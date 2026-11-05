@@ -112,3 +112,39 @@ test('Xの文字数換算（全角2・半角1）', () => {
   assert.strictEqual(E.xWeightedLength('abc'), 3);
   assert.strictEqual(E.xWeightedLength('あいう'), 6);
 });
+
+test('定型コメント：すべての定型文で差し込み記号が残らない', () => {
+  const ids = new Set();
+  const cats = new Set(D.TEMPLATE_CATEGORIES.map(c => c.id));
+  for (const t of D.TEMPLATES) {
+    assert.ok(!ids.has(t.id), `IDの重複: ${t.id}`);
+    ids.add(t.id);
+    assert.ok(cats.has(t.cat), `未定義の場面: ${t.cat}`);
+    const text = E.fillTemplate(client, t.text, { day: 30 });
+    assert.ok(!/\{\w+\}/.test(text), `未置換: ${t.id}\n${text}`);
+    assert.ok(text.includes('山田さん'), t.id);
+    assert.ok(text.endsWith('トレーナー 佐藤'), t.id);
+  }
+});
+
+test('定型コメント：体重や日数が差し込まれ、記録がない値は「〇」になる', () => {
+  const v = E.templateVars(client, 30);
+  assert.strictEqual(v.current, 61.4);
+  assert.strictEqual(v.lost, 0.6);
+  assert.strictEqual(v.toGoal, 5.4);
+  assert.strictEqual(v.remain, 60);
+  assert.strictEqual(v.phase, E.phaseForDay(E.buildPlan(90), 30).name);
+  const empty = E.templateVars({ ...client, logs: [] }, 1);
+  assert.strictEqual(empty.current, '〇');
+  assert.strictEqual(empty.lost, '〇');
+  assert.strictEqual(E.fillTemplate(client, '{name}です', { signature: false }), '山田さんです');
+});
+
+test('定型コメント：クライアント専用の定型文は、その方の一覧にだけ出る', () => {
+  const custom = [{ id: 'u1', cat: 'greet', title: '全員用', text: '' }, { id: 'u2', cat: 'greet', title: '専用', text: '', clientId: 'other' }];
+  const list = E.listTemplates(custom, 't1');
+  assert.ok(list.some(t => t.id === 'u1' && t.custom));
+  assert.ok(!list.some(t => t.id === 'u2'));
+  assert.ok(E.listTemplates(custom, 'other').some(t => t.id === 'u2'));
+  assert.strictEqual(list.length, D.TEMPLATES.length + 1);
+});

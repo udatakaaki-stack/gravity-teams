@@ -16,7 +16,9 @@
     variant: 0,
     sceneId: null,
     sceneVariant: 0,
-    bulk: []
+    bulk: [],
+    templates: [],
+    tplId: null
   };
 
   // ------------------------------------------------------------------
@@ -53,13 +55,14 @@
         var data = JSON.parse(raw);
         state.clients = Array.isArray(data.clients) ? data.clients : [];
         state.currentId = data.currentId || null;
+        state.templates = Array.isArray(data.templates) ? data.templates : [];
       }
     } catch (e) { /* 保存領域が使えない環境でも動くようにする */ }
   }
 
   function save() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ clients: state.clients, currentId: state.currentId }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ clients: state.clients, currentId: state.currentId, templates: state.templates }));
     } catch (e) {
       toast('このブラウザでは保存できませんでした。データ書き出しで保管してください。');
     }
@@ -203,6 +206,7 @@
     renderPlan();
     renderCommentControls();
     renderComment();
+    renderTemplates();
     renderScenes();
     renderExercises();
     renderKnowledge();
@@ -232,6 +236,7 @@
       b.setAttribute('aria-selected', on ? 'true' : 'false');
     });
     $all('.panel').forEach(function (p) { p.classList.toggle('active', p.getAttribute('data-panel') === tab); });
+    if (tab === 'template' && current()) renderTemplates();
   }
 
   // ------------------------------------------------------------------
@@ -557,6 +562,178 @@
     $('#phaseKnowledge').innerHTML = html;
   }
 
+
+  // ------------------------------------------------------------------
+  // 定型コメント
+  // ------------------------------------------------------------------
+  function catLabel(id) {
+    var c = D.TEMPLATE_CATEGORIES.filter(function (x) { return x.id === id; })[0];
+    return c ? c.label : 'その他';
+  }
+
+  function allTemplates() {
+    return E.listTemplates(state.templates, state.currentId);
+  }
+
+  function findTemplate(id) {
+    return allTemplates().filter(function (t) { return t.id === id; })[0] || null;
+  }
+
+  function initTemplateOptions() {
+    var opts = D.TEMPLATE_CATEGORIES.map(function (c) {
+      return '<option value="' + c.id + '">' + esc(c.label) + '</option>';
+    }).join('');
+    $('#tplCat').innerHTML += opts;
+    $('#tplFormCat').innerHTML = opts;
+    $('#tplVarChips').innerHTML = D.TEMPLATE_VARS.map(function (v) {
+      return '<button type="button" class="chip" data-var="' + v.key + '">' + esc(v.label) + '</button>';
+    }).join('');
+  }
+
+  function renderTemplates() {
+    var c = current();
+    if (!c) return;
+    var cat = $('#tplCat').value;
+    var q = $('#tplSearch').value.trim();
+    var mineOnly = $('#tplMineOnly').checked;
+    var list = allTemplates().filter(function (t) {
+      if (cat && t.cat !== cat) return false;
+      if (mineOnly && !t.custom) return false;
+      if (q && (t.title + t.text + catLabel(t.cat)).indexOf(q) === -1) return false;
+      return true;
+    });
+    var groups = D.TEMPLATE_CATEGORIES.map(function (g) {
+      return { cat: g, items: list.filter(function (t) { return t.cat === g.id; }) };
+    }).filter(function (g) { return g.items.length; });
+
+    $('#tplList').innerHTML = groups.map(function (g) {
+      return '<div class="tpl-group"><h3>' + esc(g.cat.label) + '</h3>' + g.items.map(function (t) {
+        var badge = t.custom ? '<span class="tpl-badge' + (t.clientId ? ' client' : '') + '">' + (t.clientId ? 'この方専用' : '登録') + '</span>' : '';
+        var preview = E.fillTemplate(c, t.text, { day: state.day, signature: false }).replace(/\n/g, ' ');
+        return '<article class="tpl-item' + (t.id === state.tplId ? ' active' : '') + '" data-tpl="' + esc(t.id) + '" tabindex="0">' +
+          '<header><strong>' + esc(t.title) + badge + '</strong>' +
+          '<button type="button" class="btn ghost small" data-tpl-edit="' + esc(t.id) + '">' + (t.custom ? '編集' : '複製して編集') + '</button></header>' +
+          '<p>' + esc(preview) + '</p></article>';
+      }).join('') + '</div>';
+    }).join('') || '<p class="muted">条件に合う定型文がありません。絞り込みを変えるか、「＋ 定型文を登録」から追加してください。</p>';
+
+    renderTemplateOutput();
+  }
+
+  function renderTemplateOutput() {
+    var c = current();
+    var t = state.tplId ? findTemplate(state.tplId) : null;
+    if (!t) {
+      $('#tplCurrentTitle').textContent = '定型文を選んでください';
+      $('#tplOutput').value = '';
+      $('#tplCount').textContent = '';
+      return;
+    }
+    var text = E.fillTemplate(c, t.text, { day: state.day, signature: $('#tplSign').checked });
+    $('#tplCurrentTitle').textContent = catLabel(t.cat) + '：' + t.title;
+    $('#tplOutput').value = text;
+    $('#tplCount').textContent = countLabel(text);
+  }
+
+  function openTemplateEditor(t, copy) {
+    var f = $('#tplForm');
+    var isEdit = t && t.custom && !copy;
+    $('#tplEditorTitle').textContent = isEdit ? '定型文を編集' : (t ? '定型文を複製して登録' : '定型文を登録');
+    f.elements.id.value = isEdit ? t.id : '';
+    f.elements.cat.value = t ? t.cat : ($('#tplCat').value || D.TEMPLATE_CATEGORIES[0].id);
+    f.elements.title.value = t ? (isEdit ? t.title : t.title + '（アレンジ）') : '';
+    f.elements.scope.value = t && t.clientId ? 'client' : 'all';
+    f.elements.text.value = t ? t.text : '{name}、';
+    $('#btnTplDelete').hidden = !isEdit;
+    $('#tplEditor').hidden = false;
+    updateTemplatePreview();
+    $('#tplEditor').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    f.elements.title.focus();
+  }
+
+  function closeTemplateEditor() {
+    $('#tplEditor').hidden = true;
+  }
+
+  function updateTemplatePreview() {
+    $('#tplFormPreview').textContent = E.fillTemplate(current(), $('#tplFormText').value, { day: state.day, signature: false });
+  }
+
+  function insertAtCursor(ta, str) {
+    var s = ta.selectionStart || 0;
+    var e = ta.selectionEnd || 0;
+    ta.value = ta.value.slice(0, s) + str + ta.value.slice(e);
+    ta.selectionStart = ta.selectionEnd = s + str.length;
+    ta.focus();
+  }
+
+  function bindTemplates() {
+    ['#tplCat', '#tplMineOnly'].forEach(function (s) { $(s).addEventListener('change', renderTemplates); });
+    $('#tplSearch').addEventListener('input', renderTemplates);
+    $('#tplSign').addEventListener('change', renderTemplateOutput);
+    $('#tplOutput').addEventListener('input', function () { $('#tplCount').textContent = countLabel(this.value); });
+
+    $('#tplList').addEventListener('click', function (ev) {
+      var edit = ev.target.closest('[data-tpl-edit]');
+      if (edit) {
+        var t = findTemplate(edit.getAttribute('data-tpl-edit'));
+        openTemplateEditor(t, !t.custom);
+        return;
+      }
+      var item = ev.target.closest('[data-tpl]');
+      if (!item) return;
+      state.tplId = item.getAttribute('data-tpl');
+      $all('.tpl-item').forEach(function (el) { el.classList.toggle('active', el === item); });
+      renderTemplateOutput();
+      if (window.matchMedia('(max-width: 860px)').matches) $('.tpl-output').scrollIntoView({ behavior: 'smooth' });
+    });
+    $('#tplList').addEventListener('keydown', function (ev) {
+      if (ev.key === 'Enter' && ev.target.matches('[data-tpl]')) ev.target.click();
+    });
+
+    $('#btnTplNew').addEventListener('click', function () { openTemplateEditor(null); });
+    $('#btnTplCancel').addEventListener('click', closeTemplateEditor);
+    $('#tplFormText').addEventListener('input', updateTemplatePreview);
+    $('#tplVarChips').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-var]');
+      if (!b) return;
+      insertAtCursor($('#tplFormText'), '{' + b.getAttribute('data-var') + '}');
+      updateTemplatePreview();
+    });
+
+    $('#tplForm').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var f = this;
+      var id = f.elements.id.value || ('u' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
+      var item = {
+        id: id,
+        cat: f.elements.cat.value,
+        title: f.elements.title.value.trim(),
+        text: f.elements.text.value
+      };
+      if (f.elements.scope.value === 'client') item.clientId = state.currentId;
+      var idx = state.templates.map(function (t) { return t.id; }).indexOf(id);
+      if (idx === -1) state.templates.unshift(item); else state.templates[idx] = item;
+      state.tplId = id;
+      save();
+      closeTemplateEditor();
+      renderTemplates();
+      toast('定型文を保存しました');
+    });
+
+    $('#btnTplDelete').addEventListener('click', function () {
+      var id = $('#tplForm').elements.id.value;
+      var t = findTemplate(id);
+      if (!t || !window.confirm('「' + t.title + '」を削除します。よろしいですか？')) return;
+      state.templates = state.templates.filter(function (x) { return x.id !== id; });
+      if (state.tplId === id) state.tplId = null;
+      save();
+      closeTemplateEditor();
+      renderTemplates();
+      toast('削除しました');
+    });
+  }
+
   // ------------------------------------------------------------------
   // イベント
   // ------------------------------------------------------------------
@@ -698,10 +875,11 @@
 
     ['#exCat', '#exPlace', '#exFit'].forEach(function (s) { $(s).addEventListener('change', renderExercises); });
 
+    bindTemplates();
     $all('.share-row').forEach(buildShareRow);
 
     $('#btnExport').addEventListener('click', function () {
-      download('diet-support-data_' + today() + '.json', JSON.stringify({ clients: state.clients }, null, 2), 'application/json');
+      download('diet-support-data_' + today() + '.json', JSON.stringify({ clients: state.clients, templates: state.templates }, null, 2), 'application/json');
     });
     $('#fileImport').addEventListener('change', function () {
       var file = this.files[0];
@@ -713,6 +891,7 @@
           if (!data || !Array.isArray(data.clients)) throw new Error('format');
           if (!window.confirm(data.clients.length + '名分のデータを読み込みます。現在のデータは置き換わります。よろしいですか？')) return;
           state.clients = data.clients;
+          if (Array.isArray(data.templates)) state.templates = data.templates;
           state.currentId = state.clients.length ? state.clients[0].id : null;
           state.day = null;
           save();
@@ -732,6 +911,7 @@
   // ------------------------------------------------------------------
   initProfileOptions();
   initExerciseFilters();
+  initTemplateOptions();
   load();
   if (!current() && state.clients.length) state.currentId = state.clients[0].id;
   bind();

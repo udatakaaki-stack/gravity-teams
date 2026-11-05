@@ -56,6 +56,7 @@
           <button type="button" role="tab" data-tab="profile" class="tab">プロフィール</button>
           <button type="button" role="tab" data-tab="plan" class="tab">期分化プラン</button>
           <button type="button" role="tab" data-tab="comment" class="tab">今日のコメント</button>
+          <button type="button" role="tab" data-tab="template" class="tab">定型コメント</button>
           <button type="button" role="tab" data-tab="bulk" class="tab">一括生成</button>
           <button type="button" role="tab" data-tab="plateau" class="tab">停滞期サポート</button>
           <button type="button" role="tab" data-tab="exercise" class="tab">運動ライブラリ</button>
@@ -221,6 +222,66 @@
             <p class="muted small" id="commentCount"></p>
             <div class="share-row" data-share-target="commentOutput"></div>
             <p class="hint">送る前に、クライアントの最近の様子に合わせて一言添えると、ぐっと気持ちが伝わります。テキストはそのまま編集できます。</p>
+          </div>
+        </section>
+
+        <!-- 定型コメント -->
+        <section class="panel" data-panel="template">
+          <p class="lead">場面ごとの定型文に、お名前や日数、体重などが自動で差し込まれます。ご自身の定型文を登録して、いつもの言葉づかいで使うこともできます。</p>
+          <div class="card controls">
+            <div class="control-row">
+              <label>場面
+                <select id="tplCat"><option value="">すべての場面</option></select>
+              </label>
+              <label>キーワードで探す<input type="search" id="tplSearch" placeholder="例：飲み会、生理、写真"></label>
+              <label class="inline"><input type="checkbox" id="tplMineOnly"> 登録した定型文だけ</label>
+              <button type="button" class="btn primary" id="btnTplNew">＋ 定型文を登録</button>
+            </div>
+          </div>
+
+          <div id="tplEditor" class="card tpl-editor" hidden>
+            <h3 id="tplEditorTitle">定型文を登録</h3>
+            <form id="tplForm" class="form-grid tpl-form" autocomplete="off">
+              <input type="hidden" name="id">
+              <label>場面<select name="cat" id="tplFormCat"></select></label>
+              <label>タイトル<input name="title" required placeholder="例：朝の体重報告へのお礼"></label>
+              <label>使う相手
+                <select name="scope">
+                  <option value="all">すべてのクライアント</option>
+                  <option value="client">このクライアントだけ</option>
+                </select>
+              </label>
+              <div class="wide">
+                <span class="label-text">差し込み（押すと本文のカーソル位置に入ります）</span>
+                <div class="chips" id="tplVarChips"></div>
+              </div>
+              <label class="wide">本文<textarea name="text" id="tplFormText" rows="8" required placeholder="例：{name}、今日も記録ありがとうございます。"></textarea></label>
+              <div class="wide">
+                <span class="label-text">プレビュー</span>
+                <pre id="tplFormPreview" class="tpl-preview"></pre>
+              </div>
+              <div class="form-actions wide">
+                <div class="btn-row">
+                  <button type="submit" class="btn primary">保存する</button>
+                  <button type="button" class="btn ghost" id="btnTplCancel">やめる</button>
+                </div>
+                <button type="button" class="btn danger" id="btnTplDelete" hidden>この定型文を削除</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="tpl-layout">
+            <div id="tplList" class="tpl-list"></div>
+            <div class="card output-card tpl-output">
+              <div class="output-head">
+                <strong id="tplCurrentTitle">定型文を選んでください</strong>
+                <label class="inline small"><input type="checkbox" id="tplSign" checked> 署名を付ける</label>
+              </div>
+              <textarea id="tplOutput" class="output" rows="14" aria-label="定型コメント"></textarea>
+              <p class="muted small" id="tplCount"></p>
+              <div class="share-row" data-share-target="tplOutput"></div>
+              <p class="hint">「〇」の部分は、記録がまだない項目や日時など、送る前に書き換えが必要なところです。</p>
+            </div>
           </div>
         </section>
 

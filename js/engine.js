@@ -544,6 +544,58 @@
     return n;
   }
 
+  // ------------------------------------------------------------------
+  // 定型コメント
+  // ------------------------------------------------------------------
+
+  // 定型文の差し込みに使う値（分からない値は「〇」にして、送る前に気づけるようにする）
+  function templateVars(client, day) {
+    var total = clampDays(client.totalDays);
+    var d = clamp(parseInt(day, 10) || todayDay(client), 1, total);
+    var phase = phaseForDay(buildPlan(total), d);
+    var latest = latestLog(client);
+    var start = parseFloat(client.startWeight);
+    var goal = parseFloat(client.goalWeight);
+    var cur = latest ? latest.weight : null;
+    var blank = '〇';
+    return {
+      name: displayName(client),
+      day: d,
+      total: total,
+      remain: total - d,
+      phase: phase.name,
+      coach: client.coach || '',
+      startWeight: start ? start : blank,
+      goalWeight: goal ? goal : blank,
+      current: cur !== null ? cur : blank,
+      lost: start && cur !== null ? round1(start - cur) : blank,
+      toGoal: goal && cur !== null ? Math.max(0, round1(cur - goal)) : blank
+    };
+  }
+
+  /**
+   * 定型文にクライアントの情報を差し込みます。
+   * @param {object} client
+   * @param {string} text  定型文
+   * @param {object} opts  { day, signature: 署名を付けるか（既定 true） }
+   */
+  function fillTemplate(client, text, opts) {
+    opts = opts || {};
+    var out = fill(text, templateVars(client, opts.day));
+    if (opts.signature !== false && client.coach && out.indexOf(client.coach) === -1) {
+      out += '\n\n' + client.coach;
+    }
+    return out;
+  }
+
+  // 定型文の一覧（組み込み＋ユーザー登録）。clientId を指定すると、そのクライアント専用の定型文も含める
+  function listTemplates(custom, clientId) {
+    var mine = (custom || []).filter(function (t) {
+      return !t.clientId || t.clientId === clientId;
+    }).map(function (t) { return Object.assign({ custom: true }, t); });
+    return mine.concat(D.TEMPLATES);
+  }
+
   return {
     MIN_DAYS: MIN_DAYS,
     MAX_DAYS: MAX_DAYS,
@@ -562,6 +614,9 @@
     plateauMessage: plateauMessage,
     displayName: displayName,
     xWeightedLength: xWeightedLength,
+    templateVars: templateVars,
+    fillTemplate: fillTemplate,
+    listTemplates: listTemplates,
     formatDate: formatDate,
     parseDate: parseDate,
     clampDays: clampDays
