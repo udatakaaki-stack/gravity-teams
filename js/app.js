@@ -142,6 +142,7 @@
       '<button type="button" class="btn line small" data-act="line">LINEで送る</button>' +
       '<button type="button" class="btn x small" data-act="x">Xに投稿</button>';
     if (navigator.share) html += '<button type="button" class="btn ghost small" data-act="share">その他のアプリで共有</button>';
+    html += '<button type="button" class="btn ghost small" data-act="sent">✓ 送信済みにする</button>';
     row.innerHTML = html;
     row.addEventListener('click', function (ev) {
       var btn = ev.target.closest('button');
@@ -149,6 +150,7 @@
       var text = document.getElementById(targetId).value;
       var act = btn.getAttribute('data-act');
       if (act === 'copy') copyText(text);
+      else if (act === 'sent') recordHistory(row.getAttribute('data-kind') || KIND_BY_TARGET[targetId] || 'other', text);
       else if (act === 'share') navigator.share({ text: text }).catch(function () {});
       else {
         if (act === 'x' && E.xWeightedLength(text) > 280) {
@@ -157,6 +159,55 @@
         openShare(act, text);
       }
     });
+  }
+
+  // ------------------------------------------------------------------
+  // 送信履歴
+  // ------------------------------------------------------------------
+  var KIND_BY_TARGET = {
+    commentOutput: 'comment', tplOutput: 'template', rpOutput: 'rapport', sceneOutput: 'plateau', mechOutput: 'mechanism'
+  };
+  var KIND_LABELS = {
+    comment: '今日のコメント', template: '定型コメント', rapport: 'ラポール21日', plateau: '停滞期サポート',
+    mechanism: '体のしくみの説明', other: 'メッセージ'
+  };
+  // 履歴に残す見出しと補足情報（追加機能から登録できる）
+  var historyLabels = {
+    comment: function () { return { label: state.day + '日目のコメント', meta: { day: state.day } }; },
+    template: function () {
+      var t = state.tplId ? findTemplate(state.tplId) : null;
+      return { label: t ? t.title : '定型コメント', meta: {} };
+    },
+    rapport: function () { return { label: 'ラポール' + state.rpDay + '日目「' + D.RAPPORT_DAYS[state.rpDay - 1].theme + '」', meta: { rapportDay: state.rpDay } }; },
+    plateau: function () {
+      var sc = D.PLATEAU_SCENES.filter(function (x) { return x.id === state.sceneId; })[0];
+      return { label: sc ? sc.title : '停滞期サポート', meta: {} };
+    },
+    mechanism: function () {
+      var m = D.MECHANISM_SHARES.filter(function (x) { return x.id === state.mechId; })[0];
+      return { label: m ? m.title : '体のしくみ', meta: {} };
+    }
+  };
+
+  function recordHistory(kind, text) {
+    var c = current();
+    if (!c || !text.trim()) return;
+    var info = historyLabels[kind] ? historyLabels[kind]() : { label: KIND_LABELS[kind] || 'メッセージ', meta: {} };
+    var now = new Date();
+    c.history = c.history || [];
+    c.history.unshift({
+      id: 'h' + now.getTime().toString(36) + Math.random().toString(36).slice(2, 5),
+      date: today(),
+      time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'),
+      kind: kind,
+      kindLabel: KIND_LABELS[kind] || 'メッセージ',
+      label: info.label,
+      meta: info.meta || {},
+      text: text
+    });
+    save();
+    toast('送信済みとして記録しました（' + info.label + '）');
+    extras.forEach(function (e) { if (e.onHistory) e.onHistory(); });
   }
 
   function countLabel(text) {
@@ -219,6 +270,7 @@
     renderScenes();
     renderExercises();
     renderKnowledge();
+    extras.forEach(function (e) { if (e.render) e.render(); });
     showTab(state.tab);
   }
 
@@ -246,6 +298,7 @@
     });
     $all('.panel').forEach(function (p) { p.classList.toggle('active', p.getAttribute('data-panel') === tab); });
     if (tab === 'template' && current()) renderTemplates();
+    extras.forEach(function (e) { if (e.onTab && current()) e.onTab(tab); });
   }
 
   // ------------------------------------------------------------------
@@ -323,9 +376,19 @@
   function renderLogs() {
     var c = current();
     var logs = E.sortedLogs(c);
+    var F = window.DietFeatures;
+    var moodLabel = {};
+    F.LOG_MOODS.forEach(function (m) { moodLabel[m.id] = m.label; });
     $('#logForm').elements.date.value = today();
-    $('#logList').innerHTML = logs.slice().reverse().map(function (l) {
-      return '<li><span>' + esc(l.date.replace(/-/g, '/')) + '</span><span>' + l.weight.toFixed(1) + ' kg</span>' +
+    $('#logList').innerHTML = F.allLogs(c).slice().reverse().map(function (l) {
+      var items = [];
+      if (l.weight !== undefined && l.weight !== '' && !isNaN(parseFloat(l.weight))) items.push('<b>' + parseFloat(l.weight).toFixed(1) + ' kg</b>');
+      if (l.waist) items.push('ウエスト ' + esc(l.waist) + 'cm');
+      if (l.sleep) items.push('睡眠 ' + esc(l.sleep) + '時間');
+      if (l.steps) items.push(Number(l.steps).toLocaleString('ja-JP') + '歩');
+      if (l.mood) items.push('気分：' + esc(moodLabel[l.mood] || l.mood));
+      return '<li><span class="log-date">' + esc(l.date.replace(/-/g, '/')) + '</span><span class="log-items">' + items.join('　') +
+        (l.memo ? '<small>' + esc(l.memo) + '</small>' : '') + '</span>' +
         '<button type="button" data-date="' + esc(l.date) + '" aria-label="この記録を削除">✕</button></li>';
     }).join('') || '<li class="hint">記録すると、コメントの中で前回との変化に合わせた声かけをします。</li>';
     renderChart(logs, parseFloat(c.goalWeight));
@@ -986,16 +1049,25 @@
     $('#logForm').addEventListener('submit', function (ev) {
       ev.preventDefault();
       var c = current();
-      var date = this.elements.date.value;
-      var w = parseFloat(this.elements.weight.value);
-      if (!date || isNaN(w)) return;
+      var f = this.elements;
+      var date = f.date.value;
+      if (!date) return;
+      var entry = { date: date };
+      ['weight', 'waist', 'sleep', 'steps'].forEach(function (k) {
+        var v = parseFloat(f[k].value);
+        if (!isNaN(v)) entry[k] = v;
+      });
+      if (f.mood.value) entry.mood = f.mood.value;
+      if (f.memo.value.trim()) entry.memo = f.memo.value.trim();
+      if (Object.keys(entry).length === 1) { toast('体重などの項目をひとつ以上入力してください'); return; }
+      // 同じ日の記録は、入力した項目だけ上書きする
+      var prev = (c.logs || []).filter(function (l) { return l.date === date; })[0] || {};
       c.logs = (c.logs || []).filter(function (l) { return l.date !== date; });
-      c.logs.push({ date: date, weight: w });
-      this.elements.weight.value = '';
+      c.logs.push(Object.assign({}, prev, entry));
+      ['weight', 'waist', 'sleep', 'steps', 'memo'].forEach(function (k) { f[k].value = ''; });
+      f.mood.value = '';
       save();
-      renderMetrics();
-      renderLogs();
-      renderComment();
+      renderAll();
       toast('記録しました。コメントにも反映されます');
     });
     $('#logList').addEventListener('click', function (ev) {
@@ -1003,11 +1075,10 @@
       if (!b) return;
       var c = current();
       var d = b.getAttribute('data-date');
+      if (!window.confirm(d.replace(/-/g, '/') + 'の記録を削除します。よろしいですか？')) return;
       c.logs = (c.logs || []).filter(function (l) { return l.date !== d; });
       save();
-      renderMetrics();
-      renderLogs();
-      renderComment();
+      renderAll();
     });
 
     function setDay(v) {
@@ -1107,6 +1178,17 @@
   }
 
   // ------------------------------------------------------------------
+  // 追加機能（js/app-extras.js）から使う窓口
+  // ------------------------------------------------------------------
+  var extras = window.DietExtras || [];
+  var api = {
+    state: state, current: current, save: save, esc: esc, $: $, $all: $all, li: li,
+    copyText: copyText, toast: toast, download: download, countLabel: countLabel,
+    renderAll: renderAll, showTab: showTab, selectClient: selectClient,
+    recordHistory: recordHistory, historyLabels: historyLabels, kindLabels: KIND_LABELS
+  };
+
+  // ------------------------------------------------------------------
   // 起動
   // ------------------------------------------------------------------
   initProfileOptions();
@@ -1115,6 +1197,7 @@
   initMechanism();
   load();
   if (!current() && state.clients.length) state.currentId = state.clients[0].id;
+  extras.forEach(function (e) { if (e.init) e.init(api); });
   bind();
   renderAll();
 })();
