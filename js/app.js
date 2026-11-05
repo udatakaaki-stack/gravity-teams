@@ -18,7 +18,11 @@
     sceneVariant: 0,
     bulk: [],
     templates: [],
-    tplId: null
+    tplId: null,
+    rpDay: 1,
+    rpVariant: 0,
+    rpList: [],
+    mechId: 'm_energy'
   };
 
   // ------------------------------------------------------------------
@@ -185,6 +189,10 @@
     state.day = null;
     state.variant = 0;
     state.sceneVariant = 0;
+    state.rpDay = 1;
+    state.rpVariant = 0;
+    state.rpList = [];
+    $('#rpList').innerHTML = '';
     save();
     renderAll();
   }
@@ -207,6 +215,7 @@
     renderCommentControls();
     renderComment();
     renderTemplates();
+    renderRapport();
     renderScenes();
     renderExercises();
     renderKnowledge();
@@ -543,6 +552,7 @@
   // 知識
   // ------------------------------------------------------------------
   function renderKnowledge() {
+    renderMechanismShare();
     $('#knowledgeList').innerHTML = D.KNOWLEDGE.map(function (k) {
       return '<div class="card"><h3>' + esc(k.title) + '</h3><p>' + esc(k.body) + '</p></div>';
     }).join('');
@@ -734,6 +744,178 @@
     });
   }
 
+
+  // ------------------------------------------------------------------
+  // ラポール21日
+  // ------------------------------------------------------------------
+  var WEEK_COLORS = { 1: '#7cb7a3', 2: '#e8a25c', 3: '#9a8fd1' };
+
+  function rapportOpts() {
+    var c = current();
+    return {
+      format: $('#rpFormat').value,
+      emoji: parseInt($('#rpEmoji').value, 10),
+      variant: state.rpVariant,
+      startDate: c.rapportStart || c.startDate
+    };
+  }
+
+  function renderRapport() {
+    var c = current();
+    if (!c) return;
+    $('#rpStart').value = c.rapportStart || c.startDate || '';
+    $('#rapportWeeks').innerHTML = D.RAPPORT_WEEKS.map(function (w) {
+      var days = D.RAPPORT_DAYS.filter(function (d) { return d.week === w.week; });
+      return '<div class="rp-week" style="border-top-color:' + WEEK_COLORS[w.week] + '">' +
+        '<h3>' + w.week + '週目　' + esc(w.title) + '</h3><p>' + esc(w.aim) + '</p>' +
+        '<div class="rp-days">' + days.map(function (d) {
+          return '<button type="button" data-rpday="' + d.day + '" title="' + esc(d.theme) + '" class="' + (d.day === state.rpDay ? 'active' : '') + '">' + d.day + '</button>';
+        }).join('') + '</div></div>';
+    }).join('');
+    renderRapportOutput();
+  }
+
+  function renderRapportOutput() {
+    var c = current();
+    var item = D.RAPPORT_DAYS[state.rpDay - 1];
+    var week = D.RAPPORT_WEEKS[item.week - 1];
+    var r = E.rapportMessage(c, state.rpDay, rapportOpts());
+    var isMail = $('#rpFormat').value === 'mail';
+    $('#rpDayRange').value = state.rpDay;
+    $('#rpDayNum').value = state.rpDay;
+    $all('[data-rpday]').forEach(function (b) { b.classList.toggle('active', +b.getAttribute('data-rpday') === state.rpDay); });
+    var badge = $('#rpWeekBadge');
+    badge.textContent = item.week + '週目・' + week.title;
+    badge.style.background = WEEK_COLORS[item.week];
+    var dateText = state.rpDay + '日目';
+    if (r.date) {
+      var dt = E.parseDate(r.date);
+      dateText += '・' + r.date.replace(/-/g, '/') + '（' + '日月火水木金土'.charAt(dt.getDay()) + '）に送信';
+    }
+    $('#rpDate').textContent = dateText;
+    $('#rpSubjectRow').hidden = !isMail;
+    $('#btnRpMail').hidden = !isMail;
+    $('#rpEmoji').disabled = isMail;
+    $('#rpSubject').value = r.subject;
+    $('#rpOutput').value = r.text;
+    $('#rpCount').textContent = countLabel(r.text);
+    $('#rpTheme').textContent = state.rpDay + '日目のテーマ：' + item.theme;
+    $('#rpCoach').textContent = 'コーチへのひとこと：' + item.coach;
+  }
+
+  function rapportListText() {
+    var isMail = $('#rpFormat').value === 'mail';
+    return state.rpList.map(function (r) {
+      var head = '━━━━━━━━━━\n【' + r.day + '日目' + (r.date ? '　' + r.date.replace(/-/g, '/') : '') + '　' + r.theme + '】\n━━━━━━━━━━\n';
+      return head + (isMail ? '件名：' + r.subject + '\n\n' : '') + r.text;
+    }).join('\n\n');
+  }
+
+  function renderRapportList() {
+    var isMail = $('#rpFormat').value === 'mail';
+    state.rpList = E.rapportRange(current(), 1, E.RAPPORT_TOTAL, rapportOpts());
+    $('#rpList').innerHTML = state.rpList.map(function (r, i) {
+      return '<article class="bulk-item"><header><strong>' + r.day + '日目' + (r.date ? '・' + esc(r.date.replace(/-/g, '/')) : '') + '・' + esc(r.theme) + '</strong>' +
+        '<button type="button" class="btn ghost small" data-rpcopy="' + i + '">コピー</button></header>' +
+        (isMail ? '<p class="small"><strong>件名：</strong>' + esc(r.subject) + '</p>' : '') +
+        '<pre>' + esc(r.text) + '</pre></article>';
+    }).join('');
+  }
+
+  function bindRapport() {
+    function setRpDay(v) {
+      state.rpDay = Math.min(E.RAPPORT_TOTAL, Math.max(1, parseInt(v, 10) || 1));
+      state.rpVariant = 0;
+      renderRapportOutput();
+    }
+    $('#rpDayRange').addEventListener('input', function () { setRpDay(this.value); });
+    $('#rpDayNum').addEventListener('change', function () { setRpDay(this.value); });
+    $('#rapportWeeks').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-rpday]');
+      if (b) setRpDay(b.getAttribute('data-rpday'));
+    });
+    ['#rpFormat', '#rpEmoji'].forEach(function (s) {
+      $(s).addEventListener('change', function () {
+        renderRapportOutput();
+        if (state.rpList.length) renderRapportList();
+      });
+    });
+    $('#rpStart').addEventListener('change', function () {
+      current().rapportStart = this.value;
+      save();
+      renderRapportOutput();
+      if (state.rpList.length) renderRapportList();
+    });
+    $('#btnRpRegen').addEventListener('click', function () {
+      state.rpVariant += 1;
+      renderRapportOutput();
+    });
+    $('#rpOutput').addEventListener('input', function () { $('#rpCount').textContent = countLabel(this.value); });
+    $('#btnRpCopySubject').addEventListener('click', function () { copyText($('#rpSubject').value); });
+    $('#btnRpMail').addEventListener('click', function () {
+      var url = 'mailto:?subject=' + encodeURIComponent($('#rpSubject').value) + '&body=' + encodeURIComponent($('#rpOutput').value);
+      window.location.href = url;
+    });
+    $('#btnRpAll').addEventListener('click', renderRapportList);
+    $('#rpList').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-rpcopy]');
+      if (!b) return;
+      var r = state.rpList[+b.getAttribute('data-rpcopy')];
+      copyText($('#rpFormat').value === 'mail' ? '件名：' + r.subject + '\n\n' + r.text : r.text);
+    });
+    $('#btnRpDownload').addEventListener('click', function () {
+      if (!state.rpList.length) renderRapportList();
+      var c = current();
+      var kind = $('#rpFormat').value === 'mail' ? 'メール' : 'LINE';
+      download((c.name || 'client') + '_ラポール21日_' + kind + '.txt', rapportListText());
+    });
+  }
+
+  // ------------------------------------------------------------------
+  // 体のしくみ
+  // ------------------------------------------------------------------
+  function initMechanism() {
+    var M = D.MECHANISM;
+    $('#mechBar').innerHTML = M.expenditure.map(function (e) {
+      return '<div style="width:' + e.pct + '%;background:' + e.color + '">' + esc(e.label) + ' 約' + e.pct + '%</div>';
+    }).join('');
+    $('#mechBarLegend').innerHTML = M.expenditure.map(function (e) {
+      return '<dt><i style="background:' + e.color + '"></i>' + esc(e.label) + '（約' + e.pct + '％）</dt><dd>' + esc(e.desc) + '</dd>';
+    }).join('');
+    $('#mechSteps').innerHTML = M.fatSteps.map(function (s) {
+      return '<li><strong>' + esc(s.title) + '</strong><span>' + esc(s.body) + '</span></li>';
+    }).join('');
+    $('#mechDit').innerHTML = M.dit.map(function (d) {
+      return '<div class="dit-row"><span>' + esc(d.label) + '</span><div class="dit-track"><div class="dit-fill" style="width:' + (d.pct / 30 * 100) + '%"></div></div><b>約' + d.pct + '%</b></div>';
+    }).join('') + '<p class="hint">とったエネルギーのうち、消化・吸収などに使われる割合の目安です。</p>';
+    $('#mechActions').innerHTML = M.actions.map(function (a) {
+      return '<div><strong>' + esc(a.title) + '</strong>' + esc(a.body) + '</div>';
+    }).join('');
+    $('#mechMyths').innerHTML = M.myths.map(function (m) {
+      return '<div><strong>' + esc(m.q) + '</strong><p>' + esc(m.a) + '</p></div>';
+    }).join('');
+    $('#mechSources').innerHTML = M.sources.map(li).join('');
+    $('#mechShareChips').innerHTML = D.MECHANISM_SHARES.map(function (s) {
+      return '<button type="button" class="chip" data-mech="' + s.id + '">' + esc(s.title) + '</button>';
+    }).join('');
+    $('#mechShareChips').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-mech]');
+      if (!b) return;
+      state.mechId = b.getAttribute('data-mech');
+      renderMechanismShare();
+    });
+    $('#mechOutput').addEventListener('input', function () { $('#mechCount').textContent = countLabel(this.value); });
+  }
+
+  function renderMechanismShare() {
+    var c = current();
+    if (!c) return;
+    $all('[data-mech]').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-mech') === state.mechId); });
+    var text = E.mechanismText(c, state.mechId);
+    $('#mechOutput').value = text;
+    $('#mechCount').textContent = countLabel(text);
+  }
+
   // ------------------------------------------------------------------
   // イベント
   // ------------------------------------------------------------------
@@ -876,6 +1058,7 @@
     ['#exCat', '#exPlace', '#exFit'].forEach(function (s) { $(s).addEventListener('change', renderExercises); });
 
     bindTemplates();
+    bindRapport();
     $all('.share-row').forEach(buildShareRow);
 
     $('#btnExport').addEventListener('click', function () {
@@ -912,6 +1095,7 @@
   initProfileOptions();
   initExerciseFilters();
   initTemplateOptions();
+  initMechanism();
   load();
   if (!current() && state.clients.length) state.currentId = state.clients[0].id;
   bind();

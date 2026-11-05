@@ -596,6 +596,101 @@
     return mine.concat(D.TEMPLATES);
   }
 
+  // ------------------------------------------------------------------
+  // ラポールを築く21日間のアファメーションメッセージ
+  // ------------------------------------------------------------------
+  var RAPPORT_TOTAL = 21;
+
+  var RAPPORT_OPENINGS = {
+    gentle: ['{name}、こんにちは。', '{name}、今日もお疲れさまです。', '{name}、体調はいかがですか？'],
+    genki: ['{name}、こんにちは！', '{name}、今日も元気にいきましょう！', '{name}、お疲れさまです！'],
+    polite: ['{name}、いつもお世話になっております。', '{name}、こんにちは。いつもありがとうございます。']
+  };
+
+  var AFFIRMATION_GUIDES = [
+    '朝起きた時や寝る前に、心の中でゆっくり唱えてみてください。',
+    '声に出しても、心の中でつぶやいても大丈夫です。少しだけ深呼吸してから唱えてみてくださいね。',
+    'スマホの待ち受けやメモに書いておいて、ふとした時に読み返してみてください。',
+    '鏡の前の自分に向けて、やさしく言ってあげてください。'
+  ];
+
+  var RAPPORT_CLOSINGS = {
+    gentle: ['よかったら、気軽にお返事くださいね。どんなお話でもうれしいです。', 'お返事はいつでも大丈夫です。{name}のペースで、また話しかけてくださいね。'],
+    genki: ['お返事、楽しみに待っています！', '気軽にお返事くださいね！どんなことでも大歓迎です！'],
+    polite: ['よろしければ、お気軽にご返信ください。お話をうかがえるのを楽しみにしております。', 'ご返信はいつでも構いません。どうぞご自身のペースでお知らせください。']
+  };
+
+  function rapportDay(day) {
+    var d = clamp(parseInt(day, 10) || 1, 1, RAPPORT_TOTAL);
+    return D.RAPPORT_DAYS[d - 1];
+  }
+
+  /**
+   * ラポールを築くアファメーションメッセージを作成します。
+   * @param {object} client
+   * @param {number} day   1〜21
+   * @param {object} opts  { format: 'line'|'mail', emoji: 0|1|2, variant, startDate: 'YYYY-MM-DD' }
+   * @returns {{subject: string, text: string, day: number, date: string|null, theme: string}}
+   */
+  function rapportMessage(client, day, opts) {
+    opts = opts || {};
+    var item = rapportDay(day);
+    var format = opts.format === 'mail' ? 'mail' : 'line';
+    var emoji = format === 'mail' ? 0 : (opts.emoji === undefined ? 1 : opts.emoji);
+    var toneId = D.TONES[client.tone] ? client.tone : 'gentle';
+    var rng = createRng(hashString([client.id || client.name || 'c', 'rapport', item.day, opts.variant || 0, format].join('|')));
+    var goal = client.goalNote ? String(client.goalNote).trim() : '';
+    var vars = { name: displayName(client), day: item.day, total: RAPPORT_TOTAL, goal: goal, coach: client.coach || '' };
+    var body = fill(goal || !item.alt ? item.message : item.alt, vars);
+    var affirmation = fill(item.affirmation, vars);
+    var question = fill(item.question, vars);
+    var guide = pick(rng, AFFIRMATION_GUIDES);
+    var closing = fill(pick(rng, RAPPORT_CLOSINGS[toneId]), vars);
+    var start = parseDate(opts.startDate || client.startDate);
+    var date = start ? formatDate(addDays(start, item.day - 1)) : null;
+    var subject = '【3週間サポート ' + item.day + '日目】' + fill(item.subject, vars);
+    var parts = [];
+
+    if (format === 'line') {
+      parts.push(fill(pick(rng, RAPPORT_OPENINGS[toneId]), vars) + (emoji ? pick(rng, D.TONES[toneId].emoji) : ''));
+      parts.push((emoji ? '🌱' : '■') + '3週間メッセージ ' + item.day + '日目「' + item.theme + '」');
+      parts.push(body);
+      parts.push((emoji ? '🌸' : '■') + '今日の言葉\n「' + affirmation + '」\n' + guide);
+      parts.push((emoji ? '💬' : '■') + '今日の質問\n' + question);
+      parts.push(closing + (emoji >= 2 ? pick(rng, D.TONES[toneId].emoji) : ''));
+      if (client.coach) parts.push(client.coach);
+      return { subject: subject, text: parts.join('\n\n'), day: item.day, date: date, theme: item.theme };
+    }
+
+    // メール形式
+    var greet = 'いつもお世話になっております。' + (client.coach ? client.coach + 'です。' : '');
+    parts.push(vars.name);
+    parts.push(greet + '\n3週間サポートの' + item.day + '日目のメッセージをお送りします。今日のテーマは「' + item.theme + '」です。');
+    parts.push(body);
+    parts.push('◇ 今日の言葉 ◇\n「' + affirmation + '」\n' + guide);
+    parts.push('◇ 今日の質問 ◇\n' + question + '\nこのメールにそのままご返信いただければ、お返事いたします。');
+    parts.push(fill(pick(rng, RAPPORT_CLOSINGS.polite), vars) + '\n今後とも、どうぞよろしくお願いいたします。');
+    if (client.coach) parts.push('━━━━━━━━━━\n' + client.coach + '\n━━━━━━━━━━');
+    return { subject: subject, text: parts.join('\n\n'), day: item.day, date: date, theme: item.theme };
+  }
+
+  function rapportRange(client, from, to, opts) {
+    var a = clamp(parseInt(from, 10) || 1, 1, RAPPORT_TOTAL);
+    var b = clamp(parseInt(to, 10) || RAPPORT_TOTAL, a, RAPPORT_TOTAL);
+    var out = [];
+    for (var d = a; d <= b; d++) out.push(rapportMessage(client, d, opts));
+    return out;
+  }
+
+  // しくみの説明文（クライアント向け）に名前を差し込む
+  function mechanismText(client, id) {
+    var s = D.MECHANISM_SHARES.filter(function (x) { return x.id === id; })[0];
+    if (!s) return '';
+    var text = fill(s.text, { name: displayName(client) });
+    if (client.coach) text += '\n\n' + client.coach;
+    return text;
+  }
+
   return {
     MIN_DAYS: MIN_DAYS,
     MAX_DAYS: MAX_DAYS,
@@ -617,6 +712,10 @@
     templateVars: templateVars,
     fillTemplate: fillTemplate,
     listTemplates: listTemplates,
+    RAPPORT_TOTAL: RAPPORT_TOTAL,
+    rapportMessage: rapportMessage,
+    rapportRange: rapportRange,
+    mechanismText: mechanismText,
     formatDate: formatDate,
     parseDate: parseDate,
     clampDays: clampDays

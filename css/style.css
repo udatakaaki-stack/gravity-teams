@@ -47,6 +47,7 @@
 }
 
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { margin: 0; }
 body {
   background: var(--bg);
@@ -268,3 +269,47 @@ input[type="range"] { flex: 1; accent-color: var(--accent); }
   .tpl-output { position: static; order: -1; }
 }
 .tpl-form { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+
+/* ラポール21日 */
+.rapport-weeks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.rp-week { border: 1px solid var(--border); background: var(--surface); border-radius: 12px; padding: 12px 14px; border-top: 4px solid; }
+.rp-week h3 { font-size: 15px; margin-bottom: 4px; }
+.rp-week p { font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+.rp-days { display: flex; flex-wrap: wrap; gap: 4px; }
+.rp-days button { border: 1px solid var(--border); background: var(--bg); border-radius: 8px; min-width: 34px; padding: 3px 6px; cursor: pointer; font-size: 13px; }
+.rp-days button.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.subject-row { display: flex; gap: 8px; align-items: flex-end; margin-bottom: 8px; }
+.subject-row label { flex: 1; }
+.rp-reply { padding-left: 1.2em; margin: 0 0 10px; font-size: 14px; }
+#btnRpMail { margin-top: 4px; }
+
+/* 体のしくみ */
+.mech h4 { margin: 20px 0 8px; font-size: 15px; }
+.mech-bar { display: flex; height: 40px; border-radius: 10px; overflow: hidden; }
+.mech-bar div { display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; }
+.mech-legend { display: grid; gap: 6px; margin: 10px 0 0; font-size: 14px; }
+.mech-legend dt { font-weight: 600; display: flex; align-items: center; gap: 6px; }
+.mech-legend dt i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.mech-legend dd { margin: 0 0 6px 16px; color: var(--muted); }
+.mech-steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 0; counter-reset: step; }
+.mech-steps li { position: relative; padding: 0 0 16px 44px; counter-increment: step; }
+.mech-steps li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+.mech-steps li:not(:last-child)::after { content: ''; position: absolute; left: 14px; top: 32px; bottom: 2px; width: 2px; background: var(--border); }
+.mech-steps strong { display: block; }
+.mech-steps span { color: var(--muted); font-size: 14px; }
+.mech-dit { display: grid; gap: 8px; margin-bottom: 4px; }
+.dit-row { display: grid; grid-template-columns: minmax(120px, 220px) minmax(0, 1fr) 48px; gap: 10px; align-items: center; font-size: 14px; }
+.dit-track { background: var(--surface-2); border-radius: 999px; height: 14px; overflow: hidden; }
+.dit-fill { background: #9a8fd1; height: 100%; border-radius: 999px; }
+.dit-row b { text-align: right; font-variant-numeric: tabular-nums; }
+.mech-actions, .mech-myths { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+.mech-actions div, .mech-myths div { background: var(--surface-2); border-radius: 10px; padding: 12px 14px; font-size: 14px; }
+.mech-actions strong, .mech-myths strong { display: block; margin-bottom: 4px; }
+.mech-myths p { margin: 0; color: var(--muted); }
+#mechShareChips { margin-bottom: 10px; }
+#mechShareChips .chip.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+@media (max-width: 860px) {
+  .rapport-weeks { grid-template-columns: 1fr; }
+  .dit-row { grid-template-columns: minmax(0, 1fr) 48px; }
+  .dit-row .dit-track { grid-column: 1 / -1; grid-row: 2; }
+}

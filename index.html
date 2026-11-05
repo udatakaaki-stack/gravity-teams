@@ -57,10 +57,11 @@
           <button type="button" role="tab" data-tab="plan" class="tab">期分化プラン</button>
           <button type="button" role="tab" data-tab="comment" class="tab">今日のコメント</button>
           <button type="button" role="tab" data-tab="template" class="tab">定型コメント</button>
+          <button type="button" role="tab" data-tab="rapport" class="tab">ラポール21日</button>
           <button type="button" role="tab" data-tab="bulk" class="tab">一括生成</button>
           <button type="button" role="tab" data-tab="plateau" class="tab">停滞期サポート</button>
           <button type="button" role="tab" data-tab="exercise" class="tab">運動ライブラリ</button>
-          <button type="button" role="tab" data-tab="knowledge" class="tab">食事と体の知識</button>
+          <button type="button" role="tab" data-tab="knowledge" class="tab">体のしくみと知識</button>
         </nav>
 
         <!-- プロフィール -->
@@ -285,6 +286,80 @@
           </div>
         </section>
 
+        <!-- ラポール21日 -->
+        <section class="panel" data-panel="rapport">
+          <p class="lead">信頼関係（ラポール）を築くための、3週間（21日間）のアファメーションメッセージです。毎日のメッセージに「今日の言葉」と、返信しやすい「今日の質問」が入っています。LINE用とメール用を切り替えられます。</p>
+          <div id="rapportWeeks" class="rapport-weeks"></div>
+
+          <div class="card controls">
+            <div class="control-row">
+              <label>何日目？（1〜21日）
+                <span class="range-row">
+                  <input type="range" id="rpDayRange" min="1" max="21" value="1">
+                  <input type="number" id="rpDayNum" min="1" max="21" value="1" inputmode="numeric">
+                </span>
+              </label>
+              <label>送り方
+                <select id="rpFormat">
+                  <option value="line">LINE</option>
+                  <option value="mail">メール</option>
+                </select>
+              </label>
+              <label>絵文字（LINEのみ）
+                <select id="rpEmoji">
+                  <option value="0">使わない</option>
+                  <option value="1" selected>少しだけ</option>
+                  <option value="2">多め</option>
+                </select>
+              </label>
+              <label>1日目を送る日<input type="date" id="rpStart"></label>
+            </div>
+          </div>
+
+          <div class="cards two">
+            <div class="card output-card">
+              <div class="output-head">
+                <div>
+                  <span class="phase-badge" id="rpWeekBadge"></span>
+                  <span id="rpDate" class="muted"></span>
+                </div>
+                <button type="button" class="btn ghost small" id="btnRpRegen">別の言い回しにする</button>
+              </div>
+              <div id="rpSubjectRow" class="subject-row" hidden>
+                <label>件名<input id="rpSubject" aria-label="メールの件名"></label>
+                <button type="button" class="btn ghost small" id="btnRpCopySubject">件名をコピー</button>
+              </div>
+              <textarea id="rpOutput" class="output" rows="18" aria-label="ラポールメッセージ"></textarea>
+              <p class="muted small" id="rpCount"></p>
+              <div class="share-row" data-share-target="rpOutput"></div>
+              <button type="button" class="btn ghost small" id="btnRpMail" hidden>メールアプリで開く</button>
+            </div>
+            <div class="card">
+              <h3 id="rpTheme"></h3>
+              <div class="coach-point" id="rpCoach"></div>
+              <h4>返信が来たら</h4>
+              <ul class="rp-reply">
+                <li>まず相手の言葉をそのまま繰り返して受け止める（例：「〇〇と感じているんですね」）</li>
+                <li>アドバイスより先に、話してくれたことへの感謝を伝える</li>
+                <li>返信の目安をあらかじめ決めて守る（約束を守ることが信頼の土台です）</li>
+                <li>聞いた内容はプロフィールのメモ欄に残し、次のメッセージで生かす</li>
+              </ul>
+              <p class="hint">「3週間」は区切りとして設定しています。習慣が身につくまでの期間には個人差が大きく、平均で約2か月かかったという研究もあります。22日目以降は「今日のコメント」や「定型コメント」で続けていきましょう。</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="output-head">
+              <strong>21日分をまとめて確認</strong>
+              <div class="btn-row">
+                <button type="button" class="btn ghost small" id="btnRpAll">21日分を表示</button>
+                <button type="button" class="btn ghost small" id="btnRpDownload">テキストで保存</button>
+              </div>
+            </div>
+            <div id="rpList" class="bulk-list"></div>
+          </div>
+        </section>
+
         <!-- 一括生成 -->
         <section class="panel" data-panel="bulk">
           <div class="card controls">
@@ -364,6 +439,40 @@
 
         <!-- 知識 -->
         <section class="panel" data-panel="knowledge">
+          <div class="card mech">
+            <h3>体のしくみ：脂肪はどうやって燃えるのか</h3>
+            <p class="muted">クライアントに説明する時の資料としてお使いください。数値は出典のあるものだけを載せています。</p>
+
+            <h4>1日に使うエネルギーの内訳</h4>
+            <div id="mechBar" class="mech-bar" role="img" aria-label="基礎代謝約60%、身体活動約30%、食事誘発性熱産生約10%"></div>
+            <dl id="mechBarLegend" class="mech-legend"></dl>
+
+            <h4>脂肪が燃えるまでの流れ</h4>
+            <ol id="mechSteps" class="mech-steps"></ol>
+
+            <h4>食事誘発性熱産生（食べた時に使われるエネルギー）</h4>
+            <p>食べたものを消化・吸収し、体の中で処理する時にもエネルギーが使われ、その一部は熱になります。食後に体が温かくなるのはこのためです。使われるエネルギーの割合は栄養素によって違い、たんぱく質がいちばん多くなります。</p>
+            <div id="mechDit" class="mech-dit"></div>
+
+            <h4>体重を減らすためにできること</h4>
+            <div id="mechActions" class="mech-actions"></div>
+
+            <h4>よくある誤解</h4>
+            <div id="mechMyths" class="mech-myths"></div>
+
+            <h4>出典</h4>
+            <ul id="mechSources" class="small muted"></ul>
+          </div>
+
+          <div class="card">
+            <h3>しくみをクライアントに伝える</h3>
+            <p class="hint">説明したいテーマを選ぶと、お名前入りのやさしい説明文ができます。</p>
+            <div class="chips" id="mechShareChips"></div>
+            <textarea id="mechOutput" class="output" rows="12" aria-label="しくみの説明文"></textarea>
+            <p class="muted small" id="mechCount"></p>
+            <div class="share-row" data-share-target="mechOutput"></div>
+          </div>
+
           <div id="knowledgeList" class="knowledge-list"></div>
           <div class="card">
             <h3>今の期の食事・運動・心の持ち方</h3>

@@ -148,3 +148,52 @@ test('定型コメント：クライアント専用の定型文は、その方�
   assert.ok(E.listTemplates(custom, 'other').some(t => t.id === 'u2'));
   assert.strictEqual(list.length, D.TEMPLATES.length + 1);
 });
+
+test('ラポール21日：21日分そろっていて、LINE・メールとも差し込み記号が残らない', () => {
+  assert.strictEqual(D.RAPPORT_DAYS.length, 21);
+  D.RAPPORT_DAYS.forEach((d, i) => assert.strictEqual(d.day, i + 1));
+  for (const goalNote of ['', '結婚式でドレスを着たい']) {
+    for (const tone of Object.keys(D.TONES)) {
+      for (const format of ['line', 'mail']) {
+        const list = E.rapportRange({ ...client, tone, goalNote }, 1, 21, { format, emoji: 2 });
+        assert.strictEqual(list.length, 21);
+        for (const r of list) {
+          assert.ok(!/\{\w+\}/.test(r.text + r.subject), `未置換: ${tone} ${format} ${r.day}\n${r.text}`);
+          assert.ok(r.text.includes('山田さん'));
+          assert.ok(r.text.includes('今日の言葉'));
+          assert.ok(r.subject.startsWith('【3週間サポート ' + r.day + '日目】'));
+        }
+      }
+    }
+  }
+});
+
+test('ラポール21日：目的が登録されていれば15日目に反映され、なければ別の文になる', () => {
+  const withGoal = E.rapportMessage({ ...client, goalNote: '結婚式でドレスを着たい' }, 15).text;
+  assert.ok(withGoal.includes('「結婚式でドレスを着たい」'));
+  const noGoal = E.rapportMessage({ ...client, goalNote: '' }, 15).text;
+  assert.ok(!noGoal.includes('「」'));
+});
+
+test('ラポール21日：送信日は開始日から数え、範囲外の日は1〜21に収まる', () => {
+  assert.strictEqual(E.rapportMessage(client, 1, { startDate: '2026-12-01' }).date, '2026-12-01');
+  assert.strictEqual(E.rapportMessage(client, 21, { startDate: '2026-12-01' }).date, '2026-12-21');
+  assert.strictEqual(E.rapportMessage(client, 99).day, 21);
+  assert.strictEqual(E.rapportMessage(client, 0).day, 1);
+});
+
+test('ラポール21日：メール形式には絵文字が入らない', () => {
+  for (let d = 1; d <= 21; d++) {
+    const t = E.rapportMessage(client, d, { format: 'mail', emoji: 2 }).text;
+    assert.ok(!/\p{Extended_Pictographic}/u.test(t), `day ${d}`);
+  }
+});
+
+test('体のしくみ：消費エネルギーの内訳は合計100%、説明文は名前入りで作れる', () => {
+  assert.strictEqual(D.MECHANISM.expenditure.reduce((a, e) => a + e.pct, 0), 100);
+  for (const s of D.MECHANISM_SHARES) {
+    const t = E.mechanismText(client, s.id);
+    assert.ok(t.startsWith('山田さん'));
+    assert.ok(!/\{\w+\}/.test(t));
+  }
+});
