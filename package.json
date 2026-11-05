@@ -1,0 +1,9 @@
+{
+  "name": "diet-support-program",
+  "version": "1.0.0",
+  "private": true,
+  "description": "期分化・クライアント別コメント自動生成・停滞期サポートを備えたダイエット指導ツール",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  }
+}
