@@ -313,3 +313,4 @@ input[type="range"] { flex: 1; accent-color: var(--accent); }
   .dit-row { grid-template-columns: minmax(0, 1fr) 48px; }
   .dit-row .dit-track { grid-column: 1 / -1; grid-row: 2; }
 }
+.rp-status { margin: 4px 0 0; font-size: 13px; color: var(--muted); background: var(--surface-2); border-radius: 8px; padding: 6px 10px; }

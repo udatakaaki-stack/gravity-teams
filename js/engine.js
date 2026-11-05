@@ -625,12 +625,54 @@
     return D.RAPPORT_DAYS[d - 1];
   }
 
+  // 体重記録から、その日の進み具合を判断する
+  //   dateStr までの記録を使う（dateStr がなければすべての記録）
+  function progressState(client, dateStr) {
+    var logs = sortedLogs(client).filter(function (l) { return !dateStr || l.date <= dateStr; });
+    var start = parseFloat(client.startWeight);
+    var goal = parseFloat(client.goalWeight);
+    var res = { state: 'none', lost: null, pct: null, toGoal: null, diff: null };
+    if (!logs.length) return res;
+    var latest = logs[logs.length - 1];
+    var prev = logs.length > 1 ? logs[logs.length - 2] : null;
+    res.diff = prev ? round1(latest.weight - prev.weight) : null;
+    if (start) res.lost = round1(start - latest.weight);
+    if (goal) res.toGoal = Math.max(0, round1(latest.weight - goal));
+    if (start && goal && start > goal) {
+      res.pct = clamp(Math.round(((start - latest.weight) / (start - goal)) * 100), 0, 100);
+    }
+
+    // 停滞：直近14日の記録が3回以上あり、その幅が0.5kg未満
+    var since = formatDate(addDays(parseDate(latest.date), -13));
+    var recent = logs.filter(function (l) { return l.date >= since; });
+    var ws = recent.map(function (l) { return l.weight; });
+    var plateau = recent.length >= 3 && (Math.max.apply(null, ws) - Math.min.apply(null, ws)) < 0.5 &&
+      diffDays(parseDate(recent[0].date), parseDate(latest.date)) >= 10;
+
+    if (goal && latest.weight <= goal) res.state = 'goal';
+    else if (res.pct !== null && res.pct >= 80) res.state = 'nearGoal';
+    else if (res.diff !== null && res.diff >= 0.5) res.state = 'up';
+    else if (plateau) res.state = 'plateau';
+    else if (!prev) res.state = 'start';
+    else if (res.lost !== null && res.lost >= 0.5) res.state = 'down';
+    else res.state = 'steady';
+    return res;
+  }
+
+  function moodInfo(id) {
+    return D.MOODS.filter(function (m) { return m.id === id; })[0] || D.MOODS[0];
+  }
+
   /**
    * ラポールを築くアファメーションメッセージを作成します。
+   * その方の「今の気持ち」と、体重記録から判断した「進み具合」に合わせて、
+   * 寄り添いの言葉と、今のその方へのアファメーションが加わります。
    * @param {object} client
    * @param {number} day   1〜21
-   * @param {object} opts  { format: 'line'|'mail', emoji: 0|1|2, variant, startDate: 'YYYY-MM-DD' }
-   * @returns {{subject: string, text: string, day: number, date: string|null, theme: string}}
+   * @param {object} opts  { format: 'line'|'mail', emoji: 0|1|2, variant, startDate: 'YYYY-MM-DD',
+   *                         mood: 気持ちのID（省略時は client.mood）, personalize: false で寄り添いなし,
+   *                         asOf: 'YYYY-MM-DD' この日までの記録で判断（省略時は最新の記録） }
+   * @returns {{subject, text, day, date, theme, progress, mood}}
    */
   function rapportMessage(client, day, opts) {
     opts = opts || {};
@@ -640,38 +682,80 @@
     var toneId = D.TONES[client.tone] ? client.tone : 'gentle';
     var rng = createRng(hashString([client.id || client.name || 'c', 'rapport', item.day, opts.variant || 0, format].join('|')));
     var goal = client.goalNote ? String(client.goalNote).trim() : '';
-    var vars = { name: displayName(client), day: item.day, total: RAPPORT_TOTAL, goal: goal, coach: client.coach || '' };
+    var start = parseDate(opts.startDate || client.startDate);
+    var date = start ? formatDate(addDays(start, item.day - 1)) : null;
+    var personalize = opts.personalize !== false;
+    var mood = moodInfo(opts.mood !== undefined ? opts.mood : client.mood);
+    // 進み具合は、作成する時点での最新の記録で判断する
+    var prog = progressState(client, opts.asOf || null);
+
+    var vars = {
+      name: displayName(client), day: item.day, total: RAPPORT_TOTAL, goal: goal, coach: client.coach || '',
+      lost: prog.lost !== null ? Math.abs(prog.lost) : '', pct: prog.pct !== null ? prog.pct : '', toGoal: prog.toGoal !== null ? prog.toGoal : ''
+    };
     var body = fill(goal || !item.alt ? item.message : item.alt, vars);
     var affirmation = fill(item.affirmation, vars);
     var question = fill(item.question, vars);
     var guide = pick(rng, AFFIRMATION_GUIDES);
     var closing = fill(pick(rng, RAPPORT_CLOSINGS[toneId]), vars);
-    var start = parseDate(opts.startDate || client.startDate);
-    var date = start ? formatDate(addDays(start, item.day - 1)) : null;
     var subject = '【3週間サポート ' + item.day + '日目】' + fill(item.subject, vars);
+
+    // 寄り添いの言葉（気持ち → 進み具合の順）
+    var empathy = [];
+    var personal = '';
+    if (personalize) {
+      if (mood.id && D.MOOD_EMPATHY[mood.id]) empathy.push(fill(pick(rng, D.MOOD_EMPATHY[mood.id]), vars));
+      var progKey = prog.state;
+      // 「減っている」の数字が出せない時は、ゆるやかな言葉にする
+      if (progKey === 'down' && (prog.pct === null || prog.lost === null)) progKey = 'steady';
+      if (progKey === 'nearGoal' && prog.toGoal === null) progKey = 'down';
+      // 気持ちが前向きで、特に伝えることのない記録状態なら進み具合は省略
+      var skip = (progKey === 'none' && mood.id && !mood.negative) || (progKey === 'steady' && empathy.length);
+      if (!skip && D.PROGRESS_EMPATHY[progKey]) empathy.push(fill(pick(rng, D.PROGRESS_EMPATHY[progKey]), vars));
+
+      // 今の{name}へのアファメーション：沈んだ気持ち → 進み具合 → 前向きな気持ち の優先順
+      var PA = D.PERSONAL_AFFIRMATIONS;
+      var key = null;
+      if (mood.negative && PA[mood.id]) key = mood.id;
+      else if (progKey === 'goal' || progKey === 'nearGoal' || progKey === 'plateau' || progKey === 'up') key = progKey;
+      else if (progKey === 'down') key = 'down_progress';
+      else if (mood.id === 'good') key = 'good';
+      if (key) personal = fill(pick(rng, PA[key]), vars);
+    }
+    var lightReply = personalize && mood.negative ? pick(rng, D.LIGHT_REPLY) : '';
+
     var parts = [];
+    var result = { subject: subject, day: item.day, date: date, theme: item.theme, progress: prog, mood: mood.id };
 
     if (format === 'line') {
       parts.push(fill(pick(rng, RAPPORT_OPENINGS[toneId]), vars) + (emoji ? pick(rng, D.TONES[toneId].emoji) : ''));
       parts.push((emoji ? '🌱' : '■') + '3週間メッセージ ' + item.day + '日目「' + item.theme + '」');
+      if (empathy.length) parts.push(empathy.join('\n'));
       parts.push(body);
-      parts.push((emoji ? '🌸' : '■') + '今日の言葉\n「' + affirmation + '」\n' + guide);
-      parts.push((emoji ? '💬' : '■') + '今日の質問\n' + question);
+      var words = (emoji ? '🌸' : '■') + '今日の言葉\n「' + affirmation + '」';
+      if (personal) words += '\n\n' + (emoji ? '🤍' : '■') + '今の' + vars.name + 'へ\n「' + personal + '」';
+      parts.push(words + '\n' + guide);
+      parts.push((emoji ? '💬' : '■') + '今日の質問\n' + question + (lightReply ? '\n' + lightReply : ''));
       parts.push(closing + (emoji >= 2 ? pick(rng, D.TONES[toneId].emoji) : ''));
       if (client.coach) parts.push(client.coach);
-      return { subject: subject, text: parts.join('\n\n'), day: item.day, date: date, theme: item.theme };
+      result.text = parts.join('\n\n');
+      return result;
     }
 
     // メール形式
     var greet = 'いつもお世話になっております。' + (client.coach ? client.coach + 'です。' : '');
     parts.push(vars.name);
     parts.push(greet + '\n3週間サポートの' + item.day + '日目のメッセージをお送りします。今日のテーマは「' + item.theme + '」です。');
+    if (empathy.length) parts.push(empathy.join('\n'));
     parts.push(body);
-    parts.push('◇ 今日の言葉 ◇\n「' + affirmation + '」\n' + guide);
-    parts.push('◇ 今日の質問 ◇\n' + question + '\nこのメールにそのままご返信いただければ、お返事いたします。');
+    var mwords = '◇ 今日の言葉 ◇\n「' + affirmation + '」';
+    if (personal) mwords += '\n\n◇ 今の' + vars.name + 'へ ◇\n「' + personal + '」';
+    parts.push(mwords + '\n' + guide);
+    parts.push('◇ 今日の質問 ◇\n' + question + '\n' + (lightReply || 'このメールにそのままご返信いただければ、お返事いたします。'));
     parts.push(fill(pick(rng, RAPPORT_CLOSINGS.polite), vars) + '\n今後とも、どうぞよろしくお願いいたします。');
     if (client.coach) parts.push('━━━━━━━━━━\n' + client.coach + '\n━━━━━━━━━━');
-    return { subject: subject, text: parts.join('\n\n'), day: item.day, date: date, theme: item.theme };
+    result.text = parts.join('\n\n');
+    return result;
   }
 
   function rapportRange(client, from, to, opts) {
@@ -714,6 +798,7 @@
     listTemplates: listTemplates,
     RAPPORT_TOTAL: RAPPORT_TOTAL,
     rapportMessage: rapportMessage,
+    progressState: progressState,
     rapportRange: rapportRange,
     mechanismText: mechanismText,
     formatDate: formatDate,

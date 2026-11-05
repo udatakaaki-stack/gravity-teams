@@ -197,3 +197,42 @@ test('体のしくみ：消費エネルギーの内訳は合計100%、説明文�
     assert.ok(!/\{\w+\}/.test(t));
   }
 });
+
+test('寄り添い：体重記録から進み具合を判断する', () => {
+  const base = { ...client, startWeight: 62, goalWeight: 56 };
+  assert.strictEqual(E.progressState({ ...base, logs: [] }).state, 'none');
+  assert.strictEqual(E.progressState({ ...base, logs: [{ date: '2026-11-01', weight: 62 }] }).state, 'start');
+  assert.strictEqual(E.progressState({ ...base, logs: [{ date: '2026-11-01', weight: 62 }, { date: '2026-11-04', weight: 61 }] }).state, 'down');
+  assert.strictEqual(E.progressState({ ...base, logs: [{ date: '2026-11-01', weight: 60 }, { date: '2026-11-03', weight: 60.8 }] }).state, 'up');
+  const flat = [['10-20', 62], ['10-24', 60.9], ['10-28', 60.8], ['11-02', 60.7], ['11-05', 60.9]].map(([d, w]) => ({ date: '2026-' + d, weight: w }));
+  assert.strictEqual(E.progressState({ ...base, logs: flat }).state, 'plateau');
+  assert.strictEqual(E.progressState({ ...base, logs: [{ date: '2026-11-01', weight: 56.9 }] }).state, 'nearGoal');
+  assert.strictEqual(E.progressState({ ...base, logs: [{ date: '2026-11-01', weight: 55.9 }] }).state, 'goal');
+});
+
+test('寄り添い：気持ちと進み具合に合わせた言葉が入り、すべての組み合わせで記号が残らない', () => {
+  const logsByState = {
+    none: [],
+    down: [{ date: '2026-11-01', weight: 62 }, { date: '2026-11-04', weight: 60.2 }],
+    up: [{ date: '2026-11-01', weight: 60 }, { date: '2026-11-03', weight: 60.8 }],
+    goal: [{ date: '2026-11-01', weight: 55.5 }]
+  };
+  for (const mood of D.MOODS.map(m => m.id)) {
+    for (const [st, logs] of Object.entries(logsByState)) {
+      for (const format of ['line', 'mail']) {
+        for (let d = 1; d <= 21; d++) {
+          const r = E.rapportMessage({ ...client, logs }, d, { mood, format });
+          assert.ok(!/\{\w+\}/.test(r.text), `${mood} ${st} ${format} ${d}`);
+          assert.ok(!r.text.includes('undefined') && !r.text.includes('null'), `${mood} ${st} ${d}`);
+        }
+      }
+    }
+  }
+  const sad = E.rapportMessage({ ...client, logs: [] }, 4, { mood: 'down' }).text;
+  assert.ok(sad.includes('今の山田さんへ'));
+  assert.ok(D.LIGHT_REPLY.some(t => sad.includes(t)));
+  const off = E.rapportMessage({ ...client, logs: [] }, 4, { mood: 'down', personalize: false }).text;
+  assert.ok(!off.includes('今の山田さんへ'));
+  const up = E.rapportMessage({ ...client, logs: logsByState.up }, 4).text;
+  assert.ok(up.includes('増えた分がすべて脂肪というわけではありません') || up.includes('ここからどう戻すか'));
+});

@@ -756,7 +756,9 @@
       format: $('#rpFormat').value,
       emoji: parseInt($('#rpEmoji').value, 10),
       variant: state.rpVariant,
-      startDate: c.rapportStart || c.startDate
+      startDate: c.rapportStart || c.startDate,
+      mood: c.mood || '',
+      personalize: $('#rpPersonal').checked
     };
   }
 
@@ -764,6 +766,7 @@
     var c = current();
     if (!c) return;
     $('#rpStart').value = c.rapportStart || c.startDate || '';
+    $('#rpMood').value = c.mood || '';
     $('#rapportWeeks').innerHTML = D.RAPPORT_WEEKS.map(function (w) {
       var days = D.RAPPORT_DAYS.filter(function (d) { return d.week === w.week; });
       return '<div class="rp-week" style="border-top-color:' + WEEK_COLORS[w.week] + '">' +
@@ -801,6 +804,11 @@
     $('#rpCount').textContent = countLabel(r.text);
     $('#rpTheme').textContent = state.rpDay + '日目のテーマ：' + item.theme;
     $('#rpCoach').textContent = 'コーチへのひとこと：' + item.coach;
+    var p = r.progress;
+    var status = '記録から判断した進み具合：' + D.PROGRESS_STATES[p.state];
+    if (p.lost !== null && p.state !== 'none') status += '（開始から' + (p.lost >= 0 ? '−' : '＋') + Math.abs(p.lost) + 'kg' + (p.pct !== null ? '、目標までの' + p.pct + '%' : '') + '）';
+    if (p.state === 'none') status += '。プロフィールのタブで体重を記録すると、進み具合に合わせた言葉が入ります。';
+    $('#rpStatus').textContent = status;
   }
 
   function rapportListText() {
@@ -834,7 +842,16 @@
       var b = ev.target.closest('[data-rpday]');
       if (b) setRpDay(b.getAttribute('data-rpday'));
     });
-    ['#rpFormat', '#rpEmoji'].forEach(function (s) {
+    $('#rpMood').innerHTML = D.MOODS.map(function (m) {
+      return '<option value="' + m.id + '">' + esc(m.label) + '</option>';
+    }).join('');
+    $('#rpMood').addEventListener('change', function () {
+      current().mood = this.value;
+      save();
+      renderRapportOutput();
+      if (state.rpList.length) renderRapportList();
+    });
+    ['#rpFormat', '#rpEmoji', '#rpPersonal'].forEach(function (s) {
       $(s).addEventListener('change', function () {
         renderRapportOutput();
         if (state.rpList.length) renderRapportList();
