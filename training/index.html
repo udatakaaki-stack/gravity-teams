@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>トレーニングサポート</title>
+  <meta name="description" content="運動・筋力・チームトレーニング向けの期分化、コンディション管理、選手別コメント自動生成ツール">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark">🏋️</span>
+      <div>
+        <h1>トレーニングサポート</h1>
+        <p>選手とチームに寄り添う、指導者のためのパートナー</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn ghost" id="btnExport">データ書き出し</button>
+      <label class="btn ghost">データ読み込み<input type="file" id="fileImport" accept="application/json" hidden></label>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <h2>チーム</h2>
+        <button type="button" class="btn primary small" id="btnNewTeam">＋ チーム</button>
+      </div>
+      <ul id="teamList" class="client-list"></ul>
+      <div class="sidebar-head">
+        <h2>メンバー</h2>
+        <button type="button" class="btn primary small" id="btnNewMember">＋ メンバー</button>
+      </div>
+      <ul id="memberList" class="client-list"></ul>
+      <p class="hint">データはこのブラウザ内にのみ保存されます。</p>
+    </aside>
+
+    <main class="main">
+      <div id="emptyState" class="empty-state">
+        <h2>チームかメンバーを登録しましょう</h2>
+        <p>チームで指導する場合は「＋ チーム」から、個人を指導する場合は「＋ メンバー」から登録します。チームに入ったメンバーは、チームの期分化プランに合わせて自動でコメントが作られます。</p>
+        <div class="btn-row center">
+          <button type="button" class="btn primary" id="btnEmptyTeam">チームを登録する</button>
+          <button type="button" class="btn primary" id="btnEmptyMember">メンバーを登録する</button>
+        </div>
+      </div>
+
+      <!-- ============================ チーム ============================ -->
+      <div id="teamSpace" hidden>
+        <div class="client-banner">
+          <div>
+            <h2 id="teamBannerName"></h2>
+            <p id="teamBannerMeta"></p>
+          </div>
+          <div class="banner-day"><span>今日は</span><strong id="teamBannerDay"></strong></div>
+        </div>
+        <nav class="tabs" role="tablist" data-tabs="team">
+          <button type="button" role="tab" class="tab" data-tab="tSettings">チーム設定</button>
+          <button type="button" role="tab" class="tab" data-tab="tStatus">メンバーの状態</button>
+          <button type="button" role="tab" class="tab" data-tab="tMessage">チームへのメッセージ</button>
+          <button type="button" role="tab" class="tab" data-tab="tBulk">全員の個別コメント</button>
+          <button type="button" role="tab" class="tab" data-tab="tPlan">期分化プラン</button>
+        </nav>
+
+        <section class="panel" data-panel="tSettings">
+          <form id="teamForm" class="form-grid" autocomplete="off">
+            <fieldset>
+              <legend>チームの基本</legend>
+              <label class="wide">チーム名<input name="name" required placeholder="例：〇〇高校 陸上部"></label>
+              <label>競技・種目<input name="sport" placeholder="例：陸上 短距離"></label>
+              <label>メンバーの主なレベル<select name="level" data-options="levels"></select></label>
+              <label>トーン<select name="tone" data-options="tones"></select></label>
+              <label>署名<input name="coach" placeholder="例：コーチ 佐藤"></label>
+            </fieldset>
+            <fieldset>
+              <legend>チームのプラン</legend>
+              <label>目標<select name="goal" data-options="goals"></select></label>
+              <label>開始日<input type="date" name="startDate"></label>
+              <label>期間（1〜365日）<span class="range-row"><input type="range" min="1" max="365" name="totalDaysRange"><input type="number" min="1" max="365" name="totalDays" inputmode="numeric"></span></label>
+              <label>試合日（競技力向上の場合）<input type="date" name="eventDate"></label>
+              <div class="wide"><span class="label-text">練習する曜日</span><div class="checks" data-checks="weekdays" data-name="trainingDays"></div></div>
+              <div class="wide"><span class="label-text">練習場所</span><div class="checks" data-checks="places" data-name="places"></div></div>
+            </fieldset>
+            <div class="form-actions">
+              <button type="submit" class="btn primary">保存する</button>
+              <button type="button" class="btn danger" id="btnDeleteTeam">このチームを削除</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel" data-panel="tStatus">
+          <div class="card">
+            <div class="output-head">
+              <h3>メンバーのコンディションと負荷</h3>
+              <span class="muted small">記録が2日以上前のものは灰色で表示します</span>
+            </div>
+            <div class="table-wrap"><table class="status-table" id="statusTable"></table></div>
+            <p class="hint">疲労・筋肉痛は5段階（5がいちばん強い）。急性：慢性負荷比（ACWR）は21日以上の練習記録がある場合のみ表示します。名前を押すと、そのメンバーの画面を開きます。</p>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="tMessage">
+          <div class="card controls">
+            <div class="control-row">
+              <label>何日目？<span class="range-row"><input type="range" id="tmDayRange" min="1" max="84"><input type="number" id="tmDayNum" min="1" inputmode="numeric"></span></label>
+              <label>絵文字<select id="tmEmoji"><option value="0">使わない</option><option value="1" selected>少しだけ</option></select></label>
+              <label class="inline"><input type="checkbox" id="tmCheckin" checked> コンディション報告のお願いを入れる</label>
+              <button type="button" class="btn ghost small" id="btnTmToday">今日に戻す</button>
+            </div>
+          </div>
+          <div class="card output-card">
+            <div class="output-head">
+              <div><span class="phase-badge" id="tmPhase"></span><span class="muted" id="tmDate"></span></div>
+              <button type="button" class="btn ghost small" id="btnTmRegen">別のメニュー・言い回しにする</button>
+            </div>
+            <textarea id="tmOutput" class="output" rows="20" aria-label="チームへのメッセージ"></textarea>
+            <p class="muted small" id="tmCount"></p>
+            <div class="share-row" data-share-target="tmOutput"></div>
+            <p class="hint">チーム全体へのメッセージには、個人の名前や記録は入りません。グループLINEなどにそのまま送れます。</p>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="tBulk">
+          <div class="card">
+            <div class="output-head">
+              <h3>メンバー一人ひとりへの今日のコメント</h3>
+              <div class="btn-row">
+                <button type="button" class="btn ghost small" id="btnBulkCopyAll">すべてコピー</button>
+              </div>
+            </div>
+            <p class="hint">それぞれのコンディションの記録、自己ベスト、気になっていることに合わせた個別のコメントです。</p>
+            <div id="bulkList" class="bulk-list"></div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="tPlan">
+          <div data-plan-view="team"></div>
+        </section>
+      </div>
+
+      <!-- ============================ メンバー ============================ -->
+      <div id="memberSpace" hidden>
+        <div class="client-banner">
+          <div>
+            <h2 id="memberBannerName"></h2>
+            <p id="memberBannerMeta"></p>
+          </div>
+          <div class="banner-day"><span>今日は</span><strong id="memberBannerDay"></strong></div>
+        </div>
+        <div id="alertBox" class="alert-box" hidden></div>
+        <nav class="tabs" role="tablist" data-tabs="member">
+          <button type="button" role="tab" class="tab" data-tab="mProfile">プロフィール</button>
+          <button type="button" role="tab" class="tab" data-tab="mRecord">記録</button>
+          <button type="button" role="tab" class="tab" data-tab="mPlan">期分化プラン</button>
+          <button type="button" role="tab" class="tab" data-tab="mComment">今日のコメント</button>
+          <button type="button" role="tab" class="tab" data-tab="mWeekly">週の振り返り</button>
+          <button type="button" role="tab" class="tab" data-tab="mTemplate">定型コメント</button>
+          <button type="button" role="tab" class="tab" data-tab="mRapport">ラポール21日</button>
+          <button type="button" role="tab" class="tab" data-tab="mScene">課題サポート</button>
+          <button type="button" role="tab" class="tab" data-tab="mExercise">種目ライブラリ</button>
+          <button type="button" role="tab" class="tab" data-tab="mKnowledge">トレーニングの知識</button>
+        </nav>
+
+        <section class="panel" data-panel="mProfile">
+          <form id="memberForm" class="form-grid" autocomplete="off">
+            <fieldset>
+              <legend>基本情報</legend>
+              <label>お名前<input name="name" required placeholder="例：田中 太郎"></label>
+              <label>敬称<select name="honorific"><option value="さん">さん</option><option value="選手">選手</option><option value="くん">くん</option><option value="様">様</option><option value="">なし</option></select></label>
+              <label>所属チーム<select name="teamId" id="memberTeamSelect"></select></label>
+              <label>ポジション・種目<input name="position" placeholder="例：100m、FW"></label>
+              <label>年齢<input type="number" name="age" min="6" max="100" inputmode="numeric"></label>
+              <label>体重（kg）<input type="number" name="bodyWeight" step="0.1" min="20" max="200" inputmode="decimal"></label>
+              <label>トレーニング経験<select name="level" data-options="levels"></select></label>
+              <label>トーン（空欄ならチームに合わせる）<select name="tone" data-options="tones" data-empty="チーム・既定に合わせる"></select></label>
+              <label class="wide">目標・目的（ラポール21日の15日目に入ります）<input name="goalNote" placeholder="例：インターハイ出場、ベンチプレス100kg"></label>
+              <label class="wide">署名（空欄ならチームの署名）<input name="coach" placeholder="例：コーチ 佐藤"></label>
+            </fieldset>
+            <fieldset id="memberPlanFields">
+              <legend>個人のプラン</legend>
+              <label class="inline wide" id="useTeamPlanRow"><input type="checkbox" name="useTeamPlan"> チームのプランに合わせる（チームの開始日・期間・目標・試合日・練習曜日を使います）</label>
+              <label>目標<select name="goal" data-options="goals"></select></label>
+              <label>開始日<input type="date" name="startDate"></label>
+              <label>期間（1〜365日）<span class="range-row"><input type="range" min="1" max="365" name="totalDaysRange"><input type="number" min="1" max="365" name="totalDays" inputmode="numeric"></span></label>
+              <label>試合日（競技力向上の場合）<input type="date" name="eventDate"></label>
+              <div class="wide"><span class="label-text">練習する曜日</span><div class="checks" data-checks="weekdays" data-name="trainingDays"></div></div>
+              <div class="wide"><span class="label-text">練習場所</span><div class="checks" data-checks="places" data-name="places"></div></div>
+            </fieldset>
+            <fieldset>
+              <legend>気になっていること（コメントのヒントに反映されます）</legend>
+              <div class="checks wide" data-checks="concerns" data-name="concerns"></div>
+              <label class="wide">メモ（指導者用・コメントには入りません）<textarea name="memo" rows="3"></textarea></label>
+            </fieldset>
+            <div class="form-actions">
+              <button type="submit" class="btn primary">保存する</button>
+              <button type="button" class="btn danger" id="btnDeleteMember">このメンバーを削除</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="panel" data-panel="mRecord">
+          <div class="cards three">
+            <div class="card">
+              <h3>コンディション</h3>
+              <form id="wellForm" class="rec-form" autocomplete="off">
+                <label>日付<input type="date" name="date" required></label>
+                <label>睡眠（時間）<input type="number" name="sleep" step="0.5" min="0" max="24" inputmode="decimal"></label>
+                <label>疲労（1〜5）<select name="fatigue" data-scale="5"></select></label>
+                <label>筋肉痛（1〜5）<select name="soreness" data-scale="5"></select></label>
+                <label>気分（1〜5）<select name="mood" data-scale="5" data-scale-hint="mood"></select></label>
+                <label class="wide">痛み・違和感がある部位<input name="pain" placeholder="なければ空欄。例：右膝"></label>
+                <label class="wide">メモ<input name="memo"></label>
+                <button type="submit" class="btn primary small">記録する</button>
+              </form>
+            </div>
+            <div class="card">
+              <h3>練習</h3>
+              <form id="sessionForm" class="rec-form" autocomplete="off">
+                <label>日付<input type="date" name="date" required></label>
+                <label>内容<select name="type"><option>筋力トレーニング</option><option>持久・体力</option><option>技術練習</option><option>試合</option><option>その他</option></select></label>
+                <label>時間（分）<input type="number" name="minutes" min="1" max="600" required inputmode="numeric"></label>
+                <label>きつさ RPE（0〜10）<select name="rpe" data-scale="10" data-zero="1" required></select></label>
+                <label class="wide">メモ<input name="note"></label>
+                <button type="submit" class="btn primary small">記録する</button>
+              </form>
+              <p class="hint">練習負荷 ＝ きつさ（RPE）× 時間（分）で計算します。</p>
+            </div>
+            <div class="card">
+              <h3>挙上記録</h3>
+              <form id="liftForm" class="rec-form" autocomplete="off">
+                <label>日付<input type="date" name="date" required></label>
+                <label class="wide">種目<input name="exercise" list="liftNames" required placeholder="例：バックスクワット"></label>
+                <label>重さ（kg）<input type="number" name="weight" step="0.5" min="0" max="500" required inputmode="decimal"></label>
+                <label>回数<input type="number" name="reps" min="1" max="50" required inputmode="numeric"></label>
+                <label>セット数<input type="number" name="sets" min="1" max="20" inputmode="numeric"></label>
+                <button type="submit" class="btn primary small">記録する</button>
+              </form>
+              <datalist id="liftNames"></datalist>
+              <p class="hint">推定1RMはEpley式で計算します（10回以下の記録のみ）。</p>
+            </div>
+          </div>
+          <div class="cards two">
+            <div class="card">
+              <h3>練習負荷（直近28日）</h3>
+              <div id="loadMetrics" class="metric-grid"></div>
+              <div id="loadChart" class="chart-box"></div>
+            </div>
+            <div class="card">
+              <h3>自己ベスト（推定1RM）</h3>
+              <div id="bestLifts"></div>
+            </div>
+          </div>
+          <div class="card">
+            <h3>記録の一覧</h3>
+            <div id="recordList" class="record-list"></div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="mPlan">
+          <div data-plan-view="member"></div>
+        </section>
+
+        <section class="panel" data-panel="mComment">
+          <div class="card controls">
+            <div class="control-row">
+              <label>何日目？<span class="range-row"><input type="range" id="cDayRange" min="1"><input type="number" id="cDayNum" min="1" inputmode="numeric"></span></label>
+              <button type="button" class="btn ghost small" id="btnCToday">今日に戻す</button>
+            </div>
+            <div class="control-row">
+              <label>形式<select id="cFormat"><option value="line">LINE・個別メッセージ</option><option value="short">ひとこと（短め）</option></select></label>
+              <label>絵文字<select id="cEmoji"><option value="0">使わない</option><option value="1" selected>少しだけ</option><option value="2">多め</option></select></label>
+              <label class="inline"><input type="checkbox" id="cMenu" checked> 今日のメニュー</label>
+              <label class="inline"><input type="checkbox" id="cTip" checked> 今日のヒント</label>
+              <label class="inline"><input type="checkbox" id="cCond" checked> コンディションへの声かけ</label>
+            </div>
+          </div>
+          <div class="card output-card">
+            <div class="output-head">
+              <div><span class="phase-badge" id="cPhase"></span><span class="muted" id="cDate"></span></div>
+              <button type="button" class="btn ghost small" id="btnCRegen">別の言い回しにする</button>
+            </div>
+            <textarea id="cOutput" class="output" rows="20" aria-label="今日のコメント"></textarea>
+            <p class="muted small" id="cCount"></p>
+            <div class="share-row" data-share-target="cOutput"></div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="mWeekly">
+          <div class="card controls">
+            <div class="control-row">
+              <label>振り返る週の最終日<input type="date" id="wEnd"></label>
+              <button type="button" class="btn ghost small" id="btnWPrev">← 前の週</button>
+              <button type="button" class="btn ghost small" id="btnWNext">次の週 →</button>
+              <button type="button" class="btn ghost small" id="btnWRegen">別の言い回しにする</button>
+            </div>
+          </div>
+          <div class="card output-card">
+            <textarea id="wOutput" class="output" rows="20" aria-label="週の振り返り"></textarea>
+            <p class="muted small" id="wCount"></p>
+            <div class="share-row" data-share-target="wOutput"></div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="mTemplate">
+          <div class="card controls">
+            <div class="control-row">
+              <label>場面<select id="tplCat"><option value="">すべての場面</option></select></label>
+              <label>キーワード<input type="search" id="tplSearch" placeholder="例：試合、痛み、自己ベスト"></label>
+              <button type="button" class="btn primary" id="btnTplNew">＋ 定型文を登録</button>
+            </div>
+          </div>
+          <div id="tplEditor" class="card" hidden>
+            <h3 id="tplEditorTitle">定型文を登録</h3>
+            <form id="tplForm" class="form-grid tpl-form" autocomplete="off">
+              <input type="hidden" name="id">
+              <label>場面<select name="cat" id="tplFormCat"></select></label>
+              <label>タイトル<input name="title" required></label>
+              <div class="wide"><span class="label-text">差し込み（押すとカーソル位置に入ります）</span><div class="chips" id="tplVarChips"></div></div>
+              <label class="wide">本文<textarea name="text" id="tplFormText" rows="7" required></textarea></label>
+              <div class="form-actions wide">
+                <div class="btn-row"><button type="submit" class="btn primary">保存する</button><button type="button" class="btn ghost" id="btnTplCancel">やめる</button></div>
+                <button type="button" class="btn danger" id="btnTplDelete" hidden>この定型文を削除</button>
+              </div>
+            </form>
+          </div>
+          <div class="tpl-layout">
+            <div id="tplList" class="tpl-list"></div>
+            <div class="card output-card tpl-output">
+              <div class="output-head"><strong id="tplCurrentTitle">定型文を選んでください</strong></div>
+              <textarea id="tplOutput" class="output" rows="14" aria-label="定型コメント"></textarea>
+              <p class="muted small" id="tplCount"></p>
+              <div class="share-row" data-share-target="tplOutput"></div>
+              <p class="hint">「〇」の部分は、送る前に書き換えが必要なところです。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="mRapport">
+          <p class="lead">指導者と選手の信頼関係（ラポール）を築く、3週間のアファメーションメッセージです。今の状態を選ぶと、寄り添いの言葉と「今の〇〇さんへ」の言葉が加わります。痛みや強い疲労の記録がある場合は、選ばなくても自動で寄り添います。</p>
+          <div id="rpWeeks" class="rapport-weeks"></div>
+          <div class="card controls">
+            <div class="control-row">
+              <label>何日目？（1〜21日）<span class="range-row"><input type="range" id="rpDayRange" min="1" max="21" value="1"><input type="number" id="rpDayNum" min="1" max="21" value="1" inputmode="numeric"></span></label>
+              <label>送り方<select id="rpFormat"><option value="line">LINE</option><option value="mail">メール</option></select></label>
+              <label>今の状態<select id="rpState"></select></label>
+              <label>1日目を送る日<input type="date" id="rpStart"></label>
+            </div>
+          </div>
+          <div class="cards two">
+            <div class="card output-card">
+              <div class="output-head">
+                <div><span class="phase-badge" id="rpBadge"></span><span class="muted" id="rpDate"></span></div>
+                <button type="button" class="btn ghost small" id="btnRpRegen">別の言い回しにする</button>
+              </div>
+              <div id="rpSubjectRow" class="subject-row" hidden>
+                <label>件名<input id="rpSubject"></label>
+              </div>
+              <textarea id="rpOutput" class="output" rows="18" aria-label="ラポールメッセージ"></textarea>
+              <p class="muted small" id="rpCount"></p>
+              <div class="share-row" data-share-target="rpOutput" data-mail-subject="rpSubject"></div>
+            </div>
+            <div class="card">
+              <h3 id="rpTheme"></h3>
+              <div class="coach-point" id="rpCoach"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="mScene">
+          <p class="lead">選手から相談があった場面を選ぶと、指導者向けの解説と、そのまま送れるメッセージが表示されます。</p>
+          <div id="sceneGrid" class="scene-grid"></div>
+          <div id="sceneDetail" hidden>
+            <div class="cards two">
+              <div class="card">
+                <h3 id="sceneTitle"></h3>
+                <p class="feeling"><span>選手の気持ち</span><span id="sceneFeeling"></span></p>
+                <h4>考えられること</h4><ul id="sceneCauses"></ul>
+                <h4>対処と克服のヒント</h4><ul id="sceneTips"></ul>
+              </div>
+              <div class="card output-card">
+                <textarea id="sceneOutput" class="output" rows="16" aria-label="課題サポートのメッセージ"></textarea>
+                <p class="muted small" id="sceneCount"></p>
+                <div class="share-row" data-share-target="sceneOutput"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="mExercise">
+          <div class="card controls">
+            <div class="control-row">
+              <label>種類<select id="exCat"><option value="">すべて</option></select></label>
+              <label>場所<select id="exPlace"><option value="">すべて</option></select></label>
+            </div>
+          </div>
+          <div id="exGrid" class="ex-grid"></div>
+        </section>
+
+        <section class="panel" data-panel="mKnowledge">
+          <div class="card">
+            <h3>トレーニングの5つの原則</h3>
+            <div id="kPrinciples" class="mech-actions"></div>
+          </div>
+          <div class="card">
+            <h3>目的別の強度・回数・休息の目安（NSCA）</h3>
+            <div class="table-wrap"><table class="status-table" id="kTable"></table></div>
+          </div>
+          <div id="kTopics" class="knowledge-list"></div>
+          <div class="card">
+            <h3>出典</h3>
+            <ul id="kSources" class="small muted"></ul>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <footer class="app-footer">
+    <p>このツールが示す数値や情報は一般的な目安であり、医療的な診断や治療に代わるものではありません。痛みや体調の異変がある時は練習を中止し、医療機関にご相談ください。</p>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="printArea" class="print-area" aria-hidden="true"></div>
+
+  <script src="js/t-data.js"></script>
+  <script src="js/t-content.js"></script>
+  <script src="js/t-engine.js"></script>
+  <script src="js/t-app.js"></script>
+</body>
+</html>
