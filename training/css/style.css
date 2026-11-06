@@ -435,3 +435,20 @@ details.alert[open] > summary::after { content: '閉じる'; }
   .cards.three, .record-list { grid-template-columns: 1fr; }
 }
 .disabled-field { opacity: 0.5; }
+.backup-note { background: #fdf1e2; color: #7a4a12; padding: 8px 24px; font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .backup-note { background: #3a2e1c; color: #f0cf9f; } }
+:root[data-theme="dark"] .backup-note { background: #3a2e1c; color: #f0cf9f; }
+.sent-badge { font-size: 12px; font-weight: 700; color: var(--accent); margin-left: 6px; }
+.sub-h { font-size: 13px; color: var(--muted); margin: 12px 0 6px; }
+.counsel-form { display: grid; gap: 12px; margin-bottom: 12px; }
+.counsel-form fieldset { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+.meal-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; align-content: start; }
+.meal-card { margin-bottom: 0; }
+.meal-card h3 { font-size: 15px; margin-bottom: 4px; }
+.meal-card p { font-size: 14px; margin-bottom: 6px; }
+.meal-card.picked { border-color: var(--accent); background: var(--accent-soft); }
+.status-table .ok { color: var(--accent); font-weight: 700; }
+.status-table .ng { color: var(--danger); font-weight: 700; }
+a.btn { color: var(--text); }
+.status-table td:last-child { white-space: normal; min-width: 180px; }
+.status-table .flag { margin-bottom: 3px; }

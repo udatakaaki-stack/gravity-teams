@@ -17,10 +17,14 @@
       </div>
     </div>
     <div class="header-actions">
+      <a class="btn ghost" href="../index.html">ダイエット版へ</a>
+      <button type="button" class="btn ghost" id="btnSample">サンプルを追加</button>
       <button type="button" class="btn ghost" id="btnExport">データ書き出し</button>
       <label class="btn ghost">データ読み込み<input type="file" id="fileImport" accept="application/json" hidden></label>
     </div>
   </header>
+
+  <div id="backupNote" class="backup-note" hidden></div>
 
   <div class="layout">
     <aside class="sidebar">
@@ -45,6 +49,8 @@
           <button type="button" class="btn primary" id="btnEmptyTeam">チームを登録する</button>
           <button type="button" class="btn primary" id="btnEmptyMember">メンバーを登録する</button>
         </div>
+        <p class="hint">まずは動きを見てみたい場合は、架空のチームと選手3人のデータで試せます。</p>
+        <button type="button" class="btn ghost" id="btnEmptySample">サンプルデータで試す</button>
       </div>
 
       <!-- ============================ チーム ============================ -->
@@ -97,7 +103,7 @@
               <span class="muted small">記録が2日以上前のものは灰色で表示します</span>
             </div>
             <div class="table-wrap"><table class="status-table" id="statusTable"></table></div>
-            <p class="hint">疲労・筋肉痛は5段階（5がいちばん強い）。急性：慢性負荷比（ACWR）は21日以上の練習記録がある場合のみ表示します。名前を押すと、そのメンバーの画面を開きます。</p>
+            <p class="hint">「今日の連絡」は、そのメンバーに今日「✓ 送信済みにする」を押したかどうかです。疲労・筋肉痛は5段階（5がいちばん強い）。急性：慢性負荷比（ACWR）は21日以上の練習記録がある場合のみ表示します。名前を押すと、そのメンバーの画面を開きます。</p>
           </div>
         </section>
 
@@ -112,12 +118,12 @@
           </div>
           <div class="card output-card">
             <div class="output-head">
-              <div><span class="phase-badge" id="tmPhase"></span><span class="muted" id="tmDate"></span></div>
+              <div><span class="phase-badge" id="tmPhase"></span><span class="muted" id="tmDate"></span> <span class="sent-badge" id="tmSent" hidden>✓ 今日送信済み</span></div>
               <button type="button" class="btn ghost small" id="btnTmRegen">別のメニュー・言い回しにする</button>
             </div>
             <textarea id="tmOutput" class="output" rows="20" aria-label="チームへのメッセージ"></textarea>
             <p class="muted small" id="tmCount"></p>
-            <div class="share-row" data-share-target="tmOutput"></div>
+            <div class="share-row" data-share-target="tmOutput" data-kind="team"></div>
             <p class="hint">チーム全体へのメッセージには、個人の名前や記録は入りません。グループLINEなどにそのまま送れます。</p>
           </div>
         </section>
@@ -152,15 +158,19 @@
         <div id="alertBox" class="alert-box" hidden></div>
         <nav class="tabs" role="tablist" data-tabs="member">
           <button type="button" role="tab" class="tab" data-tab="mProfile">プロフィール</button>
+          <button type="button" role="tab" class="tab" data-tab="mCounsel">カウンセリング</button>
           <button type="button" role="tab" class="tab" data-tab="mRecord">記録</button>
           <button type="button" role="tab" class="tab" data-tab="mPlan">期分化プラン</button>
           <button type="button" role="tab" class="tab" data-tab="mComment">今日のコメント</button>
+          <button type="button" role="tab" class="tab" data-tab="mReply">返信アシスト</button>
           <button type="button" role="tab" class="tab" data-tab="mWeekly">週の振り返り</button>
           <button type="button" role="tab" class="tab" data-tab="mTemplate">定型コメント</button>
           <button type="button" role="tab" class="tab" data-tab="mRapport">ラポール21日</button>
           <button type="button" role="tab" class="tab" data-tab="mScene">課題サポート</button>
+          <button type="button" role="tab" class="tab" data-tab="mMeal">食事・補食</button>
           <button type="button" role="tab" class="tab" data-tab="mExercise">種目ライブラリ</button>
           <button type="button" role="tab" class="tab" data-tab="mKnowledge">トレーニングの知識</button>
+          <button type="button" role="tab" class="tab" data-tab="mHistory">送信履歴</button>
         </nav>
 
         <section class="panel" data-panel="mProfile">
@@ -283,7 +293,7 @@
             </div>
             <textarea id="cOutput" class="output" rows="20" aria-label="今日のコメント"></textarea>
             <p class="muted small" id="cCount"></p>
-            <div class="share-row" data-share-target="cOutput"></div>
+            <div class="share-row" data-share-target="cOutput" data-kind="comment"></div>
           </div>
         </section>
 
@@ -299,7 +309,7 @@
           <div class="card output-card">
             <textarea id="wOutput" class="output" rows="20" aria-label="週の振り返り"></textarea>
             <p class="muted small" id="wCount"></p>
-            <div class="share-row" data-share-target="wOutput"></div>
+            <div class="share-row" data-share-target="wOutput" data-kind="weekly"></div>
           </div>
         </section>
 
@@ -331,7 +341,7 @@
               <div class="output-head"><strong id="tplCurrentTitle">定型文を選んでください</strong></div>
               <textarea id="tplOutput" class="output" rows="14" aria-label="定型コメント"></textarea>
               <p class="muted small" id="tplCount"></p>
-              <div class="share-row" data-share-target="tplOutput"></div>
+              <div class="share-row" data-share-target="tplOutput" data-kind="template"></div>
               <p class="hint">「〇」の部分は、送る前に書き換えが必要なところです。</p>
             </div>
           </div>
@@ -359,7 +369,7 @@
               </div>
               <textarea id="rpOutput" class="output" rows="18" aria-label="ラポールメッセージ"></textarea>
               <p class="muted small" id="rpCount"></p>
-              <div class="share-row" data-share-target="rpOutput" data-mail-subject="rpSubject"></div>
+              <div class="share-row" data-share-target="rpOutput" data-mail-subject="rpSubject" data-kind="rapport"></div>
             </div>
             <div class="card">
               <h3 id="rpTheme"></h3>
@@ -382,7 +392,7 @@
               <div class="card output-card">
                 <textarea id="sceneOutput" class="output" rows="16" aria-label="課題サポートのメッセージ"></textarea>
                 <p class="muted small" id="sceneCount"></p>
-                <div class="share-row" data-share-target="sceneOutput"></div>
+                <div class="share-row" data-share-target="sceneOutput" data-kind="scene"></div>
               </div>
             </div>
           </div>
@@ -396,6 +406,79 @@
             </div>
           </div>
           <div id="exGrid" class="ex-grid"></div>
+        </section>
+
+
+        <section class="panel" data-panel="mCounsel">
+          <p class="lead">最初の面談で聞いておきたいことをまとめたシートです。「プロフィールに反映」で、目標、経験、場所、トーン、気になっていることが自動で入ります。けがや持病の申告は、画面上部の注意にも表示されます。</p>
+          <div class="cards two">
+            <div class="card">
+              <form id="counselForm" class="counsel-form" autocomplete="off"></form>
+              <div class="btn-row">
+                <button type="button" class="btn primary" id="btnCounselSave">回答を保存</button>
+                <button type="button" class="btn primary" id="btnCounselApply">プロフィールに反映</button>
+              </div>
+              <p class="hint" id="counselNote"></p>
+            </div>
+            <div class="card output-card">
+              <div class="output-head">
+                <div class="btn-row">
+                  <button type="button" class="chip active" data-cout="message">事前に送る質問</button>
+                  <button type="button" class="chip" data-cout="summary">回答のまとめ（指導者用）</button>
+                </div>
+              </div>
+              <textarea id="counselOutput" class="output" rows="18" aria-label="カウンセリング"></textarea>
+              <p class="muted small" id="counselCount"></p>
+              <div class="share-row" data-share-target="counselOutput" data-kind="counsel"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="mReply">
+          <p class="lead">選手から届いた返信を貼り付けると、言葉から状態と話題を読み取って、返事の案を作ります。</p>
+          <div class="cards two">
+            <div class="card">
+              <label>選手からの返信<textarea id="replyInput" rows="7" placeholder="例：今日の試合、予選で負けてしまいました。悔しいです。あと右膝に少し違和感があります。"></textarea></label>
+              <h4 class="sub-h">読み取った状態</h4>
+              <div class="chips" id="replyStates"></div>
+              <h4 class="sub-h">読み取った話題</h4>
+              <div class="chips" id="replyTopics"></div>
+              <p class="hint">言葉の手がかり（キーワード）から判断しています。必ず内容を読んで、押して選び直してください。</p>
+              <div id="replySafety"></div>
+              <button type="button" class="btn ghost small" id="btnReplyToRapport">この状態を「ラポール21日」にも反映する</button>
+            </div>
+            <div class="card output-card">
+              <div class="output-head"><strong>返事の案</strong><button type="button" class="btn ghost small" id="btnReplyRegen">別の言い回しにする</button></div>
+              <textarea id="replyOutput" class="output" rows="16" aria-label="返事の案"></textarea>
+              <p class="muted small" id="replyCount"></p>
+              <div class="share-row" data-share-target="replyOutput" data-kind="reply"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="mMeal">
+          <p class="lead">練習の前後、試合の前日・当日、体を大きくしたい時などの食事と補食の例です。カロリーの数字ではなく、選び方とタイミングの例をまとめています。</p>
+          <div class="card controls"><div class="control-row">
+            <label>タイミング<select id="mealTiming"><option value="">すべて</option></select></label>
+          </div></div>
+          <div class="cards two">
+            <div id="mealGrid" class="meal-grid"></div>
+            <div class="card output-card tpl-output">
+              <div class="output-head"><strong>この選手への提案</strong><button type="button" class="btn ghost small" id="btnMealRegen">別の組み合わせにする</button></div>
+              <p class="hint">気になっていること（食事量が少ない、体重を増やしたいなど）と、試合が近いかどうかに合わせて選んでいます。左の「提案に入れる」で差し替えもできます。</p>
+              <textarea id="mealOutput" class="output" rows="16" aria-label="食事の提案"></textarea>
+              <p class="muted small" id="mealCount"></p>
+              <div class="share-row" data-share-target="mealOutput" data-kind="meal"></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" data-panel="mHistory">
+          <div class="card">
+            <div class="output-head"><h3 id="historyTitle">送信履歴</h3></div>
+            <p class="hint">各タブの「✓ 送信済みにする」を押すと、ここに残ります。チームの「メンバーの状態」にも、今日の連絡状況として表示されます。</p>
+            <div id="historyList" class="bulk-list"></div>
+          </div>
         </section>
 
         <section class="panel" data-panel="mKnowledge">
@@ -427,6 +510,7 @@
   <script src="js/t-data.js"></script>
   <script src="js/t-content.js"></script>
   <script src="js/t-engine.js"></script>
+  <script src="js/t-features.js"></script>
   <script src="js/t-app.js"></script>
 </body>
 </html>

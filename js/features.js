@@ -685,7 +685,34 @@
     return parts.join('\n\n');
   }
 
+  // ------------------------------------------------------------------
+  // サンプルデータ（動作確認用の架空のクライアント）
+  // ------------------------------------------------------------------
+  function sampleClient(todayStr) {
+    var t = todayStr || today();
+    var start = addDays(t, -24);
+    var c = {
+      id: 'sample-client', name: 'サンプル 花子', honorific: 'さん', gender: 'female', age: 38, height: 158, activity: 'low',
+      startWeight: 63, goalWeight: 57, startDate: start, totalDays: 90, goalNote: '来年の旅行で好きな服を着たい',
+      tone: 'gentle', level: 1, places: ['home', 'outdoor'], coach: 'トレーナー 佐藤（サンプル）',
+      concerns: ['snack', 'night', 'busy'], memo: 'これは動作確認用のサンプルです。', logs: [], history: [], mood: 'anxious',
+      counseling: { purpose: '来年の旅行で好きな服を着たい', lifestyle: 'デスクワーク中心', breakfast: '時々食べる', snack: 'ほぼ毎日', dinnerTime: '21時以降が多い', exercise: 'ほとんどしていない', places: ['自宅', '屋外'], medical: 'なし', worries: '仕事が忙しく続けられるか不安' }
+    };
+    // 最初は順調に減り、ここ2週間ほどは横ばい（停滞期）になる記録
+    var weights = [63, 62.7, 62.4, 62.2, 61.9, 61.8, 61.6, 61.7, 61.6, 61.5, 61.6, 61.5, 61.6];
+    weights.forEach(function (w, i) {
+      var d = addDays(start, i * 2);
+      if (d > t) return;
+      var log = { date: d, weight: w, sleep: i > 9 ? 5.5 : 6.5, steps: 4000 + i * 300 };
+      if (i % 4 === 0) log.waist = round1(80 - i * 0.3);
+      if (i >= 10) log.mood = 'anxious';
+      c.logs.push(log);
+    });
+    return c;
+  }
+
   return {
+    sampleClient: sampleClient,
     LOG_MOODS: LOG_MOODS,
     allLogs: allLogs,
     safetyAlerts: safetyAlerts,

@@ -204,3 +204,71 @@ test('練習負荷：練習が3日未満の週はモノトニーを計算しな�
   const three = E.loadMetrics({ ...base, sessions: ['11-02', '11-04', '11-06'].map(d => ({ date: '2026-' + d, minutes: 60, rpe: 6 })) }, '2026-11-06');
   assert.ok(three.monotony > 0);
 });
+
+const F = require('../training/js/t-features.js');
+
+test('返信アシスト（選手）：状態と話題を読み取り、痛みや頭部の内容を優先する', () => {
+  const a = F.analyzeReply('今日の試合、予選で負けてしまいました。悔しいです。あと右膝に少し違和感があります。');
+  assert.ok(a.states.includes('injured') && a.states.includes('frustrated'));
+  assert.ok(a.topics.includes('gameLose') && a.topics.includes('pain'));
+  const text = F.buildReply(base, [team], a);
+  assert.ok(text.includes('医療機関'));
+  noVar(text);
+  const head = F.buildReply(base, [team], F.analyzeReply('練習中に頭を打ちました'));
+  assert.ok(head.includes('今日の練習には戻らず'));
+  const crisis = F.buildReply(base, [team], F.analyzeReply('もう消えたい'));
+  assert.ok(crisis.includes('相談窓口') && !crisis.includes('練習の量'));
+  assert.ok(F.analyzeReply('自己ベスト更新しました！うれしい').topics.includes('pr'));
+});
+
+test('返信アシスト（選手）：すべての状態と話題の組み合わせで文章ができる', () => {
+  for (const st of [null, ...F.STATE_PRIORITY]) {
+    for (const tp of Object.keys(F.REPLY_TOPICS)) {
+      const t = F.buildReply(base, [team], { states: st ? [st] : [], topics: [tp], urgent: [], crisis: [] });
+      noVar(t);
+      assert.ok(t.startsWith('田中さん、') && t.endsWith('コーチ 佐藤'));
+    }
+  }
+});
+
+test('カウンセリング（選手）：回答をプロフィールへの反映内容と注意に変える', () => {
+  const ans = { goalLong: 'インターハイ出場', sport: '100m', strengthExp: 'ほとんどない', places: ['自宅', 'グラウンド・体育館'], tonePref: 'coach',
+    injuries: '右足首の捻挫（去年）', painNow: 'なし', sleepHours: '6時間未満', afterMeal: 'ほとんど食べない', weightGoal: '増やしたい', nerves: 'とても緊張する', medical: '喘息の薬' };
+  const r = F.counselingPatch({ ...base, concerns: [] }, ans);
+  assert.strictEqual(r.patch.goalNote, 'インターハイ出場');
+  assert.strictEqual(r.patch.position, '100m');
+  assert.strictEqual(r.patch.level, 1);
+  assert.deepStrictEqual(r.patch.places, ['home', 'field']);
+  assert.strictEqual(r.patch.tone, 'coach');
+  assert.deepStrictEqual(r.patch.concerns, ['injury', 'sleep', 'eatLess', 'weightGain', 'nerves', 'beginner']);
+  const ids = new Set(D.CONCERNS.map(c => c.id));
+  r.patch.concerns.forEach(c => assert.ok(ids.has(c)));
+  const al = F.counselingAlerts(ans);
+  assert.ok(al.some(a => a.id === 'cMedical') && !al.some(a => a.id === 'cPain'));
+  assert.ok(F.counselingAlerts({ painNow: '腰' }).some(a => a.id === 'cPain'));
+  noVar(F.counselingMessage(base, [team]));
+  assert.ok(F.counselingSummary(base, { tonePref: 'coach' }).includes('指導者らしく力強く'));
+});
+
+test('食事・補食：悩みと試合の近さに合わせて3件選ぶ', () => {
+  const r = F.mealProposal({ ...base, concerns: ['weightGain'] }, [team]);
+  assert.strictEqual(r.meals.length, 3);
+  assert.ok(r.meals.some(m => m.timing === 'bulk'));
+  assert.ok(!/kcal|カロリー/.test(r.text));
+  noVar(r.text);
+  const near = { ...team, startDate: E.today(), eventDate: E.addDays(E.today(), 3) };
+  const r2 = F.mealProposal(base, [near]);
+  assert.ok(r2.meals.some(m => m.timing === 'eventEve' || m.timing === 'eventDay'));
+});
+
+test('サンプルデータ：チームと3人の記録がそろい、注意も表示される', () => {
+  const d = F.sampleData('2026-11-06');
+  assert.strictEqual(d.members.length, 3);
+  const s = E.planSettings(d.members[0], d.teams);
+  assert.strictEqual(s.teamName, 'サンプル高校 陸上部');
+  const ids = E.alerts(d.members[0], s, '2026-11-06').map(a => a.id);
+  assert.ok(ids.includes('pain'));
+  assert.ok(E.loadMetrics(d.members[0], '2026-11-06').acwr !== null);
+  assert.ok(E.recentPRs(d.members[0], '2026-11-06', 7).length >= 1);
+  for (const m of d.members) noVar(E.generateComment(m, d.teams, E.todayDay(E.planSettings(m, d.teams))));
+});

@@ -445,6 +445,37 @@
   }
 
   // ------------------------------------------------------------------
+  // バックアップの声かけ・サンプルデータ
+  // ------------------------------------------------------------------
+  var BACKUP_KEY = 'dietSupport.lastBackup';
+  var backupDismissed = false;
+  function lastBackup() { try { return localStorage.getItem(BACKUP_KEY); } catch (e) { return null; } }
+  function renderBackupNote() {
+    var box = $('#backupNote');
+    var last = lastBackup();
+    var days = last ? Math.round((E.parseDate(today()) - E.parseDate(last)) / 86400000) : null;
+    var show = A.state.clients.length && !backupDismissed && (days === null || days >= 14);
+    box.hidden = !show;
+    if (!show) return;
+    box.innerHTML = '<span>' + (days === null ? 'データはこのブラウザの中にだけ保存されています。まだバックアップがありません。' : '最後のバックアップから' + days + '日たちました。') +
+      'ブラウザの履歴を消すとデータも消えるため、ときどき「データ書き出し」で保存しておくと安心です。</span>' +
+      '<button type="button" class="btn primary small" id="btnBackupNow">今すぐ書き出す</button><button type="button" class="btn ghost small" id="btnBackupLater">あとで</button>';
+    $('#btnBackupNow').onclick = function () { $('#btnExport').click(); };
+    $('#btnBackupLater').onclick = function () { backupDismissed = true; renderBackupNote(); };
+  }
+  function loadSample() {
+    if (A.state.clients.some(function (c) { return c.id === 'sample-client'; })) {
+      A.toast('サンプルはすでに追加されています');
+      A.selectClient('sample-client');
+      return;
+    }
+    A.state.clients.push(F.sampleClient());
+    A.state.tab = 'profile';
+    A.selectClient('sample-client');
+    A.toast('サンプルのクライアントを追加しました。不要になったらプロフィールから削除できます');
+  }
+
+  // ------------------------------------------------------------------
   // 登録
   // ------------------------------------------------------------------
   (window.DietExtras = window.DietExtras || []).push({
@@ -470,6 +501,12 @@
       bindWeekly();
       bindSent();
       bindMeals();
+      $('#btnExport').addEventListener('click', function () {
+        try { localStorage.setItem(BACKUP_KEY, today()); } catch (e) { /* 保存できない環境では何もしない */ }
+        renderBackupNote();
+      });
+      $('#btnSample').addEventListener('click', loadSample);
+      $('#btnEmptySample').addEventListener('click', loadSample);
       $('#btnPrintPlan').addEventListener('click', function () {
         buildPrint();
         window.print();
@@ -478,6 +515,7 @@
       if (emojiSel) emojiSel.addEventListener('change', function () { if (A.current()) { renderReply(); renderWeekly(); renderMeals(); renderCounselOutput(); } });
     },
     render: function () {
+      renderBackupNote();
       // クライアントが切り替わった時だけ、入力中の内容をリセットする
       var id = A.state.currentId;
       if (id !== local.clientId) {

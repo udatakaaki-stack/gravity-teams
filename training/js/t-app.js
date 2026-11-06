@@ -7,6 +7,7 @@
   var D = window.TRAIN_DATA;
   var C = window.TRAIN_CONTENT;
   var E = window.TrainEngine;
+  var F = window.TrainFeatures;
   var STORAGE_KEY = 'trainingSupport.v1';
 
   var state = {
@@ -15,7 +16,9 @@
     teamTab: 'tSettings', memberTab: 'mProfile',
     cDay: null, cVariant: 0, tmDay: null, tmVariant: 0,
     wEnd: null, wVariant: 0, rpDay: 1, rpVariant: 0,
-    sceneId: null, tplId: null, bulk: []
+    sceneId: null, tplId: null, bulk: [],
+    counselOut: 'message', reply: { states: [], topics: [], urgent: [], crisis: [] }, replyVariant: 0,
+    mealPicked: null, mealVariant: 0, lastMemberId: null, lastBackup: null, backupDismissed: false
   };
 
   // ------------------------------------------------------------------
@@ -48,18 +51,25 @@
         state.templates = d.templates || [];
         state.view = d.view || null;
         state.currentId = d.currentId || null;
+        state.lastBackup = d.lastBackup || null;
       }
     } catch (e) { /* 保存できない環境でも動くようにする */ }
   }
   function save() {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ teams: state.teams, members: state.members, templates: state.templates, view: state.view, currentId: state.currentId }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ teams: state.teams, members: state.members, templates: state.templates, view: state.view, currentId: state.currentId, lastBackup: state.lastBackup }));
     } catch (e) { toast('このブラウザでは保存できませんでした。データ書き出しで保管してください。'); }
   }
 
   function team() { return state.view === 'team' ? state.teams.filter(function (t) { return t.id === state.currentId; })[0] || null : null; }
   function member() { return state.view === 'member' ? state.members.filter(function (m) { return m.id === state.currentId; })[0] || null : null; }
   function settingsOf(m) { return E.planSettings(m, state.teams); }
+  // 記録からの注意＋カウンセリングでの申告
+  function alertsFor(m) { return E.alerts(m, settingsOf(m)).concat(F.counselingAlerts(m.counseling)); }
+  function sentToday(list, kinds) {
+    var t = E.today();
+    return (list || []).some(function (h) { return h.date === t && (!kinds || kinds.indexOf(h.kind) !== -1); });
+  }
 
   function copyText(text) {
     function fallback() {
@@ -97,6 +107,7 @@
       '<button type="button" class="btn ghost small" data-act="mail">メールで送る</button>' +
       '<button type="button" class="btn x small" data-act="x">Xに投稿</button>';
     if (navigator.share) html += '<button type="button" class="btn ghost small" data-act="share">その他のアプリで共有</button>';
+    html += '<button type="button" class="btn ghost small" data-act="sent">✓ 送信済みにする</button>';
     row.innerHTML = html;
     row.addEventListener('click', function (ev) {
       var b = ev.target.closest('button');
@@ -104,6 +115,7 @@
       var text = document.getElementById(target).value;
       var act = b.getAttribute('data-act');
       if (act === 'copy') copyText(text);
+      else if (act === 'sent') recordHistory(row.getAttribute('data-kind') || 'other', text);
       else if (act === 'line') window.open('https://line.me/R/share?text=' + encodeURIComponent(text), '_blank', 'noopener');
       else if (act === 'x') {
         if (xLength(text) > 280) toast('Xの文字数上限を超えています。投稿画面で調整してください');
@@ -113,6 +125,38 @@
         window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(text);
       } else if (act === 'share') navigator.share({ text: text }).catch(function () {});
     });
+  }
+
+  // ------------------------------------------------------------------
+  // 送信履歴
+  // ------------------------------------------------------------------
+  var KIND_LABELS = {
+    comment: '今日のコメント', weekly: '週の振り返り', template: '定型コメント', rapport: 'ラポール21日', scene: '課題サポート',
+    reply: '返信への返事', counsel: 'カウンセリング', meal: '食事・補食の提案', team: 'チームへのメッセージ', other: 'メッセージ'
+  };
+  function historyLabel(kind) {
+    if (kind === 'comment') return state.cDay + '日目のコメント';
+    if (kind === 'rapport') return 'ラポール' + state.rpDay + '日目「' + C.RAPPORT_DAYS[state.rpDay - 1].theme + '」';
+    if (kind === 'team') return state.tmDay + '日目のチームメッセージ';
+    if (kind === 'weekly') return '週の振り返り（〜' + slash(state.wEnd) + '）';
+    if (kind === 'scene') { var sc = C.SCENES.filter(function (x) { return x.id === state.sceneId; })[0]; return sc ? sc.title : '課題サポート'; }
+    if (kind === 'template') { var t = allTemplates().filter(function (x) { return x.id === state.tplId; })[0]; return t ? t.title : '定型コメント'; }
+    if (kind === 'reply') return '返信への返事' + (state.reply.topics.length ? '（' + state.reply.topics.map(function (k) { return F.REPLY_TOPICS[k].label; }).join('・') + '）' : '');
+    return KIND_LABELS[kind] || 'メッセージ';
+  }
+  function recordHistory(kind, text) {
+    var target = kind === 'team' ? team() : member();
+    if (!target || !text.trim()) return;
+    var now = new Date();
+    target.history = target.history || [];
+    target.history.unshift({
+      id: uid('h'), date: E.today(), time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'),
+      kind: kind, kindLabel: KIND_LABELS[kind] || 'メッセージ', label: historyLabel(kind), rapportDay: kind === 'rapport' ? state.rpDay : null, text: text
+    });
+    save();
+    toast('送信済みとして記録しました');
+    renderLists();
+    if (kind === 'team') renderTeamMessage(); else renderHistory();
   }
 
   function download(name, text, type) {
@@ -213,7 +257,7 @@
     groups.push({ t: null, ms: state.members.filter(function (m) { return !m.teamId || !state.teams.some(function (t) { return t.id === m.teamId; }); }) });
     $('#memberList').innerHTML = groups.map(function (g) {
       return g.ms.map(function (m) {
-        var alerts = E.alerts(m, settingsOf(m));
+        var alerts = alertsFor(m);
         var mark = alerts.some(function (a) { return a.level === 'urgent'; }) ? '⚠️ ' : alerts.some(function (a) { return a.level === 'warn'; }) ? '△ ' : '';
         return '<li><button type="button" data-member="' + esc(m.id) + '" class="' + (state.view === 'member' && state.currentId === m.id ? 'active' : '') + '">' +
           '<span class="cl-team">' + esc(g.t ? g.t.name : '個人') + '</span><span class="cl-name">' + mark + esc(m.name || '（名前未設定）') + '</span>' +
@@ -232,6 +276,7 @@
   }
 
   function renderAll() {
+    renderBackupNote();
     renderLists();
     var t = team();
     var m = member();
@@ -335,17 +380,18 @@
     var ms = state.members.filter(function (m) { return m.teamId === t.id; });
     if (!ms.length) { $('#statusTable').innerHTML = '<tr><td class="muted">まだメンバーがいません。「＋ メンバー」で登録し、所属チームにこのチームを選んでください。</td></tr>'; return; }
     var today = E.today();
-    $('#statusTable').innerHTML = '<thead><tr><th>名前</th><th>最新の記録</th><th>睡眠</th><th>疲労</th><th>筋肉痛</th><th>気分</th><th>痛み</th><th>7日間の負荷</th><th>ACWR</th><th>注意</th></tr></thead><tbody>' +
+    $('#statusTable').innerHTML = '<thead><tr><th>名前</th><th>最新の記録</th><th>睡眠</th><th>疲労</th><th>筋肉痛</th><th>気分</th><th>痛み</th><th>7日間の負荷</th><th>ACWR</th><th>今日の連絡</th><th>注意</th></tr></thead><tbody>' +
       ms.map(function (m) {
         var w = E.latestWellness(m);
         var lm = E.loadMetrics(m);
-        var al = E.alerts(m, settingsOf(m));
+        var al = alertsFor(m);
         var stale = !w || E.diffDays(w.date, today) >= 2;
         var flags = al.map(function (a) { return '<span class="flag ' + a.level + '" title="' + esc(a.body) + '">' + esc(a.title.replace(/があります|ています|です/g, '')) + '</span>'; }).join('');
         return '<tr class="' + (stale ? 'stale' : '') + '"><td><button type="button" class="link" data-member="' + esc(m.id) + '">' + esc(m.name || '（名前未設定）') + '</button></td>' +
           '<td>' + (w ? slash(w.date).slice(5) : '―') + '</td><td>' + (w && w.sleep ? w.sleep + 'h' : '―') + '</td><td>' + (w && w.fatigue ? w.fatigue : '―') + '</td>' +
           '<td>' + (w && w.soreness ? w.soreness : '―') + '</td><td>' + (w && w.mood ? w.mood : '―') + '</td><td>' + (w && w.pain ? esc(w.pain) : '―') + '</td>' +
-          '<td>' + (lm.weekly || '―') + '</td><td>' + (lm.acwr !== null ? lm.acwr : '―') + '</td><td>' + (flags || '―') + '</td></tr>';
+          '<td>' + (lm.weekly || '―') + '</td><td>' + (lm.acwr !== null ? lm.acwr : '―') + '</td>' +
+          '<td>' + (sentToday(m.history) ? '<span class="ok">✓ 済み</span>' : '<span class="ng">未</span>') + '</td><td>' + (flags || '―') + '</td></tr>';
       }).join('') + '</tbody>';
   }
 
@@ -361,6 +407,7 @@
     b.textContent = info.phase.name + '（' + info.phase.sub + '）' + (info.deload ? '・回復週' : '');
     b.style.background = info.seg.color;
     $('#tmDate').textContent = state.tmDay + '日目・' + slash(info.dateStr) + '（' + info.weekdayJa + '）' + (info.training ? '' : '・休養日');
+    $('#tmSent').hidden = !sentToday(t.history, ['team']);
     setOut('tmOutput', 'tmCount', E.teamMessage(t, state.tmDay, { variant: state.tmVariant, emoji: +$('#tmEmoji').value, checkin: $('#tmCheckin').checked }));
   }
 
@@ -402,6 +449,18 @@
     renderRapport();
     renderScenes();
     renderExercises();
+    if (state.lastMemberId !== m.id) {
+      state.lastMemberId = m.id;
+      state.reply = { states: [], topics: [], urgent: [], crisis: [] };
+      state.replyVariant = 0;
+      state.mealPicked = null;
+      state.mealVariant = 0;
+      $('#replyInput').value = '';
+    }
+    fillCounsel();
+    renderReply();
+    renderMeals();
+    renderHistory();
     showTab('member', state.memberTab);
   }
 
@@ -419,7 +478,7 @@
 
   function renderAlerts() {
     var m = member();
-    var al = E.alerts(m, settingsOf(m));
+    var al = alertsFor(m);
     var box = $('#alertBox');
     box.hidden = !al.length;
     var label = { urgent: 'すぐ確認', warn: '注意', info: '確認' };
@@ -610,10 +669,223 @@
     $('#kSources').innerHTML = K.sources.map(li).join('');
   }
 
+
+  // ------------------------------------------------------------------
+  // カウンセリング
+  // ------------------------------------------------------------------
+  function buildCounselForm() {
+    $('#counselForm').innerHTML = F.COUNSELING.map(function (g) {
+      return '<fieldset><legend>' + esc(g.group) + '</legend>' + g.items.map(function (it) {
+        var f;
+        if (it.type === 'select') {
+          f = '<select name="' + it.id + '">' + it.options.map(function (o, i) {
+            return '<option value="' + esc(o) + '">' + esc((it.optionLabels ? it.optionLabels[i] : o) || '選んでください') + '</option>';
+          }).join('') + '</select>';
+        } else if (it.type === 'checks') {
+          f = '<span class="checks">' + it.options.map(function (o) { return '<label><input type="checkbox" name="' + it.id + '" value="' + esc(o) + '"> ' + esc(o) + '</label>'; }).join('') + '</span>';
+        } else if (it.type === 'textarea') {
+          f = '<textarea name="' + it.id + '" rows="2" placeholder="' + esc(it.placeholder || '') + '"></textarea>';
+        } else {
+          f = '<input name="' + it.id + '" placeholder="' + esc(it.placeholder || '') + '">';
+        }
+        var wide = it.type !== 'select' ? ' class="wide"' : '';
+        return '<label' + wide + '>' + esc(it.label) + f + '</label>';
+      }).join('') + '</fieldset>';
+    }).join('');
+  }
+  function readCounsel() {
+    var f = $('#counselForm');
+    var a = {};
+    F.COUNSELING.forEach(function (g) {
+      g.items.forEach(function (it) {
+        if (it.type === 'checks') a[it.id] = $all('input[name="' + it.id + '"]:checked', f).map(function (i) { return i.value; });
+        else if (f.elements[it.id].value.trim()) a[it.id] = f.elements[it.id].value.trim();
+      });
+    });
+    return a;
+  }
+  function fillCounsel() {
+    var a = member().counseling || {};
+    var f = $('#counselForm');
+    F.COUNSELING.forEach(function (g) {
+      g.items.forEach(function (it) {
+        if (it.type === 'checks') $all('input[name="' + it.id + '"]', f).forEach(function (i) { i.checked = (a[it.id] || []).indexOf(i.value) !== -1; });
+        else f.elements[it.id].value = a[it.id] || '';
+      });
+    });
+    $('#counselNote').textContent = '';
+    renderCounselOut();
+  }
+  function renderCounselOut() {
+    var m = member();
+    $all('[data-cout]').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-cout') === state.counselOut); });
+    setOut('counselOutput', 'counselCount', state.counselOut === 'summary' ? F.counselingSummary(m, m.counseling) : F.counselingMessage(m, state.teams, { emoji: +$('#cEmoji').value }));
+  }
+
+  // ------------------------------------------------------------------
+  // 返信アシスト
+  // ------------------------------------------------------------------
+  function stateLabel(id) { var s = C.RAPPORT_STATES.filter(function (x) { return x.id === id; })[0]; return s ? s.label : id; }
+  function renderReply() {
+    var r = state.reply;
+    $('#replyStates').innerHTML = F.STATE_PRIORITY.map(function (id) {
+      return '<button type="button" class="chip' + (r.states.indexOf(id) !== -1 ? ' active' : '') + '" data-rstate="' + id + '">' + esc(stateLabel(id)) + '</button>';
+    }).join('');
+    $('#replyTopics').innerHTML = Object.keys(F.REPLY_TOPICS).map(function (id) {
+      return '<button type="button" class="chip' + (r.topics.indexOf(id) !== -1 ? ' active' : '') + '" data-rtopic="' + id + '">' + esc(F.REPLY_TOPICS[id].label) + '</button>';
+    }).join('');
+    var warn = '';
+    if (r.crisis.length) warn = '<div class="alert urgent"><div class="alert-head"><span class="alert-level">すぐ確認</span><strong>つらい気持ちを示す言葉があります（' + esc(r.crisis.join('、')) + '）</strong></div><p>練習の話はいったん脇に置き、気持ちを受け止める返事にしています。命に関わる心配がある場合は、保護者や専門家と連携してください。厚生労働省のサイト「まもろうよ こころ」に相談窓口がまとめられています。</p></div>';
+    else if (r.urgent.length) warn = '<div class="alert urgent"><div class="alert-head"><span class="alert-level">すぐ確認</span><strong>練習の中止と確認が必要な言葉があります（' + esc(r.urgent.join('、')) + '）</strong></div><p>練習の中止と、必要に応じた受診をすすめる返事にしています。</p></div>';
+    $('#replySafety').innerHTML = warn;
+    var any = $('#replyInput').value.trim() || r.states.length || r.topics.length;
+    setOut('replyOutput', 'replyCount', any ? F.buildReply(member(), state.teams, r, { variant: state.replyVariant, emoji: +$('#cEmoji').value }) : '');
+  }
+
+  // ------------------------------------------------------------------
+  // 食事・補食
+  // ------------------------------------------------------------------
+  function renderMeals() {
+    var m = member();
+    var timing = $('#mealTiming').value;
+    if (!state.mealPicked) state.mealPicked = F.mealProposal(m, state.teams, { variant: state.mealVariant }).meals;
+    $('#mealGrid').innerHTML = F.MEALS.map(function (x, i) {
+      if (timing && x.timing !== timing) return '';
+      var on = state.mealPicked.indexOf(x) !== -1;
+      return '<div class="card meal-card' + (on ? ' picked' : '') + '"><div class="ex-tags"><span>' + esc(F.MEAL_TIMINGS[x.timing]) + '</span></div><h3>' + esc(x.name) + '</h3><p>' + esc(x.items) + '</p><p class="muted small">' + esc(x.point) + '</p>' +
+        '<button type="button" class="btn ' + (on ? 'primary' : 'ghost') + ' small" data-meal="' + i + '">' + (on ? '提案に入っています（外す）' : '提案に入れる') + '</button></div>';
+    }).join('');
+    setOut('mealOutput', 'mealCount', F.mealText(m, state.teams, state.mealPicked, { emoji: +$('#cEmoji').value }));
+  }
+
+  // ------------------------------------------------------------------
+  // 送信履歴
+  // ------------------------------------------------------------------
+  function renderHistory() {
+    var m = member();
+    var h = m.history || [];
+    $('#historyTitle').textContent = E.displayName(m) + 'への送信履歴（' + h.length + '件）';
+    $('#historyList').innerHTML = h.map(function (x) {
+      return '<article class="bulk-item"><header><strong>' + slash(x.date) + ' ' + esc(x.time || '') + '・' + esc(x.kindLabel) + '・' + esc(x.label) + '</strong>' +
+        '<span class="btn-row"><button type="button" class="btn ghost small" data-hcopy="' + esc(x.id) + '">コピー</button><button type="button" class="btn ghost small" data-hdel="' + esc(x.id) + '">削除</button></span></header>' +
+        '<details><summary>本文を見る</summary><pre>' + esc(x.text) + '</pre></details></article>';
+    }).join('') || '<p class="muted">まだ記録がありません。</p>';
+  }
+
+  // ------------------------------------------------------------------
+  // バックアップの声かけ
+  // ------------------------------------------------------------------
+  function renderBackupNote() {
+    var box = $('#backupNote');
+    var hasData = state.teams.length || state.members.length;
+    var days = state.lastBackup ? E.diffDays(state.lastBackup, E.today()) : null;
+    var show = hasData && !state.backupDismissed && (days === null || days >= 14);
+    box.hidden = !show;
+    if (!show) return;
+    box.innerHTML = '<span>' + (days === null ? 'データはこのブラウザの中にだけ保存されています。まだバックアップがありません。' : '最後のバックアップから' + days + '日たちました。') +
+      'ブラウザの履歴を消すとデータも消えるため、ときどき「データ書き出し」で保存しておくと安心です。</span>' +
+      '<button type="button" class="btn primary small" id="btnBackupNow">今すぐ書き出す</button><button type="button" class="btn ghost small" id="btnBackupLater">あとで</button>';
+    $('#btnBackupNow').onclick = exportData;
+    $('#btnBackupLater').onclick = function () { state.backupDismissed = true; renderBackupNote(); };
+  }
+  function exportData() {
+    download('training-support_' + E.today() + '.json', JSON.stringify({ teams: state.teams, members: state.members, templates: state.templates }, null, 2), 'application/json');
+    state.lastBackup = E.today();
+    save();
+    renderBackupNote();
+  }
+
+  function loadSample() {
+    var d = F.sampleData();
+    var exists = state.teams.some(function (t) { return t.id === 'sample-team'; });
+    if (exists) { toast('サンプルはすでに追加されています'); select('team', 'sample-team'); return; }
+    state.teams.push.apply(state.teams, d.teams);
+    state.members.push.apply(state.members, d.members);
+    state.teamTab = 'tStatus';
+    select('team', 'sample-team');
+    toast('サンプルのチームと選手3人を追加しました。不要になったらチーム設定から削除できます');
+  }
+
+  function bindExtras() {
+    buildCounselForm();
+    $('#btnCounselSave').onclick = function () { member().counseling = readCounsel(); save(); renderCounselOut(); renderAlerts(); renderLists(); toast('回答を保存しました'); };
+    $('#btnCounselApply').onclick = function () {
+      var m = member();
+      m.counseling = readCounsel();
+      var res = F.counselingPatch(m, m.counseling);
+      if (!res.notes.length) { toast('反映できる回答がまだありません'); return; }
+      Object.assign(m, res.patch);
+      save();
+      renderAll();
+      showTab('member', 'mCounsel');
+      $('#counselNote').textContent = 'プロフィールに反映しました：' + res.notes.join('、') + '。';
+      toast('プロフィールに反映しました');
+    };
+    $('[data-panel="mCounsel"]').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-cout]');
+      if (b) { state.counselOut = b.getAttribute('data-cout'); renderCounselOut(); }
+    });
+    var timer;
+    $('#replyInput').addEventListener('input', function () {
+      var el = this;
+      clearTimeout(timer);
+      timer = setTimeout(function () { state.reply = F.analyzeReply(el.value); state.replyVariant = 0; renderReply(); }, 250);
+    });
+    $('[data-panel="mReply"]').addEventListener('click', function (ev) {
+      var a = ev.target.closest('[data-rstate]');
+      var t = ev.target.closest('[data-rtopic]');
+      if (!a && !t) return;
+      var list = a ? state.reply.states : state.reply.topics;
+      var id = a ? a.getAttribute('data-rstate') : t.getAttribute('data-rtopic');
+      var i = list.indexOf(id);
+      if (i === -1) list.push(id); else list.splice(i, 1);
+      renderReply();
+    });
+    $('#btnReplyRegen').onclick = function () { state.replyVariant++; renderReply(); };
+    $('#btnReplyToRapport').onclick = function () {
+      var st = F.STATE_PRIORITY.filter(function (k) { return state.reply.states.indexOf(k) !== -1; })[0];
+      if (!st) { toast('状態が選ばれていません'); return; }
+      member().rapportState = st;
+      save();
+      renderRapport();
+      toast('「' + stateLabel(st) + '」をラポール21日に反映しました');
+    };
+    $('#mealTiming').innerHTML += Object.keys(F.MEAL_TIMINGS).map(function (k) { return '<option value="' + k + '">' + esc(F.MEAL_TIMINGS[k]) + '</option>'; }).join('');
+    $('#mealTiming').onchange = renderMeals;
+    $('#mealGrid').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-meal]');
+      if (!b) return;
+      var x = F.MEALS[+b.getAttribute('data-meal')];
+      var i = state.mealPicked.indexOf(x);
+      if (i !== -1) state.mealPicked.splice(i, 1);
+      else { state.mealPicked.push(x); if (state.mealPicked.length > 4) state.mealPicked.shift(); }
+      renderMeals();
+    });
+    $('#btnMealRegen').onclick = function () { state.mealVariant++; state.mealPicked = null; renderMeals(); };
+    $('#historyList').addEventListener('click', function (ev) {
+      var m = member();
+      var c = ev.target.closest('[data-hcopy]');
+      if (c) { var h = (m.history || []).filter(function (x) { return x.id === c.getAttribute('data-hcopy'); })[0]; if (h) copyText(h.text); return; }
+      var d = ev.target.closest('[data-hdel]');
+      if (d && window.confirm('この履歴を削除します。よろしいですか？')) {
+        m.history = m.history.filter(function (x) { return x.id !== d.getAttribute('data-hdel'); });
+        save();
+        renderHistory();
+        renderLists();
+      }
+    });
+    [['counselOutput', 'counselCount'], ['replyOutput', 'replyCount'], ['mealOutput', 'mealCount']].forEach(function (p) {
+      $('#' + p[0]).addEventListener('input', function () { $('#' + p[1]).textContent = countLabel(this.value); });
+    });
+    $('#btnSample').onclick = loadSample;
+    $('#btnEmptySample').onclick = loadSample;
+  }
+
   // ------------------------------------------------------------------
   // イベント
   // ------------------------------------------------------------------
   function bind() {
+    bindExtras();
     function newTeam() {
       var t = { id: uid('t'), name: '', sport: '', level: 1, tone: 'gentle', coach: '', goal: 'general', startDate: E.today(), totalDays: 84, eventDate: '', trainingDays: [1, 3, 5], places: ['gym'] };
       state.teams.push(t);
@@ -661,6 +933,8 @@
     $('#btnDeleteTeam').onclick = function () {
       var t = team();
       if (!window.confirm((t.name || 'このチーム') + 'を削除します。所属メンバーは「個人」に移ります。よろしいですか？')) return;
+      // サンプルのチームを消す時は、サンプルの選手も一緒に消す
+      if (t.id === 'sample-team') state.members = state.members.filter(function (m) { return m.id.indexOf('sample-') !== 0; });
       state.members.forEach(function (m) { if (m.teamId === t.id) m.teamId = ''; });
       state.teams = state.teams.filter(function (x) { return x !== t; });
       select(state.teams.length ? 'team' : null, state.teams.length ? state.teams[0].id : null);
@@ -747,7 +1021,7 @@
     $('#cDayNum').onchange = function () { setCDay(this.value); };
     $('#btnCToday').onclick = function () { state.cDay = null; renderComment(); };
     $('#btnCRegen').onclick = function () { state.cVariant++; renderComment(); };
-    ['#cFormat', '#cEmoji', '#cMenu', '#cTip', '#cCond'].forEach(function (id) { $(id).onchange = function () { renderComment(); renderWeekly(); }; });
+    ['#cFormat', '#cEmoji', '#cMenu', '#cTip', '#cCond'].forEach(function (id) { $(id).onchange = function () { renderComment(); renderWeekly(); renderReply(); renderMeals(); renderCounselOut(); }; });
 
     $('#wEnd').onchange = function () { state.wEnd = this.value || E.today(); renderWeekly(); };
     $('#btnWPrev').onclick = function () { state.wEnd = E.addDays(state.wEnd || E.today(), -7); renderWeekly(); };
@@ -825,9 +1099,7 @@
     $all('.share-row').forEach(buildShareRow);
 
     // 書き出し・読み込み
-    $('#btnExport').onclick = function () {
-      download('training-support_' + E.today() + '.json', JSON.stringify({ teams: state.teams, members: state.members, templates: state.templates }, null, 2), 'application/json');
-    };
+    $('#btnExport').onclick = exportData;
     $('#fileImport').addEventListener('change', function () {
       var file = this.files[0];
       if (!file) return;

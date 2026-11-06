@@ -17,10 +17,14 @@
       </div>
     </div>
     <div class="header-actions">
+      <a class="btn ghost" href="training/index.html">トレーニング版へ</a>
+      <button type="button" class="btn ghost" id="btnSample">サンプルを追加</button>
       <button type="button" class="btn ghost" id="btnExport">データ書き出し</button>
       <label class="btn ghost">データ読み込み<input type="file" id="fileImport" accept="application/json" hidden></label>
     </div>
   </header>
+
+  <div id="backupNote" class="backup-note" hidden></div>
 
   <div class="layout">
     <!-- クライアント一覧 -->
@@ -38,6 +42,8 @@
         <h2>まずはクライアントを登録しましょう</h2>
         <p>左の「＋ 新規」から、お名前・目標・期間（1〜365日）などを入力すると、期分化されたプランと日ごとのコメントが自動で作られます。</p>
         <button type="button" class="btn primary" id="btnEmptyNew">クライアントを登録する</button>
+        <p class="hint">まずは動きを見てみたい場合は、架空のクライアントのデータで試せます。</p>
+        <button type="button" class="btn ghost" id="btnEmptySample">サンプルデータで試す</button>
       </div>
 
       <div id="workspace" hidden>

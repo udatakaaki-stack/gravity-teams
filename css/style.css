@@ -396,3 +396,7 @@ details.alert > summary { cursor: pointer; list-style: none; color: var(--text);
 details.alert > summary::-webkit-details-marker { display: none; }
 details.alert > summary::after { content: '詳しく'; margin-left: auto; font-size: 12px; color: var(--muted); }
 details.alert[open] > summary::after { content: '閉じる'; }
+.backup-note { background: #fdf1e2; color: #7a4a12; padding: 8px 24px; font-size: 13px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .backup-note { background: #3a2e1c; color: #f0cf9f; } }
+:root[data-theme="dark"] .backup-note { background: #3a2e1c; color: #f0cf9f; }
+a.btn { color: var(--text); }

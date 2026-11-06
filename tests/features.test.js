@@ -144,3 +144,13 @@ test('返信アシスト：「自分を責めている」と「食べすぎ」�
     assert.ok(n <= 1, t);
   }
 });
+
+test('サンプルデータ：停滞期の記録と、カウンセリングの回答がそろっている', () => {
+  const E = require('../js/engine.js');
+  const c = F.sampleClient('2026-11-06');
+  assert.ok(c.logs.length >= 10);
+  assert.strictEqual(E.progressState(c, '2026-11-06').state, 'plateau');
+  assert.ok(F.weeklyReport(c, '2026-11-06').stats.recordDays >= 3);
+  noVar(E.rapportMessage(c, 10).text);
+  assert.ok(F.counselingSummary(c, c.counseling).includes('来年の旅行'));
+});
