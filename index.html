@@ -11,8 +11,17 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preload" href="fonts/NotoSansJP-subset-Bold.woff2" as="font" type="font/woff2" crossorigin>
 <title>TELL ALERT</title>
 <style>
+/* ── 日本語フォント ──
+   端末に日本語フォントが無い・言語設定が日本語でない場合、漢字が中国語の字形（例：直・角・骨）で
+   表示されることがある。どの端末でも日本の字形になるよう、日本語フォント（Noto Sans CJK JPを
+   JIS第1水準漢字とアプリで使う文字に絞ったもの）を同梱して最優先で使う。
+   同梱フォントに無い漢字（人名の珍しい字など）は、下の font-family の順に端末の日本語フォントで表示する。 */
+@font-face{font-family:"TellJP";src:url("fonts/NotoSansJP-subset-Regular.woff2") format("woff2");font-weight:100 500;font-display:swap}
+@font-face{font-family:"TellJP";src:url("fonts/NotoSansJP-subset-Bold.woff2") format("woff2");font-weight:600 900;font-display:swap}
+
 /* ── 配色（ダーク：ベンチ・ナイター向け） ── */
 :root{
   --bg:#050b14;--bg2:#0c1727;--bg3:#13223a;--line:#22395a;
@@ -40,7 +49,7 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--bg)}
-body{color:var(--text);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","IPAexGothic","IPAGothic","TakaoGothic","VL Gothic",sans-serif;-webkit-text-size-adjust:100%;min-height:100vh;overflow-x:hidden;
+body{color:var(--text);font:15px/1.6 "TellJP","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","IPAexGothic","IPAGothic","TakaoGothic","VL Gothic",-apple-system,sans-serif;-webkit-text-size-adjust:100%;min-height:100vh;overflow-x:hidden;
   word-break:auto-phrase;line-break:strict;overflow-wrap:anywhere;font-feature-settings:"palt" 0}
 .ic{display:inline-block;vertical-align:-0.2em;flex-shrink:0}
 .logo{color:#fff}
@@ -245,7 +254,7 @@ pre.share{white-space:pre-wrap;font:13px/1.7 inherit;background:var(--bg);border
 // ══════════════════════════════════════════════
 // 定数
 // ══════════════════════════════════════════════
-const APP_VERSION = '2.1.1';
+const APP_VERSION = '2.1.2';
 const LS_DATA = 'tell_alert_v2';
 const LS_SET = 'tell_alert_settings_v2';
 const LS_OLD = 'tell_alert_final'; // 旧バージョンのデータ（引き継ぎ用）
