@@ -499,7 +499,7 @@ const Store = {
   },
 };
 function normalizePitcher(p){
-  return { sample:!!p.sample,
+  return { sample:!!p.sample, sampleVer:p.sampleVer||1,
     id:p.id||uid(), name:p.name||'名称未設定', team:p.team||'', hand:p.hand||'右投げ', memo:p.memo||'',
     createdAt:p.createdAt||Date.now(), thumbId:p.thumbId||null,
     tells:(p.tells||[]).map(t=>({
@@ -1763,12 +1763,13 @@ async function importAll(ev){
 }
 
 // サンプル投手（使い方を試すための例。実在の投手ではない）
+const SAMPLE_VER=2; // サンプルの中身を変えたら上げる（古いサンプルを入れ替えるため）
 function makeSample(){
   let seed=20261110; const rnd=()=>((seed=(seed*1103515245+12345)%2147483648)/2147483648);
   const pick=name=>catalogTell(CATALOG.find(x=>x.part===name));
   const p=normalizePitcher({name:'サンプル投手（例）',team:'例のデータ',hand:'右投げ',
     memo:'リストから4項目を選び、どちらが直球かは「記録から判断」で38球記録した例です。足を上げる高さは球種と関係がない想定、30球目以降はアゴを毎球引くようになった（クセを隠し始めた）想定です。'});
-  p.sample=true;
+  p.sample=true; p.sampleVer=SAMPLE_VER;
   const glove=pick('グラブの角度'), chin=pick('アゴ・顔の角度'), legs=pick('足を上げる高さ'), tempo=pick('始動から着地の時間');
   p.tells=[glove,chin,legs,tempo];
   const t0=Date.now()-38*60000;
@@ -1839,6 +1840,9 @@ matchMedia('(prefers-color-scheme: light)').addEventListener?.('change',()=>{ if
   if(!IDB.ok) toast('この環境では画像を保存できません（プライベートブラウズ等）','warn',4000);
   await IDB.loadAll();
   await migrateLegacy();
+  // 古いサンプルは新しいものに入れ替える（サンプル以外のデータには触れない）
+  const oldSample=Store.data.pitchers.findIndex(p=>p.sample&&p.sampleVer!==SAMPLE_VER);
+  if(oldSample>=0){ Store.data.pitchers[oldSample]=makeSample(); Store.save(); }
   if(EMBED && !Store.data.pitchers.length){ Store.data.pitchers.push(makeSample()); Store.save(); }
   render();
   if(!EMBED && 'serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
