@@ -1,5 +1,5 @@
 // オフライン用キャッシュ。一度ネットのある場所で開けば、電波のない球場でも起動できる
-const CACHE = 'tell-alert-v2.0.0';
+const CACHE = 'tell-alert-v2.1.0';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon.svg', './icon-180.png', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
