@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#050b14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TELL ALERT">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>TELL ALERT</title>
+<style>
+/* ── 配色（ダーク：ベンチ・ナイター向け） ── */
+:root{
+  --bg:#050b14;--bg2:#0c1727;--bg3:#13223a;--line:#22395a;
+  --text:#eef3fa;--sub:#b0c1d6;--dim:#7089a6;
+  --accent:#f27020;--S:#4f95ff;--B:#ff5470;
+  --ok:#2fd27a;--warn:#f5b52e;--alert:#ff8a3d;--crit:#ff4d4d;
+  color-scheme:dark;
+}
+/* ── 配色（屋外：直射日光でも読める高コントラスト） ── */
+:root[data-theme="light"]{
+  --bg:#ffffff;--bg2:#f1f4f8;--bg3:#e1e8f0;--line:#aebdcf;
+  --text:#05090f;--sub:#26354a;--dim:#55657a;
+  --accent:#c2410c;--S:#0040b8;--B:#b80d2a;
+  --ok:#0b6e30;--warn:#8f4f00;--alert:#b83a08;--crit:#a8101a;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: light){
+  :root[data-theme="auto"]{
+    --bg:#ffffff;--bg2:#f1f4f8;--bg3:#e1e8f0;--line:#aebdcf;
+    --text:#05090f;--sub:#26354a;--dim:#55657a;
+    --accent:#c2410c;--S:#0040b8;--B:#b80d2a;
+    --ok:#0b6e30;--warn:#8f4f00;--alert:#b83a08;--crit:#a8101a;
+    color-scheme:light;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg)}
+body{color:var(--text);font:15px/1.55 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;-webkit-text-size-adjust:100%;min-height:100vh;overflow-x:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent;background:none;border:none}
+button:disabled{opacity:.4;cursor:not-allowed}
+img{display:block;max-width:100%}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+
+.wrap{max-width:720px;margin:0 auto;padding:12px 14px calc(100px + env(safe-area-inset-bottom))}
+
+/* ヘッダー */
+.hdr{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:var(--bg);border-bottom:1px solid var(--line)}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.hdr-t{flex:1;min-width:0}
+.brand{font-weight:900;letter-spacing:.08em;color:var(--accent);font-size:15px}
+.hdr-sub{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon-btn{min-width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);font-size:20px;display:flex;align-items:center;justify-content:center}
+.chip{font-size:11px;font-weight:800;padding:4px 8px;border-radius:20px;border:1px solid var(--line);white-space:nowrap}
+.chip-ai{color:var(--S);border-color:var(--S)}
+.chip-off{color:var(--ok);border-color:var(--ok)}
+
+/* 共通部品 */
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:10px 16px;border-radius:12px;border:1px solid var(--line);background:var(--bg3);font-weight:800;font-size:15px;text-align:center;line-height:1.3}
+.btn:active:not(:disabled){transform:scale(.98);opacity:.85}
+.btn-main{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-ai{background:var(--S);border-color:var(--S);color:#fff}
+.btn-danger{background:transparent;border-color:var(--crit);color:var(--crit)}
+.btn.sm{min-height:40px;padding:7px 12px;font-size:14px}
+.btn.xs{min-height:34px;padding:4px 10px;font-size:13px;border-radius:9px}
+.btn.full{width:100%}
+.row{display:flex;align-items:center;gap:8px}
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 10px}
+.grow{flex:1;min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mt{margin-top:10px}.mb{margin-bottom:10px}
+.sec{font-size:15px;font-weight:900}
+.note{font-size:13px;color:var(--sub);line-height:1.7;margin-bottom:10px}
+.small{font-size:12px;color:var(--sub)}
+.dim{color:var(--dim)}
+.empty{text-align:center;padding:28px 16px;border:1px dashed var(--line);border-radius:14px;color:var(--sub);font-size:14px;line-height:1.8;margin-bottom:12px}
+.empty.sm{padding:16px;font-size:13px;text-align:left}
+.steps{text-align:left;margin:12px auto 16px;max-width:420px}
+.steps li{margin:0 0 8px 1.2em}
+
+/* フォーム */
+.field{margin-bottom:12px}
+.field>label{display:block;font-size:13px;font-weight:800;color:var(--sub);margin-bottom:5px}
+.field input,.field select,.field textarea,.sel{width:100%;min-height:46px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:16px;outline:none}
+.field textarea{min-height:70px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.help{font-size:12px;color:var(--dim);margin-top:4px;line-height:1.6}
+.seg{display:flex;background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;min-height:40px;border-radius:9px;font-weight:800;font-size:14px;color:var(--sub);padding:4px 6px;line-height:1.25}
+.seg button.on{background:var(--accent);color:#fff}
+.pick-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pick-row label{cursor:pointer;position:relative}
+.preview{position:relative;margin-top:8px}
+.preview img{width:100%;max-height:240px;object-fit:contain;border-radius:10px;background:#000}
+.preview .x{position:absolute;top:6px;right:6px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.7);color:#fff;font-size:16px}
+
+/* バッジ */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:800;border:1px solid currentColor;white-space:nowrap}
+.c-ok{color:var(--ok)}.c-warn{color:var(--warn)}.c-alert{color:var(--alert)}.c-crit{color:var(--crit)}.c-dim{color:var(--dim)}.c-S{color:var(--S)}.c-B{color:var(--B)}
+
+/* 投手一覧 */
+.pcard{display:flex;align-items:center;gap:12px;width:100%;text-align:left}
+.pcard.lv-alert,.pcard.lv-crit{border-width:2px}
+.pcard.lv-alert{border-color:var(--alert)}.pcard.lv-crit{border-color:var(--crit)}
+.thumb{width:64px;height:52px;border-radius:9px;object-fit:cover;flex-shrink:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:22px}
+.pname{font-size:17px;font-weight:900}
+.hand{font-size:12px;color:var(--sub);font-weight:700;margin-left:4px}
+.meta{font-size:12px;color:var(--sub)}
+
+/* アラートバナー */
+.banner{border-radius:14px;padding:12px 14px;margin-bottom:10px;border:2px solid currentColor;background:var(--bg2)}
+.banner .bt{font-weight:900;font-size:17px}
+.banner .bm{color:var(--text);font-size:14px;margin-top:4px;line-height:1.6}
+.banner.pulse{animation:pulse 1.2s ease-in-out 3}
+@keyframes pulse{50%{transform:scale(1.015)}}
+
+/* 下部タブ */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;display:grid;grid-template-columns:repeat(4,1fr);background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.tab{min-height:60px;font-size:13px;font-weight:800;color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.tab .ti{font-size:20px;line-height:1}
+.tab.on{color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
+
+/* 計測画面 */
+.ctx{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctx .sel{width:auto;min-width:92px;min-height:42px;padding:6px 10px}
+.ctx .seg{flex:1;min-width:150px}
+.count{font-weight:900;font-size:16px;color:var(--sub)}
+.step{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:900;margin:14px 0 8px}
+.step span{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+.obs-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.obs-h b{font-size:16px}
+.tm{font-size:12px;color:var(--dim)}
+.cue{font-size:13px;color:var(--sub);margin-bottom:8px}
+.obs-btns{display:grid;grid-template-columns:1fr 1fr 74px;gap:6px}
+.ob{min-height:66px;border-radius:12px;border:2px solid var(--line);background:var(--bg);padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.25}
+.ob b{font-size:15px}
+.ob small{font-size:11px;color:var(--sub);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ob.s{border-color:var(--S)}.ob.s b{color:var(--S)}
+.ob.b{border-color:var(--B)}.ob.b b{color:var(--B)}
+.ob.on.s{background:var(--S)}.ob.on.b{background:var(--B)}.ob.on.q{background:var(--dim);border-color:var(--dim)}
+.ob.on b,.ob.on small{color:#fff}
+.pred{border-radius:16px;border:2px solid var(--line);padding:12px 14px;margin:12px 0 4px;background:var(--bg2);text-align:center}
+.pred.S{border-color:var(--S)}.pred.B{border-color:var(--B)}
+.pred-l{font-size:12px;font-weight:800;color:var(--sub)}
+.pred-big{font-size:30px;font-weight:900;line-height:1.2;margin:2px 0}
+.pred.S .pred-big{color:var(--S)}.pred.B .pred-big{color:var(--B)}
+.pred-big span{font-size:22px}
+.pred-why{font-size:12px;color:var(--sub)}
+.pred-warn{font-size:12px;color:var(--warn);font-weight:800;margin-top:4px}
+.res-h{font-size:13px;font-weight:900;margin:8px 0 6px}
+.res-h.s{color:var(--S)}.res-h.b{color:var(--B)}
+.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.res{min-height:56px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);font-weight:900;font-size:15px}
+.res.s{border-left:6px solid var(--S)}.res.b{border-left:6px solid var(--B)}
+.res:active{transform:scale(.97)}
+.recent{font-size:13px;color:var(--sub)}
+.recent div{padding:5px 0;border-bottom:1px dashed var(--line)}
+
+/* テル一覧 */
+.tcard{padding:0;overflow:hidden}
+.tc-head{display:flex;gap:10px;padding:12px 14px;align-items:flex-start;width:100%;text-align:left}
+.tc-bar{width:5px;align-self:stretch;border-radius:3px;flex-shrink:0}
+.tc-body{padding:0 14px 12px;border-top:1px solid var(--line)}
+.stat-line{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--sub);margin-top:4px}
+.stat-line b{color:var(--text)}
+.alert-msg{font-size:13px;font-weight:800;margin-top:6px}
+.sb{border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.6;border:1px solid var(--line)}
+.sb .k{font-size:12px;font-weight:900;margin-bottom:2px}
+.sb.s{border-color:var(--S)}.sb.s .k{color:var(--S)}
+.sb.b{border-color:var(--B)}.sb.b .k{color:var(--B)}
+.refimg{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;margin-top:6px;background:#000}
+.inactive{opacity:.55}
+
+/* 比較 */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cmp figure{margin:0}
+.cmp img{width:100%;aspect-ratio:4/3;object-fit:contain;border-radius:8px;background:#000}
+.cmp figcaption{font-size:12px;font-weight:800;color:var(--sub);margin-top:3px}
+.st-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:8px}
+.st-btns button{min-height:44px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:12px;font-weight:800;line-height:1.2}
+.st-btns button.on{color:#fff}
+.st-btns button.on.ok{background:var(--ok);border-color:var(--ok)}
+.st-btns button.on.warn{background:var(--warn);border-color:var(--warn)}
+.st-btns button.on.alert{background:var(--alert);border-color:var(--alert)}
+.st-btns button.on.crit{background:var(--crit);border-color:var(--crit)}
+.st-btns button.on.dim{background:var(--dim);border-color:var(--dim)}
+
+/* 記録 */
+.log-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.log-row .n{font-weight:900;width:38px;flex-shrink:0;color:var(--sub)}
+.log-row .x{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);color:var(--dim);flex-shrink:0}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.kpi div{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.kpi b{display:block;font-size:22px;font-weight:900}
+.kpi span{font-size:11px;color:var(--sub);font-weight:700}
+pre.share{white-space:pre-wrap;font:13px/1.7 inherit;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0}
+
+/* モーダル */
+.modal-bg{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center}
+.modal{background:var(--bg2);width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));border:1px solid var(--line)}
+@media (min-width:640px){.modal-bg{align-items:center}.modal{border-radius:18px}}
+.m-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px}
+.m-head b{font-size:17px}
+.m-head .x{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);font-size:18px}
+.frame-modal video{width:100%;max-height:52vh;background:#000;border-radius:10px;margin:8px 0}
+.frame-modal input[type=range]{width:100%;height:36px}
+.ftime{text-align:center;font-size:13px;color:var(--sub);margin-bottom:8px}
+.cand{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;background:var(--bg)}
+
+/* トースト */
+.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;z-index:300;max-width:92vw;padding:12px 18px;border-radius:12px;font-weight:800;font-size:15px;color:#fff;background:#253247;transition:all .2s;pointer-events:none;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.t-ok{background:#0f7a3d}.toast.t-warn{background:#9a5a00}.toast.t-crit{background:#b3141b}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="overlay"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+// ══════════════════════════════════════════════
+// 定数
+// ══════════════════════════════════════════════
+const APP_VERSION = '2.0.0';
+const LS_DATA = 'tell_alert_v2';
+const LS_SET = 'tell_alert_settings_v2';
+const LS_OLD = 'tell_alert_final'; // 旧バージョンのデータ（引き継ぎ用）
+
+const CATEGORIES = ['グラブ','握り・手首','肘','肩甲骨・肩','腰・骨盤','ステップ','頭・目線','テンポ・リズム','その他'];
+const CAT_COLOR = {'グラブ':'#f27020','握り・手首':'#20c060','肘':'#f0a020','肩甲骨・肩':'#e84040','腰・骨盤':'#06b0c8','ステップ':'#8060f0','頭・目線':'#e040b0','テンポ・リズム':'#a080f0','その他':'#7a90a8'};
+// 打者が使えるのは「リリースより前」に出るテルだけなので、フォロースルーは選択肢から外している
+const TIMINGS = ['セット・構え','始動・足上げ','テイクバック','トップ','リリース直前'];
+const IMPORTANCE = ['高','中','低'];
+const INNINGS = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+const HANDS = ['右投げ','左投げ'];
+const PITCHES = { S:['ストレート','ツーシーム','カット'], B:['スライダー','カーブ','フォーク','チェンジアップ','シュート','その他'] };
+const SIDE_NAME = { S:'直球系', B:'変化球系' };
+
+const STATUS = {
+  INTACT:      {label:'正常', c:'ok',    icon:'✓'},
+  WEAKENED:    {label:'弱化', c:'warn',  icon:'▽'},
+  MODIFIED:    {label:'変化', c:'alert', icon:'⚡'},
+  DISAPPEARED: {label:'消失', c:'crit',  icon:'✕'},
+  UNKNOWN:     {label:'不明', c:'dim',   icon:'?'},
+};
+const LEVEL = {
+  NODATA:   {label:'記録待ち', c:'dim',   icon:'…'},
+  CLEAR:    {label:'正常',     c:'ok',    icon:'✓'},
+  CAUTION:  {label:'注意',     c:'warn',  icon:'!'},
+  ALERT:    {label:'警戒',     c:'alert', icon:'⚠'},
+  CRITICAL: {label:'緊急',     c:'crit',  icon:'⛔'},
+};
+const LEVEL_ORDER = ['NODATA','CLEAR','CAUTION','ALERT','CRITICAL'];
+const lvRank = l => LEVEL_ORDER.indexOf(l);
+
+const DEFAULT_SET = {
+  mode:'offline', apiKey:'', model:'claude-opus-5-5', theme:'dark',
+  minN:8,      // 有効判定に必要な最低球数
+  win:8,       // 「直近」とみなす球数
+  drop:50,     // 直近の的中率がこれ以下なら警戒（%）
+  wake:true, haptic:true,
+};
+const AI_MODELS = [
+  ['claude-opus-5-5','Claude Opus 5.5（標準・高精度）'],
+  ['claude-sonnet-5-5','Claude Sonnet 5.5（速い・安い）'],
+];
+
+// ══════════════════════════════════════════════
+// ユーティリティ
+// ══════════════════════════════════════════════
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const pct = x => Math.round((x||0)*100) + '%';
+const short = (s,n=16) => { s = String(s||''); return s.length>n ? s.slice(0,n)+'…' : s; };
+const fmtTime = ts => new Date(ts).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+const fmtDate = ts => new Date(ts).toLocaleDateString('ja-JP');
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+
+// 二項分布の上側確率 P(X >= k)。「この的中数は偶然でも起こりうるか」を見るために使う
+const LF=[0];
+function lf(n){ for(let i=LF.length;i<=n;i++) LF[i]=LF[i-1]+Math.log(i); return LF[n]; }
+function binomTail(k,n,p){
+  if(k<=0) return 1;
+  if(p>=1) return 1;
+  let s=0;
+  for(let i=k;i<=n;i++) s+=Math.exp(lf(n)-lf(i)-lf(n-i)+i*Math.log(p)+(n-i)*Math.log(1-p));
+  return Math.min(1,s);
+}
+
+let toastTimer;
+function toast(msg, kind='info', ms=2200){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast show t-'+kind;
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>{el.className='toast';},ms);
+}
+function haptic(pattern=25){ if(SET.haptic && navigator.vibrate) try{navigator.vibrate(pattern);}catch{} }
+
+// ══════════════════════════════════════════════
+// 設定
+// ══════════════════════════════════════════════
+let SET = {...DEFAULT_SET};
+function loadSettings(){
+  try{ SET = {...DEFAULT_SET, ...(JSON.parse(localStorage.getItem(LS_SET))||{})}; }catch{ SET={...DEFAULT_SET}; }
+  // 旧バージョンの設定を引き継ぐ（APIキーがあっても勝手にAIモードへは切り替えない）
+  try{
+    if(!SET.apiKey){ const k=localStorage.getItem('tell_alert_apikey'); if(k) SET.apiKey=k; }
+    if(!localStorage.getItem(LS_SET)){ const m=localStorage.getItem('tell_alert_mode'); if(m==='ai'||m==='offline') SET.mode=m; }
+  }catch{}
+  if(!AI_MODELS.some(m=>m[0]===SET.model)) SET.model=DEFAULT_SET.model;
+}
+function saveSettings(){ try{ localStorage.setItem(LS_SET, JSON.stringify(SET)); }catch{ toast('設定を保存できませんでした','crit'); } }
+function applyTheme(){
+  document.documentElement.dataset.theme = SET.theme;
+  const light = SET.theme==='light' || (SET.theme==='auto' && matchMedia('(prefers-color-scheme: light)').matches);
+  document.querySelector('meta[name=theme-color]').setAttribute('content', light?'#ffffff':'#050b14');
+}
+
+// ══════════════════════════════════════════════
+// データ保存
+//   文字データ → localStorage（小さい）
+//   画像       → IndexedDB（容量が大きい。旧版は画像もlocalStorageに入れていたため、数枚で容量オーバーしていた）
+// ══════════════════════════════════════════════
+const Store = {
+  data:{pitchers:[]},
+  load(){
+    try{ this.data = JSON.parse(localStorage.getItem(LS_DATA)) || {pitchers:[]}; }catch{ this.data={pitchers:[]}; }
+    if(!Array.isArray(this.data.pitchers)) this.data.pitchers=[];
+    this.data.pitchers = this.data.pitchers.map(normalizePitcher);
+  },
+  save(){
+    try{ localStorage.setItem(LS_DATA, JSON.stringify(this.data)); return true; }
+    catch(e){ toast('保存に失敗しました。設定からバックアップを書き出してください','crit',6000); return false; }
+  },
+};
+function normalizePitcher(p){
+  return {
+    id:p.id||uid(), name:p.name||'名称未設定', team:p.team||'', hand:p.hand||'右投げ', memo:p.memo||'',
+    createdAt:p.createdAt||Date.now(), thumbId:p.thumbId||null,
+    tells:(p.tells||[]).map(t=>({
+      id:t.id||uid(), category:CATEGORIES.includes(t.category)?t.category:'その他', part:t.part||'',
+      timing:TIMINGS.includes(t.timing)?t.timing:(t.timing==='リリース直前'?'リリース直前':'トップ'),
+      straight:t.straight||'', breaking:t.breaking||'', baseline:t.baseline||'', cue:t.cue||'',
+      importance:IMPORTANCE.includes(t.importance)?t.importance:'中', visibility:Number(t.visibility)||3,
+      imgS:t.imgS||null, imgB:t.imgB||null, active:t.active!==false, source:t.source||'manual', createdAt:t.createdAt||Date.now(),
+    })),
+    pitches:Array.isArray(p.pitches)?p.pitches:[],
+    scans:Array.isArray(p.scans)?p.scans:[],
+  };
+}
+const curP = () => Store.data.pitchers.find(p=>p.id===S.pid) || null;
+
+const IMG = {}; // 画像キャッシュ id → dataURL
+const IDB = {
+  db:null, ok:false,
+  async open(){
+    try{
+      this.db = await new Promise((res,rej)=>{
+        const r=indexedDB.open('tell_alert_media',1);
+        r.onupgradeneeded=()=>r.result.createObjectStore('img');
+        r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+      });
+      this.ok=true;
+    }catch{ this.ok=false; }
+  },
+  store(mode){ return this.db.transaction('img',mode).objectStore('img'); },
+  put(id,v){
+    IMG[id]=v;
+    if(!this.ok) return Promise.resolve();
+    return new Promise((res,rej)=>{ const r=this.store('readwrite').put(v,id); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); })
+      .catch(()=>toast('画像の保存に失敗しました（容量不足の可能性）','crit',5000));
+  },
+  del(id){ if(!id) return; delete IMG[id]; if(this.ok) try{ this.store('readwrite').delete(id); }catch{} },
+  loadAll(){
+    if(!this.ok) return Promise.resolve();
+    return new Promise(res=>{
+      const r=this.store('readonly').openCursor();
+      r.onsuccess=()=>{ const c=r.result; if(c){ IMG[c.key]=c.value; c.continue(); } else res(); };
+      r.onerror=()=>res();
+    });
+  },
+};
+async function storeImg(dataUrl){ if(!dataUrl) return null; const id='img_'+uid(); await IDB.put(id,dataUrl); return id; }
+const imgSrc = v => !v ? null : (String(v).startsWith('data:') ? v : (IMG[v]||null));
+// 新しい画像（dataURL）なら保存してIDを返す。既存IDならそのまま。消されたら古い画像を削除
+async function commitImg(newVal, oldId){
+  if(newVal && String(newVal).startsWith('data:')){ if(oldId) IDB.del(oldId); return await storeImg(newVal); }
+  if(!newVal && oldId){ IDB.del(oldId); return null; }
+  return newVal||null;
+}
+function pitcherImgIds(p){
+  const ids=[p.thumbId];
+  p.tells.forEach(t=>ids.push(t.imgS,t.imgB));
+  p.scans.forEach(s=>ids.push(s.imgId));
+  return ids.filter(Boolean);
+}
+
+// ══════════════════════════════════════════════
+// 画像・動画の取り込み
+// ══════════════════════════════════════════════
+function loadImage(src){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=()=>rej(new Error('画像を読み込めませんでした')); im.src=src; }); }
+// スマホの写真は数MBあるので、長辺1024pxのJPEGに縮小してから保存・送信する
+function drawToJpeg(src,w,h,max=1024,q=0.8){
+  const sc=Math.min(1,max/Math.max(w,h));
+  const c=document.createElement('canvas'); c.width=Math.round(w*sc); c.height=Math.round(h*sc);
+  c.getContext('2d').drawImage(src,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg',q);
+}
+async function fileToJpeg(file){
+  const url=URL.createObjectURL(file);
+  try{ const im=await loadImage(url); return drawToJpeg(im,im.naturalWidth,im.naturalHeight); }
+  finally{ URL.revokeObjectURL(url); }
+}
+function pickButtons(target){
+  return `<div class="pick-row">
+    <label class="btn sm"><input class="vh" type="file" accept="image/*,video/*" capture="environment" data-target="${target}" onchange="onPick(event)">📷 撮影する</label>
+    <label class="btn sm"><input class="vh" type="file" accept="image/*,video/*" data-target="${target}" onchange="onPick(event)">🎞 写真・動画から</label>
+  </div>`;
+}
+function previewBox(v, clearFn){
+  const src=imgSrc(v); if(!src) return '';
+  return `<div class="preview"><img src="${src}" alt=""><button class="x" onclick="${clearFn}" aria-label="画像を外す">✕</button></div>`;
+}
+async function onPick(ev){
+  const input=ev.target, f=input.files&&input.files[0], target=input.dataset.target;
+  input.value='';
+  if(!f) return;
+  if((f.type||'').startsWith('video/') || /\.(mov|mp4|m4v|webm|3gp)$/i.test(f.name)){ openFrameModal(f,target); return; }
+  try{ deliver(target, await fileToJpeg(f)); }catch(e){ toast(e.message,'crit'); }
+}
+function deliver(target,d){
+  if(target==='reg') S.form.img=d;
+  else if(target==='tellS') S.form.imgS=d;
+  else if(target==='tellB') S.form.imgB=d;
+  else if(target==='scan') S.scan.img=d;
+  else if(target==='aiS') S.ai.imgS=d;
+  else if(target==='aiB') S.ai.imgB=d;
+  render(); toast('画像を取り込みました','ok');
+}
+
+// 動画からコマを切り出す（静止画1枚だとテルの出る瞬間を逃しやすいので、動画で撮ってコマ送りで選ぶ）
+let FR=null;
+function openFrameModal(file,target){
+  closeFrame();
+  const url=URL.createObjectURL(file);
+  FR={url,target};
+  document.getElementById('overlay').innerHTML=`
+  <div class="modal-bg"><div class="modal frame-modal">
+    <div class="m-head"><b>🎞 コマを選ぶ</b><button class="x" onclick="closeFrame()" aria-label="閉じる">✕</button></div>
+    <div class="note">スライダーとコマ送りで、テルが一番はっきり見える瞬間に合わせてください。</div>
+    <video id="fv" playsinline muted preload="auto" src="${url}"></video>
+    <input id="fslider" type="range" min="0" max="0" step="0.001" value="0" aria-label="再生位置">
+    <div class="ftime" id="ftime">読み込み中…</div>
+    <div class="grid3 mb">
+      <button class="btn sm" onclick="fStep(-1)">◀ 1コマ</button>
+      <button class="btn sm" id="fplay" onclick="fPlay()">▶ 1/4速</button>
+      <button class="btn sm" onclick="fStep(1)">1コマ ▶</button>
+    </div>
+    <button class="btn btn-main full" onclick="fUse()">✓ このコマを使う</button>
+  </div></div>`;
+  const v=document.getElementById('fv'), s=document.getElementById('fslider');
+  const upd=()=>{ s.value=v.currentTime; document.getElementById('ftime').textContent=`${v.currentTime.toFixed(2)}秒 / ${(v.duration||0).toFixed(2)}秒`; };
+  v.addEventListener('loadedmetadata',()=>{ s.max=v.duration||0; v.currentTime=Math.min(0.05,v.duration||0); upd(); });
+  v.addEventListener('timeupdate',upd); v.addEventListener('seeked',upd);
+  v.addEventListener('pause',()=>{ const b=document.getElementById('fplay'); if(b) b.textContent='▶ 1/4速'; });
+  v.addEventListener('error',()=>toast('この動画形式は読み込めませんでした','crit',4000));
+  s.addEventListener('input',()=>{ v.pause(); v.currentTime=parseFloat(s.value)||0; });
+}
+function fStep(d){ const v=document.getElementById('fv'); if(!v) return; v.pause(); v.currentTime=clamp(v.currentTime+d/30,0,v.duration||0); }
+function fPlay(){
+  const v=document.getElementById('fv'), b=document.getElementById('fplay'); if(!v) return;
+  if(v.paused){ v.playbackRate=0.25; v.play().catch(()=>{}); b.textContent='⏸ 止める'; } else v.pause();
+}
+function fUse(){
+  const v=document.getElementById('fv');
+  if(!v||!v.videoWidth){ toast('まだ動画を読み込み中です','warn'); return; }
+  const d=drawToJpeg(v,v.videoWidth,v.videoHeight), target=FR.target;
+  closeFrame(); deliver(target,d);
+}
+function closeFrame(){ if(FR){ URL.revokeObjectURL(FR.url); FR=null; } document.getElementById('overlay').innerHTML=''; }
+
+// ══════════════════════════════════════════════
+// 分析ロジック（オフラインで動く。アプリの心臓部）
+// ══════════════════════════════════════════════
+// テル1つ分の成績
+function tellStats(p,t){
+  const W=SET.win, minN=SET.minN;
+  const asked=p.pitches.filter(x=>x.obs&&x.obs[t.id]);            // そのテルを確認しようとした球
+  const seen=asked.filter(x=>x.obs[t.id]==='S'||x.obs[t.id]==='B'); // サインが見えた球
+  const hit=x=>x.obs[t.id]===x.actual;
+  const n=seen.length, k=seen.filter(hit).length, acc=n?k/n:0;
+  // 比較の基準：「いつも多い方の球種を張った場合」の的中率（最低50%）
+  const nS=seen.filter(x=>x.actual==='S').length;
+  const p0=n?Math.max(nS/n,1-nS/n,0.5):0.5;
+  const pval=n?binomTail(k,n,p0):1;
+  const rec=seen.slice(-W), rk=rec.filter(hit).length, racc=rec.length?rk/rec.length:0;
+  const early=seen.slice(0,-W), ek=early.filter(hit).length, eacc=early.length?ek/early.length:0;
+  const recAsked=asked.slice(-W), earlyAsked=asked.slice(0,-W);
+  const hidRate=a=>a.length?a.filter(x=>x.obs[t.id]==='?').length/a.length:0;
+  const cov=asked.length?n/asked.length:0;
+  const split=['W','S'].map(m=>{ const r=seen.filter(x=>x.set===m); return {m,n:r.length,k:r.filter(hit).length}; });
+
+  let ev;
+  if(n<minN) ev='few'; else if(pval<0.05) ev='strong'; else if(pval<0.2) ev='promising'; else ev='weak';
+
+  // 変化検知：それまで当たっていたテルが直近で当たらなくなった／見えなくなった
+  // 変化が起きる前の時点で「有効」だったか（主力テルの消失は緊急扱いにするため）
+  const eS=early.filter(x=>x.actual==='S').length;
+  const earlyStrong=early.length>=minN && binomTail(ek,early.length,Math.max(eS/early.length,1-eS/early.length,0.5))<0.05;
+  let alert=null;
+  if(early.length>=minN && eacc>=0.7 && rec.length>=W && racc<=SET.drop/100){
+    alert={level:'ALERT', msg:`直近${rec.length}球の的中が${rk}/${rec.length}に低下（それまで${pct(eacc)}）。修正された可能性があります`};
+  }else if(earlyAsked.length>=minN && hidRate(earlyAsked)<0.3 && recAsked.length>=W && hidRate(recAsked)>=0.5){
+    alert={level:'CAUTION', msg:`直近で「見えず」が${pct(hidRate(recAsked))}に増加。隠し始めたか、撮影位置が変わった可能性`};
+  }else if(early.length>=minN && eacc>=0.7 && rec.length>=W && racc<eacc-0.2){
+    alert={level:'CAUTION', msg:`直近${rec.length}球の的中が${rk}/${rec.length}とやや低下（それまで${pct(eacc)}）`};
+  }
+  return {asked:asked.length,n,k,acc,p0,pval,ev,earlyStrong,rec:rec.length,rk,racc,cov,split,alert};
+}
+const EV_RANK={strong:0,promising:1,few:2,weak:3};
+function evBadge(st){
+  if(st.ev==='few')       return `<span class="badge c-dim">データ不足 ${st.n}/${SET.minN}球</span>`;
+  if(st.ev==='weak')      return `<span class="badge c-dim">未確認 ${pct(st.acc)}</span>`;
+  if(st.ev==='promising') return `<span class="badge c-warn">有望 ${pct(st.acc)}</span>`;
+  return `<span class="badge c-ok">有効 ${pct(st.acc)}</span>`;
+}
+function sortedTells(p){
+  const imp={'高':0,'中':1,'低':2};
+  return p.tells.map(t=>({t,st:tellStats(p,t)}))
+    .sort((a,b)=> (b.t.active-a.t.active) || (EV_RANK[a.st.ev]-EV_RANK[b.st.ev]) || (b.st.acc-a.st.acc) || (imp[a.t.importance]-imp[b.t.importance]) || (TIMINGS.indexOf(a.t.timing)-TIMINGS.indexOf(b.t.timing)))
+    .map(x=>x.t);
+}
+
+// 投手全体の状態
+function overall(p){
+  const items=p.tells.filter(t=>t.active).map(t=>({tell:t,st:tellStats(p,t)}));
+  let level=p.pitches.length?'CLEAR':'NODATA';
+  const msgs=[];
+  items.forEach(x=>{
+    if(!x.st.alert) return;
+    const lv=(x.st.alert.level==='ALERT'&&x.st.earlyStrong)?'CRITICAL':x.st.alert.level; // 主力テルの消失は緊急
+    if(lvRank(lv)>lvRank(level)) level=lv;
+    msgs.push({lv,text:`${x.tell.part}：${x.st.alert.msg}`});
+  });
+  // 最後の画像比較が、最後の投球記録より新しければ反映
+  const sc=p.scans[p.scans.length-1], lastPitch=p.pitches[p.pitches.length-1];
+  if(sc && sc.source!=='legacy' && (!lastPitch || sc.ts>=lastPitch.ts) && lvRank(sc.overall)>=lvRank('CAUTION')){
+    if(lvRank(sc.overall)>lvRank(level)) level=sc.overall;
+    msgs.push({lv:sc.overall,text:`画像比較（${sc.inning?sc.inning+'回 ':''}${fmtTime(sc.ts)}）：${sc.reason||'テルの変化を確認'}`});
+  }
+  const ranked=items.filter(x=>x.st.n>0).sort((a,b)=>(EV_RANK[a.st.ev]-EV_RANK[b.st.ev])||(b.st.acc-a.st.acc));
+  return {level,msgs,best:ranked[0]||null,items};
+}
+
+// 予測：記録からベイズ推定（単純ベイズ）。記録が無いテルは「テル通りなら」の参考表示にとどめる
+function predict(p,obs){
+  const H=p.pitches, nS=H.filter(x=>x.actual==='S').length;
+  const prior=(nS+1)/(H.length+2);
+  let lo=Math.log(prior/(1-prior));
+  const used=[];
+  for(const [tid,o] of Object.entries(obs)){
+    if(o!=='S'&&o!=='B') continue;
+    const t=p.tells.find(x=>x.id===tid); if(!t) continue;
+    const rows=H.filter(x=>x.obs&&(x.obs[tid]==='S'||x.obs[tid]==='B'));
+    const rS=rows.filter(x=>x.actual==='S'), rB=rows.filter(x=>x.actual==='B');
+    const a=rS.filter(x=>x.obs[tid]===o).length, b=rB.filter(x=>x.obs[tid]===o).length;
+    lo+=Math.log(((a+1)/(rS.length+2))/((b+1)/(rB.length+2)));
+    used.push({tell:t,o,n:rows.length});
+  }
+  const probS=1/(1+Math.exp(-lo));
+  const votes=used.reduce((s,u)=>s+(u.o==='S'?1:-1),0);
+  const unverified=used.length>0 && used.every(u=>u.n===0);
+  return {prior,probS,used,votes,unverified,minN:used.length?Math.min(...used.map(u=>u.n)):0};
+}
+
+function scanLevel(p,status){
+  let lv='NODATA';
+  for(const t of p.tells){
+    const s=status[t.id]; if(!s) continue;
+    let l='CLEAR';
+    if(s==='WEAKENED') l='CAUTION';
+    else if(s==='MODIFIED'||s==='DISAPPEARED') l=t.importance==='高'?'CRITICAL':'ALERT';
+    if(lvRank(l)>lvRank(lv)) lv=l;
+  }
+  return lv;
+}
+
+// ══════════════════════════════════════════════
+// AI（任意機能）
+// ══════════════════════════════════════════════
+const imgBlock = d => ({type:'image',source:{type:'base64',media_type:'image/jpeg',data:String(d).split(',')[1]}});
+async function callClaude(content, schema){
+  if(!navigator.onLine) throw new Error('オフラインです。電波のある場所で実行してください');
+  const ctrl=new AbortController(); const timer=setTimeout(()=>ctrl.abort(),120000);
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST', signal:ctrl.signal,
+      headers:{
+        'content-type':'application/json',
+        'x-api-key':SET.apiKey,
+        'anthropic-version':'2026-10-21',
+        'anthropic-beta':'server-side-fallback-2026-07-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+      },
+      body:JSON.stringify({
+        model:SET.model, max_tokens:16000,
+        fallbacks:'default',
+        output_config:{ effort:'medium', format:{type:'json_schema',schema} },
+        messages:[{role:'user',content}],
+      }),
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok){
+      if(res.status===401) throw new Error('APIキーが正しくありません');
+      if(res.status===429) throw new Error('混み合っています。少し待って再実行してください');
+      throw new Error(data?.error?.message||('通信エラー（'+res.status+'）'));
+    }
+    if(data.stop_reason==='refusal') throw new Error('AIがこの画像の分析を控えました');
+    if(data.stop_reason==='max_tokens') throw new Error('AIの回答が途中で切れました。もう一度実行してください');
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    try{ return JSON.parse(text); }
+    catch{ const m=text.match(/\{[\s\S]*\}/); if(m) return JSON.parse(m[0]); throw new Error('AIの回答を読み取れませんでした'); }
+  }catch(e){
+    if(e.name==='AbortError') throw new Error('時間切れです。電波状況を確認してください');
+    throw e;
+  }finally{ clearTimeout(timer); }
+}
+const DIFF_SCHEMA={type:'object',additionalProperties:false,required:['summary','candidates','caution','shooting_tip'],properties:{
+  summary:{type:'string'},
+  candidates:{type:'array',items:{type:'object',additionalProperties:false,required:['category','part','timing','straight','breaking','cue','confidence','reason'],properties:{
+    category:{type:'string',enum:CATEGORIES}, part:{type:'string'}, timing:{type:'string',enum:TIMINGS},
+    straight:{type:'string'}, breaking:{type:'string'}, cue:{type:'string'},
+    confidence:{type:'string',enum:['高','中','低']}, reason:{type:'string'} }}},
+  caution:{type:'string'}, shooting_tip:{type:'string'} }};
+const SCAN_SCHEMA={type:'object',additionalProperties:false,required:['reason','image_quality','checks','new_findings'],properties:{
+  reason:{type:'string'}, image_quality:{type:'string',enum:['良い','普通','悪い']},
+  checks:{type:'array',items:{type:'object',additionalProperties:false,required:['tell_id','status','looks_like','note'],properties:{
+    tell_id:{type:'string'}, status:{type:'string',enum:Object.keys(STATUS)},
+    looks_like:{type:'string',enum:['直球側','変化球側','判断不可']}, note:{type:'string'} }}},
+  new_findings:{type:'array',items:{type:'object',additionalProperties:false,required:['part','desc'],properties:{part:{type:'string'},desc:{type:'string'}}}} }};
+
+function promptDiff(p){
+  return `あなたは野球の投球動作を観察する分析担当です。
+同じ投手の2枚の画像を比べます。1枚目は直球系を投げた時、2枚目は変化球系を投げた時の、なるべく同じ局面のコマです。
+投手：${p.name}（${p.hand}）　メモ：${p.memo||'なし'}
+
+2枚の違いのうち、打者や味方ベンチがリリースより前に目で確認できそうなもの（テル候補）を挙げてください。
+・画像から実際に確認できる違いだけを書くこと。見えないことや判断できないことは書かない。
+・撮影角度、コマのタイミングのずれ、画質による見かけ上の違いの可能性があるときは、reasonにそう書き、confidenceを「低」にする。
+・確認できる違いがなければcandidatesは空配列にする。最大5件。
+・straight／breakingには、それぞれの球種のときの見え方を短く書く。cueは打者向けの短い指示（15文字程度）。
+・cautionには、この2枚だけで言えることの限界を1〜2文で書く。
+・shooting_tipには、次に撮影するときの改善点を1文で書く。`;
+}
+function promptScan(p,tells){
+  return `あなたは野球の投球動作を観察する分析担当です。
+投手：${p.name}（${p.hand}）
+登録済みのテル（球種によって形が変わる癖）が、試合中の最新のコマでもまだ確認できるかを調べます。
+最後の画像が「今回のコマ」、それより前の画像は登録時の参考画像です。
+
+テル一覧：
+${JSON.stringify(tells.map(t=>({tell_id:t.id,part:t.part,timing:t.timing,straight_sign:t.straight,breaking_sign:t.breaking})),null,1)}
+
+1枚のコマでは何を投げたかは分からないため、今回のコマが「直球時の形」か「変化球時の形」のどちらかに当てはまるかを見てください。
+status：INTACT（どちらかの形がはっきり確認できる）、WEAKENED（形の差が小さくなっている）、MODIFIED（どちらにも当てはまらない別の動きになっている）、DISAPPEARED（その部位の特徴が見られない・隠されている）、UNKNOWN（角度・局面・画質のため判断できない）。
+確信が持てないときは必ずUNKNOWNにし、推測で判定しないこと。
+looks_likeには今回のコマがどちらの形に近いかを書く。tell_idは一覧の値をそのまま使う。
+reasonは全体の判定根拠を1文で。new_findingsには登録外で目立つ違いがあれば書く（なければ空配列）。`;
+}
+
+// ══════════════════════════════════════════════
+// 画面の状態
+// ══════════════════════════════════════════════
+const freshScan = () => ({img:null,inning:'',memo:'',status:{},ai:null,loading:false,error:null});
+const freshAi = () => ({imgS:null,imgB:null,loading:false,result:null,error:null,adopted:{}});
+const S = {
+  screen:'list', pid:null, tab:'live', modal:null,
+  form:{}, scan:freshScan(), ai:freshAi(),
+  cur:{obs:{},inning:'1',set:'W'},
+  open:{}, logLimit:40, flash:false, loading:false, error:null,
+};
+function setPath(path,v){ const ks=path.split('.'); let o=S; for(let i=0;i<ks.length-1;i++) o=o[ks[i]]; o[ks[ks.length-1]]=v; }
+
+// ══════════════════════════════════════════════
+// 描画
+// ══════════════════════════════════════════════
+function render(){
+  const app=document.getElementById('app');
+  app.innerHTML = vHeader() + `<main class="wrap">${S.screen==='list'?vList():vPitcher()}</main>` + (S.screen==='pitcher'?vTabs():'') + (S.modal?vModal():'');
+  S.flash=false;
+  app.querySelectorAll('[data-bind]').forEach(el=>{
+    const evt=(el.tagName==='SELECT'||el.type==='checkbox')?'change':'input';
+    el.addEventListener(evt,()=>setPath(el.dataset.bind, el.type==='number'?Number(el.value):el.value));
+  });
+  syncWake();
+}
+
+function vHeader(){
+  const p=S.screen==='pitcher'?curP():null;
+  return `<header class="hdr">
+    ${p?`<button class="icon-btn" onclick="goList()" aria-label="投手一覧へ戻る">‹</button>`:`<div class="logo" aria-hidden="true">⚾</div>`}
+    <div class="hdr-t">
+      <div class="brand">TELL ALERT</div>
+      <div class="hdr-sub">${p?`${esc(p.name)}・${esc(p.hand)}${p.team?'・'+esc(p.team):''}`:'投手の癖を記録して、本物かどうか確かめる'}</div>
+    </div>
+    <span class="chip ${SET.mode==='ai'?'chip-ai':'chip-off'}">${SET.mode==='ai'?'AI併用':'オフライン'}</span>
+    <button class="icon-btn" onclick="toggleTheme()" aria-label="明るさ切替">${isLight()?'🌙':'☀️'}</button>
+    <button class="icon-btn" onclick="openSettings()" aria-label="設定">⚙️</button>
+  </header>`;
+}
+const isLight = () => SET.theme==='light' || (SET.theme==='auto' && matchMedia('(prefers-color-scheme: light)').matches);
+
+function thumb(id){ const s=imgSrc(id); return s?`<img class="thumb" src="${s}" alt="">`:`<div class="thumb" aria-hidden="true">⚾</div>`; }
+
+// ── 投手一覧 ──
+function vList(){
+  const ps=Store.data.pitchers;
+  let h=`<div class="row-between"><h2 class="sec">登録投手（${ps.length}人）</h2>${ps.length?`<button class="btn btn-main sm" onclick="openReg()">＋ 投手を登録</button>`:''}</div>`;
+  if(!ps.length){
+    h+=`<div class="empty">
+      <div style="font-size:40px">⚾</div>
+      <b>まだ投手が登録されていません</b>
+      <ol class="steps">
+        <li>投手を登録する（名前と投球腕だけでOK）</li>
+        <li>「テル」タブで、気づいた癖を書き込む<br><span class="small">例：グラブの高さ、セットでの手首の角度</span></li>
+        <li>「計測」タブで、1球ごとに「見えたサイン」と「実際の球種」をタップ</li>
+        <li>的中率が上がったテルだけを、打者に伝える</li>
+      </ol>
+      <button class="btn btn-main" onclick="openReg()">＋ 最初の投手を登録</button>
+    </div>`;
+    return h;
+  }
+  ps.forEach(p=>{
+    const ov=overall(p), L=LEVEL[ov.level];
+    h+=`<button class="card pcard lv-${L.c}" onclick="openPitcher('${p.id}')">
+      ${thumb(p.thumbId)}
+      <div class="grow">
+        <div class="pname">${esc(p.name)}<span class="hand">${esc(p.hand)}</span></div>
+        <div class="meta">${p.team?esc(p.team)+'・':''}テル${p.tells.length}件・記録${p.pitches.length}球</div>
+        ${ov.best?`<div class="meta">最有力：${esc(ov.best.tell.part)} ${ov.best.st.k}/${ov.best.st.n}（${pct(ov.best.st.acc)}）</div>`:''}
+      </div>
+      <span class="badge c-${L.c}">${L.icon} ${L.label}</span>
+    </button>`;
+  });
+  return h;
+}
+
+// ── 投手画面 ──
+function vTabs(){
+  const tabs=[['live','⚾','計測'],['tells','📌','テル'],['compare','🖼','比較'],['log','📋','記録']];
+  return `<nav class="tabs">${tabs.map(([k,i,l])=>`<button class="tab ${S.tab===k?'on':''}" onclick="setTab('${k}')"><span class="ti">${i}</span>${l}</button>`).join('')}</nav>`;
+}
+function vPitcher(){
+  const p=curP(); if(!p) return '';
+  const ov=overall(p);
+  return vBanner(ov) + ({live:vLive,tells:vTells,compare:vCompare,log:vLog}[S.tab]||vLive)(p,ov);
+}
+function vBanner(ov){
+  if(lvRank(ov.level)<lvRank('CAUTION')) return '';
+  const L=LEVEL[ov.level];
+  return `<div class="banner c-${L.c} ${S.flash?'pulse':''}" role="alert">
+    <div class="bt">${L.icon} ${L.label}：テルが変わった可能性</div>
+    ${ov.msgs.map(m=>`<div class="bm">・${esc(m.text)}</div>`).join('')}
+    <div class="bm small">打者には「このテルは一旦信用しない」と伝え、他のテルや配球傾向で対応しましょう。</div>
+  </div>`;
+}
+
+// ── 計測タブ（試合中に一番使う画面） ──
+function vLive(p){
+  const tells=sortedTells(p).filter(t=>t.active);
+  const pred=predict(p,S.cur.obs);
+  const last=p.pitches.slice(-5).reverse();
+  return `
+  <div class="card ctx">
+    <select class="sel" data-bind="cur.inning" aria-label="イニング">${INNINGS.map(n=>`<option value="${n}" ${S.cur.inning===n?'selected':''}>${n}回</option>`).join('')}</select>
+    <div class="seg">${[['W','ワインド'],['S','セット']].map(([k,l])=>`<button class="${S.cur.set===k?'on':''}" onclick="setCurSet('${k}')">${l}</button>`).join('')}</div>
+    <span class="count">#${p.pitches.length+1}</span>
+  </div>
+
+  <h3 class="step"><span>1</span>投球前：見えたサインをタップ</h3>
+  ${tells.length?tells.map(t=>vObsRow(p,t)).join(''):`<div class="empty sm">テルがまだ登録されていません。「テル」タブから追加してください。<br>テルが無くても結果だけ記録しておくと、この投手の球種の割合が分かります。</div>`}
+  ${vPrediction(p,pred)}
+
+  <h3 class="step"><span>2</span>投球後：実際の球種をタップ（これで1球記録）</h3>
+  <div class="res-h s">直球系</div>
+  <div class="res-grid">${PITCHES.S.map(k=>`<button class="res s" onclick="recordPitch('S','${k}')">${k}</button>`).join('')}</div>
+  <div class="res-h b">変化球系</div>
+  <div class="res-grid">${PITCHES.B.map(k=>`<button class="res b" onclick="recordPitch('B','${k}')">${k}</button>`).join('')}</div>
+
+  <div class="grid2 mt">
+    <button class="btn sm" onclick="clearObs()">サインを選び直す</button>
+    <button class="btn sm" onclick="undoPitch()" ${p.pitches.length?'':'disabled'}>↶ 直前の1球を取消</button>
+  </div>
+  ${last.length?`<div class="card mt recent"><div class="small" style="font-weight:800;margin-bottom:4px">直近の記録</div>${last.map(x=>`<div>${pitchLine(p,x)}</div>`).join('')}</div>`:''}`;
+}
+function vObsRow(p,t){
+  const st=tellStats(p,t), o=S.cur.obs[t.id];
+  return `<div class="card">
+    <div class="obs-h"><b>${esc(t.part)}</b><span class="tm">${esc(t.timing)}</span>${evBadge(st)}</div>
+    ${t.cue?`<div class="cue">👀 ${esc(t.cue)}</div>`:''}
+    <div class="obs-btns">
+      <button class="ob s ${o==='S'?'on':''}" onclick="setObs('${t.id}','S')"><b>直球サイン</b><small>${esc(short(t.straight,20))}</small></button>
+      <button class="ob b ${o==='B'?'on':''}" onclick="setObs('${t.id}','B')"><b>変化球サイン</b><small>${esc(short(t.breaking,20))}</small></button>
+      <button class="ob q ${o==='?'?'on':''}" onclick="setObs('${t.id}','?')"><b>見えず</b></button>
+    </div>
+  </div>`;
+}
+function vPrediction(p,pred){
+  if(!pred.used.length){
+    if(!p.pitches.length) return `<div class="pred"><div class="pred-l">予測</div><div class="small">サインをタップすると、ここに予測が出ます</div></div>`;
+    return `<div class="pred"><div class="pred-l">サイン未選択：この投手の球種の割合（${p.pitches.length}球）</div>
+      <div class="pred-big" style="font-size:22px"><span class="c-S">直球系 ${pct(pred.prior)}</span>　<span class="c-B">変化球系 ${pct(1-pred.prior)}</span></div></div>`;
+  }
+  if(pred.unverified){
+    if(pred.votes===0) return `<div class="pred"><div class="pred-l">予測（未検証）</div><div class="pred-big" style="font-size:22px">サインが食い違っています</div></div>`;
+    const side=pred.votes>0?'S':'B';
+    return `<div class="pred ${side}"><div class="pred-l">予測（未検証：このテルの記録がまだありません）</div>
+      <div class="pred-big">テル通りなら ${SIDE_NAME[side]}</div><div class="pred-warn">記録を重ねると、当たる確率が表示されます</div></div>`;
+  }
+  const side=pred.probS>=0.5?'S':'B', pr=side==='S'?pred.probS:1-pred.probS;
+  return `<div class="pred ${side}">
+    <div class="pred-l">予測（過去の記録から計算）</div>
+    <div class="pred-big">${SIDE_NAME[side]} <span>${Math.round(pr*100)}%</span></div>
+    <div class="pred-why">${pred.used.map(u=>`${esc(u.tell.part)}＝${u.o==='S'?'直':'変'}（記録${u.n}球）`).join('・')}</div>
+    ${pred.minN<SET.minN?`<div class="pred-warn">記録が${SET.minN}球未満のテルがあるため、参考程度に</div>`:''}
+  </div>`;
+}
+function pitchLine(p,x){
+  const obs=Object.entries(x.obs||{}).map(([id,o])=>{ const t=p.tells.find(tt=>tt.id===id); return t?`${short(t.part,8)}:${o==='S'?'直':o==='B'?'変':'?'}`:null; }).filter(Boolean).join(' ');
+  const res=x.pred? (x.pred===x.actual?'<span class="c-ok">✓的中</span>':'<span class="c-crit">✗外れ</span>') : '';
+  return `#${x.no||''} ${esc(x.inning||'')}回 ${x.set==='S'?'セ':'ワ'}　${esc(obs)||'サインなし'} → <b class="c-${x.actual}">${esc(x.kind)}</b> ${res}`;
+}
+
+// ── テルタブ ──
+function vTells(p){
+  const ts=sortedTells(p);
+  let h=`<div class="row-between"><h2 class="sec">登録テル（${p.tells.length}件）</h2><button class="btn btn-main sm" onclick="openTellEdit()">＋ テルを追加</button></div>
+  <div class="note">的中率は「計測」タブの記録から自動で計算します。<br>
+  <span class="c-ok">有効</span>：いつも多い方の球種を張るより当たっていて、偶然とは考えにくい。<br>
+  <span class="c-warn">有望</span>：当たっているが、まだ偶然の可能性も残る。<br>
+  <span class="c-dim">データ不足・未確認</span>：判断できる記録がまだない、または当たり方が偶然と区別できない。</div>`;
+  if(SET.mode==='ai') h+=vAiDiff(p);
+  if(!ts.length) h+=`<div class="empty sm">まだテルがありません。気づいた癖を「＋ テルを追加」から書き込みましょう。<br>直球の時と変化球の時の違いを、なるべく具体的に（例：グラブが胸の前か、へその前か）。</div>`;
+  ts.forEach(t=>{ h+=vTellCard(p,t); });
+  return h;
+}
+function vTellCard(p,t){
+  const st=tellStats(p,t), open=S.open[t.id];
+  const al=st.alert?`<div class="alert-msg c-${LEVEL[st.alert.level].c}">${LEVEL[st.alert.level].icon} ${esc(st.alert.msg)}</div>`:'';
+  const sp=st.split.filter(s=>s.n>0).map(s=>`${s.m==='W'?'ワインド':'セット'} ${s.k}/${s.n}`).join('・');
+  return `<div class="card tcard ${t.active?'':'inactive'}">
+    <button class="tc-head" onclick="toggleOpen('${t.id}')" aria-expanded="${!!open}">
+      <div class="tc-bar" style="background:${CAT_COLOR[t.category]||'#888'}"></div>
+      <div class="grow">
+        <div class="obs-h"><b>${esc(t.part)}</b><span class="tm">${esc(t.category)}・${esc(t.timing)}・重要度${esc(t.importance)}</span></div>
+        <div class="row" style="flex-wrap:wrap;gap:6px">${evBadge(st)}${t.source==='ai'?'<span class="badge c-S">AI候補</span>':''}${t.active?'':'<span class="badge c-dim">休止中</span>'}</div>
+        <div class="stat-line">
+          <span>的中 <b>${st.k}/${st.n}</b></span>
+          ${st.rec?`<span>直近 <b>${st.rk}/${st.rec}</b></span>`:''}
+          ${st.asked?`<span>見えた率 <b>${pct(st.cov)}</b></span>`:''}
+          ${sp?`<span>${sp}</span>`:''}
+        </div>
+        ${al}
+      </div>
+      <span class="dim">${open?'▲':'▼'}</span>
+    </button>
+    ${open?`<div class="tc-body">
+      <div class="grid2 mt">
+        <div class="sb s"><div class="k">直球の時</div>${esc(t.straight||'—')}${imgSrc(t.imgS)?`<img class="refimg" src="${imgSrc(t.imgS)}" alt="直球時の参考画像">`:''}</div>
+        <div class="sb b"><div class="k">変化球の時</div>${esc(t.breaking||'—')}${imgSrc(t.imgB)?`<img class="refimg" src="${imgSrc(t.imgB)}" alt="変化球時の参考画像">`:''}</div>
+      </div>
+      ${t.cue?`<div class="note mt">👀 打者への指示：${esc(t.cue)}</div>`:''}
+      ${t.baseline?`<div class="note">📝 ${esc(t.baseline)}</div>`:''}
+      ${st.n?`<div class="small mb">基準（多い方を張った場合）${pct(st.p0)}に対して ${pct(st.acc)}。偶然この成績になる確率 約${st.pval<0.001?'0.1%未満':pct(st.pval)}</div>`:''}
+      <div class="grid3">
+        <button class="btn xs" onclick="openTellEdit('${t.id}')">編集</button>
+        <button class="btn xs" onclick="toggleTellActive('${t.id}')">${t.active?'休止する':'再開する'}</button>
+        <button class="btn xs btn-danger" onclick="delTell('${t.id}')">削除</button>
+      </div>
+    </div>`:''}
+  </div>`;
+}
+function vAiDiff(p){
+  const A=S.ai;
+  let h=`<div class="card" style="border-color:var(--S)">
+    <div class="sec c-S mb">🤖 AIでテル候補を探す</div>
+    <div class="note">直球を投げた時と変化球を投げた時の、同じ局面のコマを1枚ずつ選んでください。AIが2枚の違いを候補として挙げます。候補は「未検証」として登録されるので、必ず計測で確かめてください。</div>
+    <div class="grid2">
+      <div><div class="small c-S" style="font-weight:800">直球の時</div>${A.imgS?previewBox(A.imgS,"S.ai.imgS=null;render()"):pickButtonsCompact('aiS')}</div>
+      <div><div class="small c-B" style="font-weight:800">変化球の時</div>${A.imgB?previewBox(A.imgB,"S.ai.imgB=null;render()"):pickButtonsCompact('aiB')}</div>
+    </div>
+    ${A.error?`<div class="alert-msg c-crit">⚠ ${esc(A.error)}</div>`:''}
+    <button class="btn btn-ai full mt" onclick="runAiDiff()" ${A.loading||!A.imgS||!A.imgB?'disabled':''}>${A.loading?'<span class="spin"></span> 分析中…':'🔍 違いを分析'}</button>`;
+  if(A.result){
+    const r=A.result;
+    h+=`<div class="note mt">${esc(r.summary)}</div>`;
+    if(!r.candidates.length) h+=`<div class="small">はっきりした違いは見つかりませんでした。</div>`;
+    r.candidates.forEach((c,i)=>{
+      h+=`<div class="cand">
+        <div class="obs-h"><b>${esc(c.part)}</b><span class="tm">${esc(c.category)}・${esc(c.timing)}</span><span class="badge ${c.confidence==='高'?'c-ok':c.confidence==='中'?'c-warn':'c-dim'}">確からしさ ${esc(c.confidence)}</span></div>
+        <div class="small"><span class="c-S">直球：</span>${esc(c.straight)}</div>
+        <div class="small"><span class="c-B">変化球：</span>${esc(c.breaking)}</div>
+        <div class="small dim">根拠：${esc(c.reason)}</div>
+        <button class="btn xs mt" onclick="adoptCandidate(${i})" ${A.adopted[i]?'disabled':''}>${A.adopted[i]?'✓ 登録済み':'＋ テルとして登録'}</button>
+      </div>`;
+    });
+    h+=`<div class="small mt">⚠ ${esc(r.caution)}</div><div class="small">📷 ${esc(r.shooting_tip)}</div>`;
+  }
+  return h+`</div>`;
+}
+function pickButtonsCompact(target){
+  return `<label class="btn xs full" style="margin-top:4px"><input class="vh" type="file" accept="image/*,video/*" capture="environment" data-target="${target}" onchange="onPick(event)">📷 撮影</label>
+  <label class="btn xs full" style="margin-top:4px"><input class="vh" type="file" accept="image/*,video/*" data-target="${target}" onchange="onPick(event)">🎞 選ぶ</label>`;
+}
+
+// ── 比較タブ（旧スキャン機能） ──
+function vCompare(p){
+  const C=S.scan, tells=sortedTells(p).filter(t=>t.active);
+  let h=`<div class="note">試合の途中でフォームを撮り、登録時の参考画像と並べて目で比べます。投手がテルを修正していないかの確認用です。<br>球数が少ない序盤や、計測ができない打席の補助として使ってください。</div>
+  <div class="card">
+    <div class="sec mb">📸 今回のコマ</div>
+    ${C.img?previewBox(C.img,"S.scan.img=null;render()"):pickButtons('scan')}
+    <div class="grid2 mt">
+      <div class="field" style="margin:0"><label>イニング</label><select data-bind="scan.inning"><option value="">—</option>${INNINGS.map(n=>`<option value="${n}" ${C.inning===n?'selected':''}>${n}回</option>`).join('')}</select></div>
+      <div class="field" style="margin:0"><label>メモ</label><input type="text" data-bind="scan.memo" value="${esc(C.memo)}" placeholder="例：腕の振りが速くなった"></div>
+    </div>
+  </div>`;
+  if(!tells.length){ h+=`<div class="empty sm">比べるテルがありません。先に「テル」タブで登録してください。</div>`; return h+vScanHistory(p); }
+  if(SET.mode==='ai') h+=`${C.error?`<div class="alert-msg c-crit mb">⚠ ${esc(C.error)}</div>`:''}
+    <button class="btn btn-ai full mb" onclick="runAiScan()" ${C.loading||!C.img?'disabled':''}>${C.loading?'<span class="spin"></span> AIが確認中…':'🤖 AIに下書き判定させる'}</button>`;
+  if(C.ai) h+=`<div class="card" style="border-color:var(--S)"><div class="small c-S" style="font-weight:800">AIの見立て（画質：${esc(C.ai.image_quality)}）</div><div class="note" style="margin:4px 0 0">${esc(C.ai.reason)}</div>
+    ${(C.ai.new_findings||[]).map(f=>`<div class="small">⭐ ${esc(f.part)}：${esc(f.desc)}</div>`).join('')}</div>`;
+  tells.forEach(t=>{
+    const s=C.status[t.id], aiC=C.ai?.checks?.find(c=>c.tell_id===t.id);
+    h+=`<div class="card">
+      <div class="obs-h"><b>${esc(t.part)}</b><span class="tm">${esc(t.timing)}</span></div>
+      ${(imgSrc(t.imgS)||imgSrc(t.imgB)||C.img)?`<div class="cmp mt">
+        ${C.img?`<figure><img src="${C.img}" alt="今回"><figcaption>今回</figcaption></figure>`:''}
+        ${imgSrc(t.imgS)?`<figure><img src="${imgSrc(t.imgS)}" alt="直球時"><figcaption class="c-S">登録時：直球</figcaption></figure>`:''}
+        ${imgSrc(t.imgB)?`<figure><img src="${imgSrc(t.imgB)}" alt="変化球時"><figcaption class="c-B">登録時：変化球</figcaption></figure>`:''}
+      </div>`:''}
+      <div class="small mt"><span class="c-S">直球：</span>${esc(t.straight||'—')}　<span class="c-B">変化球：</span>${esc(t.breaking||'—')}</div>
+      ${aiC?`<div class="small c-S mt">🤖 ${STATUS[aiC.status]?.label||''}・${esc(aiC.looks_like)}：${esc(aiC.note)}</div>`:''}
+      <div class="st-btns">${Object.entries(STATUS).map(([k,v])=>`<button class="${s===k?'on '+v.c:''}" onclick="setScanStatus('${t.id}','${k}')">${v.icon}<br>${v.label}</button>`).join('')}</div>
+    </div>`;
+  });
+  const lv=scanLevel(p,C.status);
+  h+=`<button class="btn btn-main full" onclick="saveScan()" ${Object.keys(C.status).length?'':'disabled'}>この比較を保存（判定：${LEVEL[lv].label}）</button>`;
+  return h+vScanHistory(p);
+}
+function vScanHistory(p){
+  if(!p.scans.length) return '';
+  return `<h3 class="step" style="margin-top:20px">比較の履歴（${p.scans.length}回）</h3>`+p.scans.slice().reverse().slice(0,15).map(s=>{
+    const L=LEVEL[s.overall]||LEVEL.CLEAR;
+    return `<div class="card row">
+      ${imgSrc(s.imgId)?`<img class="thumb" src="${imgSrc(s.imgId)}" alt="">`:''}
+      <div class="grow"><span class="badge c-${L.c}">${L.icon} ${L.label}</span> <span class="small">${s.inning?esc(s.inning)+'回・':''}${fmtDate(s.ts)} ${fmtTime(s.ts)}</span>
+        <div class="small">${(s.checks||[]).filter(c=>c.status!=='INTACT').map(c=>`${esc(c.part)}:${STATUS[c.status]?.label||esc(c.status)}`).join('・')||'全テル正常'}</div>
+        ${s.memo?`<div class="small dim">${esc(s.memo)}</div>`:''}</div>
+      <button class="btn xs" onclick="delScan('${s.id}')" aria-label="削除">✕</button>
+    </div>`;
+  }).join('');
+}
+
+// ── 記録タブ ──
+function vLog(p){
+  const H=p.pitches, nS=H.filter(x=>x.actual==='S').length;
+  const withPred=H.filter(x=>x.pred), hits=withPred.filter(x=>x.pred===x.actual).length;
+  const list=H.slice().reverse().slice(0,S.logLimit);
+  return `<div class="kpi">
+      <div><b>${H.length}</b><span>記録した球数</span></div>
+      <div><b>${H.length?pct(nS/H.length):'—'}</b><span>直球系の割合</span></div>
+      <div><b>${withPred.length?pct(hits/withPred.length):'—'}</b><span>予測の的中（${hits}/${withPred.length}）</span></div>
+    </div>
+    <div class="card">
+      <div class="sec mb">📣 打者・ベンチへの共有メモ</div>
+      <pre class="share" id="share-text">${esc(shareText(p))}</pre>
+      <div class="grid2"><button class="btn sm" onclick="copyShare()">コピー</button><button class="btn sm" onclick="exportCsv()">CSVで書き出す</button></div>
+    </div>
+    <div class="row-between"><h2 class="sec">1球ごとの記録</h2><button class="btn xs" onclick="openReg(true)">投手情報を編集</button></div>
+    ${H.length?'':`<div class="empty sm">まだ記録がありません。「計測」タブで1球ずつ記録しましょう。</div>`}
+    <div class="card">${list.map(x=>`<div class="log-row"><span class="n">#${x.no||''}</span><span class="grow">${pitchLine(p,x)}</span><button class="x" onclick="delPitch('${x.id}')" aria-label="この記録を削除">✕</button></div>`).join('')}
+    ${H.length>S.logLimit?`<button class="btn sm full mt" onclick="S.logLimit+=40;render()">もっと見る（残り${H.length-S.logLimit}球）</button>`:''}</div>`;
+}
+function shareText(p){
+  const ov=overall(p), H=p.pitches, nS=H.filter(x=>x.actual==='S').length;
+  const lines=[`【${p.name}（${p.hand}）】記録${H.length}球${H.length?`・直球系${pct(nS/H.length)}`:''}`];
+  const good=ov.items.filter(x=>x.st.ev==='strong'||x.st.ev==='promising').sort((a,b)=>EV_RANK[a.st.ev]-EV_RANK[b.st.ev]);
+  good.forEach(x=>lines.push(`${x.st.ev==='strong'?'◎':'○'} ${x.tell.part}（${x.tell.timing}）：直球＝${x.tell.straight||'—'}／変化球＝${x.tell.breaking||'—'}　的中${x.st.k}/${x.st.n}${x.tell.cue?`\n　👀 ${x.tell.cue}`:''}`));
+  if(!good.length) lines.push('まだ信頼できるテルはありません（記録を続けてください）');
+  ov.msgs.forEach(m=>lines.push(`⚠ ${m.text}`));
+  return lines.join('\n');
+}
+
+// ══════════════════════════════════════════════
+// モーダル
+// ══════════════════════════════════════════════
+function vModal(){
+  const body={settings:vSettings,reg:vReg,tell:vTellEdit}[S.modal];
+  if(!body) return '';
+  return `<div class="modal-bg" onclick="if(event.target===this&&S.modal==='settings')closeModal()"><div class="modal" role="dialog" aria-modal="true">${body()}</div></div>`;
+}
+function mHead(title){ return `<div class="m-head"><b>${title}</b><button class="x" onclick="closeModal()" aria-label="閉じる">✕</button></div>`; }
+
+function vSettings(){
+  const F=S.form;
+  return `${mHead('⚙️ 設定')}
+  <div class="field"><label>動作モード</label>
+    <div class="seg">
+      <button class="${F.mode==='offline'?'on':''}" onclick="S.form.mode='offline';render()">📴 オフライン<br><small>通信不要</small></button>
+      <button class="${F.mode==='ai'?'on':''}" onclick="S.form.mode='ai';render()">🤖 AI併用<br><small>要通信・APIキー</small></button>
+    </div>
+    <div class="help">${F.mode==='offline'
+      ?'記録・的中率・予測・変化検知はすべて端末内で動きます。電波のない球場でも使えます。'
+      :'オフラインの機能に加えて、画像からテル候補を探す・画像比較の下書きをAIに頼めます。AI部分だけ通信と料金がかかります。'}</div>
+  </div>
+  ${F.mode==='ai'?`
+  <div class="field"><label>Anthropic APIキー${SET.apiKey?'（保存済み）':''}</label>
+    <input type="password" data-bind="form.apiKey" value="${esc(F.apiKey)}" placeholder="sk-ant-..." autocomplete="off">
+    <div class="help">キーはこの端末の中だけに保存されます。端末を他人に貸す場合は注意してください。</div></div>
+  <div class="field"><label>AIモデル</label><select data-bind="form.model">${AI_MODELS.map(([v,l])=>`<option value="${v}" ${F.model===v?'selected':''}>${l}</option>`).join('')}</select></div>`:''}
+  <div class="field"><label>画面の明るさ</label>
+    <div class="seg">${[['dark','ダーク'],['light','屋外（明るい）'],['auto','端末に合わせる']].map(([k,l])=>`<button class="${F.theme===k?'on':''}" onclick="S.form.theme='${k}';render()">${l}</button>`).join('')}</div></div>
+  <div class="field"><label>判定の基準</label>
+    <div class="grid3">
+      <div><div class="small">有効判定の最低球数</div><input class="sel" type="number" min="4" max="40" data-bind="form.minN" value="${F.minN}"></div>
+      <div><div class="small">「直近」の球数</div><input class="sel" type="number" min="4" max="20" data-bind="form.win" value="${F.win}"></div>
+      <div><div class="small">警戒ライン（%）</div><input class="sel" type="number" min="20" max="80" data-bind="form.drop" value="${F.drop}"></div>
+    </div>
+    <div class="help">直近の球数を少なくすると変化に早く気づけますが、偶然の外れでも警告が出やすくなります。</div></div>
+  <div class="field"><label>試合中の補助</label>
+    <div class="seg">
+      <button class="${F.wake?'on':''}" onclick="S.form.wake=!S.form.wake;render()">計測中は画面を消さない</button>
+      <button class="${F.haptic?'on':''}" onclick="S.form.haptic=!S.form.haptic;render()">振動で知らせる</button>
+    </div></div>
+  <button class="btn btn-main full mb" onclick="saveSettingsForm()">設定を保存</button>
+  <div class="field"><label>データの保存・移行</label>
+    <div class="grid2">
+      <button class="btn sm" onclick="exportAll()">バックアップを書き出す</button>
+      <label class="btn sm"><input class="vh" type="file" accept="application/json,.json" onchange="importAll(event)">バックアップを読み込む</label>
+    </div>
+    <div class="help" id="usage">チームの別の端末に渡すときも、書き出したファイルを読み込めば同じデータになります。</div></div>
+  <div class="small dim">TELL ALERT v${APP_VERSION}</div>`;
+}
+
+function vReg(){
+  const F=S.form, edit=!!F.id;
+  return `${mHead(edit?'投手情報を編集':'投手を登録')}
+  <div class="field"><label>投手名（必須）</label><input type="text" data-bind="form.name" value="${esc(F.name)}" placeholder="例：○○高校 背番号1"></div>
+  <div class="grid2">
+    <div class="field"><label>投球腕</label><select data-bind="form.hand">${HANDS.map(h=>`<option ${F.hand===h?'selected':''}>${h}</option>`).join('')}</select></div>
+    <div class="field"><label>チーム</label><input type="text" data-bind="form.team" value="${esc(F.team)}" placeholder="任意"></div>
+  </div>
+  <div class="field"><label>メモ</label><textarea data-bind="form.memo" placeholder="例：変化球はスライダー中心。セットでグラブが動く">${esc(F.memo)}</textarea></div>
+  <div class="field"><label>写真（任意・一覧の目印）</label>${F.img?previewBox(F.img,"S.form.img=null;render()"):pickButtons('reg')}</div>
+  <button class="btn btn-main full mb" onclick="saveReg()">${edit?'✓ 保存する':'＋ 登録する'}</button>
+  ${edit?`<button class="btn btn-danger full" onclick="deletePitcher('${F.id}')">この投手のデータを削除</button>`:''}`;
+}
+
+function vTellEdit(){
+  const F=S.form;
+  return `${mHead(F.id?'テルを編集':'テルを追加')}
+  <div class="field"><label>部位・名前（必須）</label><input type="text" data-bind="form.part" value="${esc(F.part)}" placeholder="例：セット時のグラブの高さ"></div>
+  <div class="grid2">
+    <div class="field"><label>部位の分類</label><select data-bind="form.category">${CATEGORIES.map(c=>`<option ${F.category===c?'selected':''}>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>出るタイミング</label><select data-bind="form.timing">${TIMINGS.map(c=>`<option ${F.timing===c?'selected':''}>${c}</option>`).join('')}</select></div>
+  </div>
+  <div class="help mb" style="margin-top:-6px">早いタイミングで出るテルほど、打者が反応する時間を取れます。</div>
+  <div class="field"><label class="c-S">直球の時の見え方</label><textarea data-bind="form.straight" placeholder="例：グラブが胸の高さで止まる">${esc(F.straight)}</textarea>
+    ${F.imgS?previewBox(F.imgS,"S.form.imgS=null;render()"):`<div class="mt">${pickButtons('tellS')}</div>`}</div>
+  <div class="field"><label class="c-B">変化球の時の見え方</label><textarea data-bind="form.breaking" placeholder="例：グラブがへその高さまで下がる">${esc(F.breaking)}</textarea>
+    ${F.imgB?previewBox(F.imgB,"S.form.imgB=null;render()"):`<div class="mt">${pickButtons('tellB')}</div>`}</div>
+  <div class="field"><label>打者への指示（短く）</label><input type="text" data-bind="form.cue" value="${esc(F.cue)}" maxlength="30" placeholder="例：グラブが下がったら変化球"></div>
+  <div class="grid2">
+    <div class="field"><label>重要度</label><select data-bind="form.importance">${IMPORTANCE.map(c=>`<option ${F.importance===c?'selected':''}>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>見やすさ</label><select data-bind="form.visibility">${[1,2,3,4,5].map(v=>`<option value="${v}" ${Number(F.visibility)===v?'selected':''}>${v}：${['','見えにくい','やや見にくい','普通','見やすい','とても見やすい'][v]}</option>`).join('')}</select></div>
+  </div>
+  <div class="field"><label>メモ</label><input type="text" data-bind="form.baseline" value="${esc(F.baseline)}" placeholder="例：一塁側ベンチからだとよく見える"></div>
+  <button class="btn btn-main full" onclick="saveTell()">${F.id?'✓ 保存する':'＋ 追加する'}</button>`;
+}
+
+// ══════════════════════════════════════════════
+// 操作
+// ══════════════════════════════════════════════
+function openSettings(){ S.form={...SET}; S.modal='settings'; render(); showUsage(); }
+function closeModal(){ S.modal=null; S.form={}; render(); }
+function toggleTheme(){ SET.theme=isLight()?'dark':'light'; saveSettings(); applyTheme(); render(); }
+function saveSettingsForm(){
+  const F=S.form;
+  if(F.mode==='ai' && !String(F.apiKey||'').trim()){ toast('AI併用にはAPIキーが必要です','warn'); return; }
+  SET={...SET, mode:F.mode, apiKey:String(F.apiKey||'').trim(), model:F.model, theme:F.theme,
+    minN:clamp(Math.round(Number(F.minN))||8,4,40), win:clamp(Math.round(Number(F.win))||8,4,20), drop:clamp(Math.round(Number(F.drop))||50,20,80),
+    wake:!!F.wake, haptic:!!F.haptic};
+  saveSettings(); applyTheme(); S.modal=null; S.form={}; render(); toast('設定を保存しました','ok');
+}
+async function showUsage(){
+  try{
+    if(!navigator.storage?.estimate) return;
+    const e=await navigator.storage.estimate(); const el=document.getElementById('usage');
+    if(el) el.textContent+=`（使用量 約${(e.usage/1048576).toFixed(1)}MB）`;
+  }catch{}
+}
+
+function openReg(edit=false){
+  const p=edit?curP():null;
+  S.form=p?{id:p.id,name:p.name,team:p.team,hand:p.hand,memo:p.memo,img:p.thumbId}:{name:'',team:'',hand:'右投げ',memo:'',img:null};
+  S.modal='reg'; render();
+}
+async function saveReg(){
+  const F=S.form, name=String(F.name||'').trim();
+  if(!name){ toast('投手名を入力してください','warn'); return; }
+  if(F.id){
+    const p=Store.data.pitchers.find(x=>x.id===F.id); if(!p) return;
+    p.name=name; p.team=F.team||''; p.hand=F.hand; p.memo=F.memo||'';
+    p.thumbId=await commitImg(F.img,p.thumbId);
+  }else{
+    const p=normalizePitcher({name,team:F.team,hand:F.hand,memo:F.memo});
+    p.thumbId=await commitImg(F.img,null);
+    Store.data.pitchers.unshift(p);
+    S.pid=p.id; S.screen='pitcher'; S.tab='tells'; resetWork();
+  }
+  Store.save(); S.modal=null; S.form={}; render();
+  toast(F.id?'保存しました':'登録しました。次はテルを追加しましょう','ok',3000);
+}
+function deletePitcher(id){
+  const p=Store.data.pitchers.find(x=>x.id===id); if(!p) return;
+  if(!confirm(`${p.name} のデータ（記録${p.pitches.length}球を含む）を削除します。元に戻せません。よろしいですか？`)) return;
+  pitcherImgIds(p).forEach(i=>IDB.del(i));
+  Store.data.pitchers=Store.data.pitchers.filter(x=>x.id!==id); Store.save();
+  S.modal=null; goList(); toast('削除しました');
+}
+function resetWork(){ S.cur={obs:{},inning:'1',set:'W'}; S.scan=freshScan(); S.ai=freshAi(); S.open={}; S.logLimit=40; }
+function openPitcher(id){
+  S.pid=id; S.screen='pitcher'; resetWork();
+  const p=curP(); const last=p?.pitches[p.pitches.length-1];
+  if(last){ S.cur.inning=last.inning||'1'; S.cur.set=last.set||'W'; }
+  S.tab=p&&p.tells.length?'live':'tells';
+  render(); window.scrollTo(0,0);
+}
+function goList(){ S.screen='list'; S.pid=null; render(); window.scrollTo(0,0); }
+function setTab(k){ S.tab=k; render(); window.scrollTo(0,0); }
+function toggleOpen(id){ S.open[id]=!S.open[id]; render(); }
+
+// 計測
+function setObs(tid,o){ if(S.cur.obs[tid]===o) delete S.cur.obs[tid]; else S.cur.obs[tid]=o; haptic(10); render(); }
+function setCurSet(k){ S.cur.set=k; render(); }
+function clearObs(){ S.cur.obs={}; render(); }
+function recordPitch(side,kind){
+  const p=curP(); if(!p) return;
+  const before=overall(p).level;
+  const pred=predict(p,S.cur.obs);
+  let predSide=null, predProb=null;
+  if(pred.used.length){
+    if(pred.unverified) predSide=pred.votes>0?'S':pred.votes<0?'B':null;
+    else { predSide=pred.probS>=0.5?'S':'B'; predProb=Math.round(Math.max(pred.probS,1-pred.probS)*100); }
+  }
+  const no=(p.pitches[p.pitches.length-1]?.no||p.pitches.length)+1;
+  p.pitches.push({id:uid(),no,ts:Date.now(),inning:S.cur.inning,set:S.cur.set,obs:{...S.cur.obs},pred:predSide,predProb,actual:side,kind});
+  Store.save();
+  S.cur.obs={};
+  const after=overall(p).level;
+  if(lvRank(after)>lvRank(before) && lvRank(after)>=lvRank('CAUTION')){
+    S.flash=true; haptic([200,100,200,100,300]);
+    toast(`${LEVEL[after].icon} ${LEVEL[after].label}：テルが変わった可能性があります`,'crit',4000);
+  }else{
+    haptic(25);
+    toast(predSide?(predSide===side?`#${no} 記録 ✓ 予測的中`:`#${no} 記録 ✗ 予測外れ`):`#${no} 記録しました`, predSide?(predSide===side?'ok':'warn'):'info',1500);
+  }
+  const jump=S.flash;
+  render();
+  if(jump) window.scrollTo(0,0);
+}
+function undoPitch(){
+  const p=curP(); if(!p||!p.pitches.length) return;
+  const x=p.pitches.pop(); Store.save();
+  S.cur.obs={...x.obs}; render(); toast(`#${x.no||''} を取り消しました（サインは復元）`);
+}
+function delPitch(id){
+  const p=curP(); if(!p) return;
+  if(!confirm('この1球の記録を削除しますか？')) return;
+  p.pitches=p.pitches.filter(x=>x.id!==id); Store.save(); render();
+}
+
+// テル
+function openTellEdit(id){
+  const t=id?curP()?.tells.find(x=>x.id===id):null;
+  S.form=t?{...t}:{category:'グラブ',part:'',timing:'セット・構え',straight:'',breaking:'',cue:'',importance:'中',visibility:3,baseline:'',imgS:null,imgB:null};
+  S.modal='tell'; render();
+}
+async function saveTell(){
+  const F=S.form, p=curP(); if(!p) return;
+  const part=String(F.part||'').trim();
+  if(!part){ toast('部位・名前を入力してください','warn'); return; }
+  if(!String(F.straight||'').trim() && !String(F.breaking||'').trim()){ toast('直球か変化球、どちらかの見え方を書いてください','warn'); return; }
+  const old=F.id?p.tells.find(x=>x.id===F.id):null;
+  const t={...(old||{id:uid(),active:true,source:'manual',createdAt:Date.now()}),
+    part, category:F.category, timing:F.timing, straight:String(F.straight||'').trim(), breaking:String(F.breaking||'').trim(),
+    cue:String(F.cue||'').trim(), importance:F.importance, visibility:Number(F.visibility)||3, baseline:String(F.baseline||'').trim()};
+  t.imgS=await commitImg(F.imgS,old?.imgS); t.imgB=await commitImg(F.imgB,old?.imgB);
+  if(old) p.tells[p.tells.indexOf(old)]=t; else p.tells.push(t);
+  Store.save(); S.modal=null; S.form={}; render(); toast(old?'保存しました':'テルを追加しました','ok');
+}
+function delTell(id){
+  const p=curP(); const t=p?.tells.find(x=>x.id===id); if(!t) return;
+  if(!confirm(`テル「${t.part}」を削除しますか？（このテルの的中記録も見えなくなります）`)) return;
+  IDB.del(t.imgS); IDB.del(t.imgB);
+  p.tells=p.tells.filter(x=>x.id!==id); Store.save(); render();
+}
+function toggleTellActive(id){ const t=curP()?.tells.find(x=>x.id===id); if(!t) return; t.active=!t.active; Store.save(); render(); }
+
+// AI：テル候補
+async function runAiDiff(){
+  const p=curP(); if(!p) return;
+  if(!SET.apiKey){ toast('設定でAPIキーを入力してください','warn'); return; }
+  S.ai.loading=true; S.ai.error=null; S.ai.result=null; S.ai.adopted={}; render();
+  try{
+    S.ai.result=await callClaude([
+      {type:'text',text:'1枚目：直球系を投げた時のコマ'}, imgBlock(S.ai.imgS),
+      {type:'text',text:'2枚目：変化球系を投げた時のコマ'}, imgBlock(S.ai.imgB),
+      {type:'text',text:promptDiff(p)}], DIFF_SCHEMA);
+    if(!Array.isArray(S.ai.result.candidates)) S.ai.result.candidates=[];
+  }catch(e){ S.ai.error=e.message; }
+  S.ai.loading=false; render();
+}
+async function adoptCandidate(i){
+  const p=curP(), c=S.ai.result?.candidates?.[i]; if(!p||!c) return;
+  const t=normalizePitcher({tells:[{...c, id:uid(), source:'ai', importance:c.confidence==='高'?'高':'中', baseline:`AI候補（確からしさ${c.confidence}）：${c.reason}`}]}).tells[0];
+  t.imgS=await storeImg(S.ai.imgS); t.imgB=await storeImg(S.ai.imgB);
+  p.tells.push(t); Store.save(); S.ai.adopted[i]=true; render(); toast('未検証のテルとして登録しました。計測で確かめましょう','ok',3000);
+}
+
+// 比較
+function setScanStatus(tid,k){ if(S.scan.status[tid]===k) delete S.scan.status[tid]; else S.scan.status[tid]=k; render(); }
+async function runAiScan(){
+  const p=curP(); if(!p||!S.scan.img) return;
+  if(!SET.apiKey){ toast('設定でAPIキーを入力してください','warn'); return; }
+  const tells=sortedTells(p).filter(t=>t.active).slice(0,6);
+  const content=[]; let n=0;
+  for(const t of tells){
+    if(n>=8) break;
+    if(imgSrc(t.imgS)){ content.push({type:'text',text:`参考：テル${t.id}「${t.part}」直球の時`},imgBlock(imgSrc(t.imgS))); n++; }
+    if(imgSrc(t.imgB)&&n<8){ content.push({type:'text',text:`参考：テル${t.id}「${t.part}」変化球の時`},imgBlock(imgSrc(t.imgB))); n++; }
+  }
+  if(!n && imgSrc(p.thumbId)){ content.push({type:'text',text:'参考：登録時の投手の画像'},imgBlock(imgSrc(p.thumbId))); }
+  content.push({type:'text',text:'今回のコマ'},imgBlock(S.scan.img),{type:'text',text:promptScan(p,tells)});
+  S.scan.loading=true; S.scan.error=null; render();
+  try{
+    const r=await callClaude(content,SCAN_SCHEMA);
+    S.scan.ai=r;
+    (r.checks||[]).forEach(c=>{ if(STATUS[c.status]&&tells.some(t=>t.id===c.tell_id)) S.scan.status[c.tell_id]=c.status; });
+    toast('AIの下書きを反映しました。目で確認して直してください','ok',3000);
+  }catch(e){ S.scan.error=e.message; }
+  S.scan.loading=false; render();
+}
+async function saveScan(){
+  const p=curP(); if(!p) return;
+  const C=S.scan, lv=scanLevel(p,C.status);
+  const checks=Object.entries(C.status).map(([tid,st])=>({tellId:tid,part:p.tells.find(t=>t.id===tid)?.part||'',status:st,note:C.ai?.checks?.find(c=>c.tell_id===tid)?.note||''}));
+  const changed=checks.filter(c=>c.status!=='INTACT'&&c.status!=='UNKNOWN');
+  const before=overall(p).level;
+  p.scans.push({id:uid(),ts:Date.now(),inning:C.inning,memo:C.memo,imgId:await storeImg(C.img),overall:lv,
+    reason:changed.length?changed.map(c=>`${c.part}が${STATUS[c.status].label}`).join('、'):(C.ai?.reason||'登録時のテルを確認'),checks,source:C.ai?'ai+manual':'manual'});
+  Store.save(); S.scan=freshScan();
+  if(lvRank(lv)>=lvRank('ALERT')&&lvRank(lv)>lvRank(before)){ S.flash=true; haptic([200,100,300]); }
+  render(); window.scrollTo(0,0); toast(`比較を保存しました（${LEVEL[lv].label}）`,lvRank(lv)>=lvRank('ALERT')?'crit':'ok');
+}
+function delScan(id){
+  const p=curP(); const s=p?.scans.find(x=>x.id===id); if(!s) return;
+  if(!confirm('この比較記録を削除しますか？')) return;
+  IDB.del(s.imgId); p.scans=p.scans.filter(x=>x.id!==id); Store.save(); render();
+}
+
+// 共有・書き出し
+async function copyShare(){
+  const text=shareText(curP());
+  try{ await navigator.clipboard.writeText(text); toast('コピーしました。LINEなどに貼り付けできます','ok'); }
+  catch{
+    const r=document.createRange(), el=document.getElementById('share-text'); r.selectNodeContents(el);
+    const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); toast('文字を選択しました。長押しでコピーしてください','warn',3000);
+  }
+}
+async function saveFile(blob,name){
+  const file=new File([blob],name,{type:blob.type});
+  try{ if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name}); return; } }
+  catch(e){ if(e.name==='AbortError') return; }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+}
+const dateTag = () => new Date().toISOString().slice(0,10);
+function exportCsv(){
+  const p=curP(); if(!p) return;
+  const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const head=['番号','日時','回','ワインド/セット',...p.tells.map(t=>t.part),'予測','予測確率','結果(系統)','球種','的中'];
+  const rows=p.pitches.map(x=>[x.no,new Date(x.ts).toLocaleString('ja-JP'),x.inning,x.set==='S'?'セット':'ワインド',
+    ...p.tells.map(t=>({S:'直球サイン',B:'変化球サイン','?':'見えず'}[x.obs?.[t.id]]||'')),
+    x.pred?SIDE_NAME[x.pred]:'',x.predProb??'',SIDE_NAME[x.actual],x.kind,x.pred?(x.pred===x.actual?'○':'×'):'']);
+  const csv='﻿'+[head,...rows].map(r=>r.map(q).join(',')).join('\r\n');
+  saveFile(new Blob([csv],{type:'text/csv'}),`tell-${p.name}-${dateTag()}.csv`);
+}
+function exportAll(){
+  const images={};
+  Store.data.pitchers.forEach(p=>pitcherImgIds(p).forEach(i=>{ if(IMG[i]) images[i]=IMG[i]; }));
+  const json=JSON.stringify({app:'tell-alert',version:2,exportedAt:new Date().toISOString(),pitchers:Store.data.pitchers,images});
+  saveFile(new Blob([json],{type:'application/json'}),`tell-alert-backup-${dateTag()}.json`);
+}
+async function importAll(ev){
+  const f=ev.target.files&&ev.target.files[0]; ev.target.value=''; if(!f) return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(d.app!=='tell-alert'||!Array.isArray(d.pitchers)) throw new Error('TELL ALERTのバックアップではありません');
+    if(!confirm(`${d.pitchers.length}人分のデータを読み込みます。同じ投手がいる場合は、読み込む側の内容で上書きします。よろしいですか？`)) return;
+    for(const [id,v] of Object.entries(d.images||{})){ if(String(v).startsWith('data:image/')) await IDB.put(id,v); }
+    d.pitchers.map(normalizePitcher).forEach(np=>{
+      const i=Store.data.pitchers.findIndex(x=>x.id===np.id);
+      if(i>=0) Store.data.pitchers[i]=np; else Store.data.pitchers.push(np);
+    });
+    Store.save(); S.modal=null; S.form={}; goList(); toast('読み込みました','ok');
+  }catch(e){ toast('読み込めませんでした：'+e.message,'crit',4000); }
+}
+
+// 旧バージョン（tell_alert_final）からの引き継ぎ
+async function migrateLegacy(){
+  if(Store.data.pitchers.length) return;
+  let old=null; try{ old=JSON.parse(localStorage.getItem(LS_OLD)||'null'); }catch{}
+  if(!old||!Array.isArray(old.pitchers)||!old.pitchers.length) return;
+  for(const op of old.pitchers){
+    const p=normalizePitcher({id:op.id,name:op.name,hand:op.hand==='左投げ'?'左投げ':'右投げ',createdAt:Date.now(),
+      tells:(op.tells||[]).map(t=>({...t,source:op.baseline?'ai':'manual'}))});
+    if(op.baselineImg) p.thumbId=await storeImg(op.baselineImg);
+    for(const s of (op.scans||[]).slice().reverse()){
+      p.scans.push({id:s.id||uid(),ts:Date.now(),inning:s.inning&&s.inning!=='—'?s.inning:'',memo:s.memo||'',imgId:s.img?await storeImg(s.img):null,
+        overall:LEVEL[s.result?.overall]?s.result.overall:'CLEAR',reason:s.result?.reason||'',
+        checks:(s.result?.checks||[]).map(c=>({tellId:c.id,part:c.part,status:STATUS[c.status]?c.status:'UNKNOWN',note:c.delta||''})),source:'legacy'});
+    }
+    Store.data.pitchers.push(p);
+  }
+  if(Store.save()) toast(`以前のデータ（${old.pitchers.length}人）を引き継ぎました`,'ok',3500);
+}
+
+// 計測中は画面を消さない
+let wakeLock=null;
+async function syncWake(){
+  const want=SET.wake&&S.screen==='pitcher'&&S.tab==='live'&&document.visibilityState==='visible';
+  try{
+    if(want&&!wakeLock&&'wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release',()=>{wakeLock=null;}); }
+    else if(!want&&wakeLock){ const w=wakeLock; wakeLock=null; await w.release(); }
+  }catch{}
+}
+document.addEventListener('visibilitychange',syncWake);
+matchMedia('(prefers-color-scheme: light)').addEventListener?.('change',()=>{ if(SET.theme==='auto'){ applyTheme(); render(); } });
+
+// ══════════════════════════════════════════════
+// 起動
+// ══════════════════════════════════════════════
+(async function init(){
+  loadSettings(); applyTheme();
+  Store.load();
+  render();
+  await IDB.open();
+  if(!IDB.ok) toast('この環境では画像を保存できません（プライベートブラウズ等）','warn',4000);
+  await IDB.loadAll();
+  await migrateLegacy();
+  render();
+  if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>
