@@ -134,7 +134,7 @@ img{display:block;max-width:100%}
 @keyframes pulse{50%{transform:scale(1.015)}}
 
 /* 下部タブ */
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;display:grid;grid-template-columns:repeat(4,1fr);background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;display:grid;grid-template-columns:repeat(5,1fr);background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
 .tab{min-height:60px;font-size:13px;font-weight:800;color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .tab .ti{line-height:1;display:flex}
 .tab.on{color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
@@ -241,6 +241,40 @@ pre.share{white-space:pre-wrap;font:13px/1.7 inherit;background:var(--bg);border
 .chk{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 2px;border-bottom:1px solid var(--line);cursor:pointer}
 .chk input{width:22px;height:22px;flex-shrink:0;accent-color:var(--accent)}
 .chk b{display:block;font-size:15px}.chk small{font-size:12px;color:var(--sub)}
+.vpanel{position:fixed;inset:0;z-index:180;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+body.vp-open{overflow:hidden}
+.vp-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top)) max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));background:var(--bg);border-bottom:1px solid var(--line)}
+.vp-body{max-width:720px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+.vp-stage{position:relative;background:#000;border-radius:10px;overflow:hidden}
+.vp-stage video{display:block;width:100%;height:auto}
+.vp-stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.vpanel input[type=range]{width:100%;height:36px}
+.vp-ctrl{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}
+.vp-ctrl .btn{padding:6px 4px}
+.vp-set{margin:6px 0;font-size:14px}.vp-set summary{cursor:pointer;font-weight:800;color:var(--sub);min-height:40px;display:flex;align-items:center}
+.vp-marks{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.mk{min-height:56px;border-radius:10px;border:2px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.25;padding:4px}
+.mk b{font-size:13px}.mk small{font-size:11px;color:var(--dim)}
+.mk.on{border-color:var(--accent);background:var(--accent);color:#fff}.mk.on small{color:#fff}
+.vp-row{display:flex;gap:8px;align-items:center;margin-top:8px}.vp-row .seg{flex:1}
+.va-stage{position:relative}
+.va-stage canvas{display:block;width:100%;height:auto;border-radius:8px;background:#000;touch-action:none;image-rendering:auto}
+.va-flip{position:absolute;left:8px;top:8px;font-size:12px;font-weight:800;color:#fff;text-shadow:0 1px 2px #000}
+.va-row{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.va-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.va-roi{border:2px solid var(--S);border-radius:12px;padding:10px}
+.va-crops{display:flex;flex-wrap:wrap;gap:4px}
+.va-crop{width:64px;height:auto;border-radius:4px;background:#000}
+.va-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.va-thumbs figure{margin:0}.va-thumbs img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:6px;background:#000}
+.va-thumbs figcaption{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--sub)}
+.va-thumbs .x{width:28px;height:28px;border-radius:7px;border:1px solid var(--line);color:var(--dim)}
+.cnt{display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%}
+.cnt .sel{min-width:96px}
+.tend{width:100%;border-collapse:collapse;font-size:13px}
+.tend td,.tend th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+.tend th{color:var(--sub);font-weight:800;font-size:12px}
+.tend .bar{height:8px;border-radius:4px;background:var(--B);overflow:hidden}.tend .bar i{display:block;height:100%;background:var(--S)}
 .cand{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;background:var(--bg)}
 
 /* トースト */
@@ -262,7 +296,7 @@ pre.share{white-space:pre-wrap;font:13px/1.7 inherit;background:var(--bg);border
 // ══════════════════════════════════════════════
 // 定数
 // ══════════════════════════════════════════════
-const APP_VERSION = '2.3.0';
+const APP_VERSION = '2.4.0';
 // 共有ページ（claude.ai のアーティファクト等）で開いたとき true。ファイル保存・AI通信・オフライン化が使えない
 const EMBED = !!window.TELL_EMBED;
 const LS_DATA = 'tell_alert_v2';
@@ -278,6 +312,10 @@ const INNINGS = ['1','2','3','4','5','6','7','8','9','10','11','12'];
 const HANDS = ['右投げ','左投げ'];
 const PITCHES = { S:['ストレート','ツーシーム','カット'], B:['スライダー','カーブ','フォーク','チェンジアップ','シュート','その他'] };
 const SIDE_NAME = { S:'直球系', B:'変化球系' };
+const COUNTS = ['0-0','1-0','2-0','3-0','0-1','1-1','2-1','3-1','0-2','1-2','2-2','3-2'];
+// カウントのまとまり（数の少ないカウントでも傾向をつかめるように、近い状況をまとめる）
+function countGroup(c){ if(!c) return null; const [b,s]=c.split('-').map(Number); if(b===0&&s===0) return '初球'; if(s===2) return '2ストライク'; if(b>s) return '打者有利'; if(s>b) return '投手有利'; return '並行'; }
+const COUNT_GROUPS=['初球','投手有利','並行','打者有利','2ストライク'];
 const other = side => side==='S'?'B':'S';
 // テルの型：形が2通り／出たら分かる／動作の速さ
 const TELL_TYPES = [['state','2つの状態','どちらの状態だったかを記録'],['tempo','時間を測る','動作の時間をストップウォッチで']];
@@ -380,6 +418,7 @@ const DEFAULT_SET = {
   win:8,       // 「直近」とみなす球数
   drop:50,     // 直近の的中率がこれ以下なら警戒（%）
   wake:true, haptic:true,
+  ctx:true,    // カウントと走者も記録する
 };
 const AI_MODELS = [
   ['claude-opus-5-5','Claude Opus 5.5（標準・高精度）'],
@@ -514,6 +553,7 @@ function normalizePitcher(p){
     })),
     pitches:Array.isArray(p.pitches)?p.pitches:[],
     scans:Array.isArray(p.scans)?p.scans:[],
+    vp:Array.isArray(p.vp)?p.vp:[],
   };
 }
 const curP = () => Store.data.pitchers.find(p=>p.id===S.pid) || null;
@@ -560,6 +600,7 @@ function pitcherImgIds(p){
   const ids=[p.thumbId];
   p.tells.forEach(t=>ids.push(t.imgS,t.imgB));
   p.scans.forEach(s=>ids.push(s.imgId));
+  (p.vp||[]).forEach(x=>Object.values(x.f||{}).forEach(i=>ids.push(i)));
   return ids.filter(Boolean);
 }
 
@@ -593,7 +634,9 @@ async function onPick(ev){
   const input=ev.target, f=input.files&&input.files[0], target=input.dataset.target;
   input.value='';
   if(!f) return;
-  if((f.type||'').startsWith('video/') || /\.(mov|mp4|m4v|webm|3gp)$/i.test(f.name)){ openFrameModal(f,target); return; }
+  const isVideo=(f.type||'').startsWith('video/') || /\.(mov|mp4|m4v|webm|3gp)$/i.test(f.name);
+  if(target==='vid'){ if(isVideo) openVideoPanel(f); else toast('動画を選んでください','warn'); return; }
+  if(isVideo){ openFrameModal(f,target); return; }
   try{ deliver(target, await fileToJpeg(f)); }catch(e){ toast(e.message,'crit'); }
 }
 function deliver(target,d){
@@ -817,7 +860,12 @@ function obsLabel(t,o,sec){
 // 予測：記録からベイズ推定（単純ベイズ）。記録が無いテルは「テル通りなら」の参考表示にとどめる
 function predict(p){
   const H=p.pitches, nS=H.filter(x=>x.actual==='S').length;
-  const prior=(nS+1)/(H.length+2);
+  let prior=(nS+1)/(H.length+2), ctxNote='';
+  if(SET.ctx){
+    // 同じカウントのまとまり・同じ走者状況の記録があれば、全体の割合に寄せながら（記録4球分の重み）使う
+    const g=countGroup(S.cur.count), same=H.filter(x=>countGroup(x.count)===g&&(x.run||'0')===S.cur.run);
+    if(same.length){ const k=4; prior=(same.filter(x=>x.actual==='S').length+k*prior)/(same.length+k); ctxNote=`${g}・${S.cur.run==='1'?'走者あり':'走者なし'}の傾向（${same.length}球）を含む`; }
+  }
   let lo=Math.log(prior/(1-prior));
   const used=[];
   for(const t of p.tells.filter(x=>x.active)){
@@ -831,7 +879,7 @@ function predict(p){
   const probS=1/(1+Math.exp(-lo));
   const votes=used.reduce((s,u)=>s+(u.o==='S'?1:-1),0);
   const unverified=used.length>0 && used.every(u=>u.n===0);
-  return {prior,probS,used,votes,unverified,minN:used.length?Math.min(...used.map(u=>u.n)):0};
+  return {prior,ctxNote,probS,used,votes,unverified,minN:used.length?Math.min(...used.map(u=>u.n)):0};
 }
 
 function scanLevel(p,status){
@@ -938,8 +986,8 @@ const freshAi = () => ({imgS:null,imgB:null,loading:false,result:null,error:null
 const S = {
   screen:'list', pid:null, tab:'live', modal:null,
   form:{}, scan:freshScan(), ai:freshAi(),
-  cur:{obs:{},tempo:{},inning:'1',set:'W'},
-  open:{}, logLimit:40, flash:false, loading:false, error:null,
+  cur:{obs:{},tempo:{},inning:'1',set:'W',count:'0-0',run:'0'},
+  open:{}, logLimit:40, va:freshVa(), vaD:null, flash:false, loading:false, error:null,
 };
 function setPath(path,v){ const ks=path.split('.'); let o=S; for(let i=0;i<ks.length-1;i++) o=o[ks[i]]; o[ks[ks.length-1]]=v; }
 
@@ -955,6 +1003,7 @@ function render(){
     el.addEventListener(evt,()=>setPath(el.dataset.bind, el.type==='number'?Number(el.value):el.value));
   });
   syncWake();
+  if(S.screen==='pitcher'&&S.tab==='video') vaAfterRender(); else { clearInterval(vaTimer); vaTimer=null; }
 }
 
 function vHeader(){
@@ -1009,13 +1058,13 @@ function vList(){
 
 // ── 投手画面 ──
 function vTabs(){
-  const tabs=[['live','ball','計測'],['tells','pin','テル'],['compare','images','比較'],['log','list','記録']];
+  const tabs=[['live','ball','計測'],['tells','pin','テル'],['video','film','映像'],['compare','images','比較'],['log','list','記録']];
   return `<nav class="tabs">${tabs.map(([k,i,l])=>`<button class="tab ${S.tab===k?'on':''}" onclick="setTab('${k}')"><span class="ti">${ic(i,22)}</span>${l}</button>`).join('')}</nav>`;
 }
 function vPitcher(){
   const p=curP(); if(!p) return '';
   const ov=overall(p);
-  return (p.sample?`<div class="sample-note">これは使い方を試すための<b>サンプルデータ</b>です（実在の投手ではありません）。${esc(p.memo)}</div>`:'') + vBanner(ov) + ({live:vLive,tells:vTells,compare:vCompare,log:vLog}[S.tab]||vLive)(p,ov);
+  return (p.sample?`<div class="sample-note">これは使い方を試すための<b>サンプルデータ</b>です（実在の投手ではありません）。${esc(p.memo)}</div>`:'') + vBanner(ov) + ({live:vLive,tells:vTells,video:vVideo,compare:vCompare,log:vLog}[S.tab]||vLive)(p,ov);
 }
 function vBanner(ov){
   if(lvRank(ov.level)<lvRank('CAUTION')) return '';
@@ -1037,6 +1086,11 @@ function vLive(p){
     <select class="sel" data-bind="cur.inning" aria-label="イニング">${INNINGS.map(n=>`<option value="${n}" ${S.cur.inning===n?'selected':''}>${n}回</option>`).join('')}</select>
     <div class="seg">${[['W','ワインド'],['S','セット']].map(([k,l])=>`<button class="${S.cur.set===k?'on':''}" onclick="setCurSet('${k}')">${l}</button>`).join('')}</div>
     <span class="count">#${p.pitches.length+1}</span>
+    ${SET.ctx?`<div class="cnt">
+      <select class="sel" aria-label="カウント" onchange="S.cur.count=this.value;render()">${COUNTS.map(c=>`<option value="${c}" ${S.cur.count===c?'selected':''}>${c.replace('-','ボール')}ストライク</option>`).join('')}</select>
+      <div class="seg" style="flex:1;min-width:150px">${[['0','走者なし'],['1','走者あり']].map(([k,l])=>`<button class="${S.cur.run===k?'on':''}" onclick="S.cur.run='${k}';render()">${l}</button>`).join('')}</div>
+      <button class="btn xs" onclick="S.cur.count='0-0';render()">次の打者</button>
+    </div>`:''}
   </div>
 
   <h3 class="step"><span>1</span>投球前：見えたサインをタップ</h3>
@@ -1102,7 +1156,7 @@ function vTempo(p,t,st){
 function vPrediction(p,pred){
   if(!pred.used.length){
     if(!p.pitches.length) return `<div class="pred"><div class="pred-l">予測</div><div class="small">サインをタップすると、ここに予測が出ます</div></div>`;
-    return `<div class="pred"><div class="pred-l">サイン未選択：この投手の球種の割合（${p.pitches.length}球）</div>
+    return `<div class="pred"><div class="pred-l">サイン未選択：${pred.ctxNote||`この投手の球種の割合（${p.pitches.length}球）`}</div>
       <div class="pred-big" style="font-size:22px"><span class="c-S">直球系 ${pct(pred.prior)}</span>　<span class="c-B">変化球系 ${pct(1-pred.prior)}</span></div></div>`;
   }
   if(pred.unverified){
@@ -1116,6 +1170,7 @@ function vPrediction(p,pred){
     <div class="pred-l">予測（過去の記録から計算）</div>
     <div class="pred-big">${SIDE_NAME[side]} <span>${Math.round(pr*100)}%</span></div>
     <div class="pred-why">${pred.used.map(u=>`${esc(u.tell.part)}＝${esc(u.label)}（記録${u.n}球）`).join('・')}</div>
+    ${pred.ctxNote?`<div class="pred-why">${esc(pred.ctxNote)}</div>`:''}
     ${pred.minN<SET.minN?`<div class="pred-warn">記録が${SET.minN}球未満のテルがあるため、参考程度に</div>`:''}
   </div>`;
 }
@@ -1126,7 +1181,7 @@ function pitchLine(p,x){
     return o?`${short(t.part,8)}:${obsLabel(t,o)}`:null;
   }).filter(Boolean).join(' ');
   const res=x.pred? (x.pred===x.actual?'<span class="c-ok">○的中</span>':'<span class="c-crit">×外れ</span>') : '';
-  return `#${x.no||''} ${esc(x.inning||'')}回 ${x.set==='S'?'セット':'ワインド'}　${esc(obs)||'サインなし'} → <b class="c-${x.actual}">${esc(x.kind)}</b> ${res}`;
+  return `#${x.no||''} ${esc(x.inning||'')}回 ${x.set==='S'?'セット':'ワインド'}${x.count?` ${esc(x.count)}${x.run==='1'?' 走者あり':''}`:''}　${esc(obs)||'サインなし'} → <b class="c-${x.actual}">${esc(x.kind)}</b> ${res}`;
 }
 
 // ── テルタブ ──
@@ -1292,10 +1347,26 @@ function vLog(p){
       <pre class="share" id="share-text">${esc(shareText(p))}</pre>
       <div class="grid2"><button class="btn sm" onclick="copyShare()">コピー</button><button class="btn sm" onclick="exportCsv()">CSVで書き出す</button></div>
     </div>
+    ${vTendency(p)}
     <div class="row-between"><h2 class="sec">1球ごとの記録</h2><button class="btn xs" onclick="openReg(true)">投手情報を編集</button></div>
     ${H.length?'':`<div class="empty sm">まだ記録がありません。「計測」タブで1球ずつ記録しましょう。</div>`}
     <div class="card">${list.map(x=>`<div class="log-row"><span class="n">#${x.no||''}</span><span class="grow">${pitchLine(p,x)}</span><button class="x" onclick="delPitch('${x.id}')" aria-label="この記録を削除">×</button></div>`).join('')}
     ${H.length>S.logLimit?`<button class="btn sm full mt" onclick="S.logLimit+=40;render()">もっと見る（残り${H.length-S.logLimit}球）</button>`:''}</div>`;
+}
+// 配球の傾向（状況ごとの直球の割合）
+function vTendency(p){
+  const H=p.pitches; if(!H.length) return '';
+  const row=(label,xs)=>{ if(!xs.length) return ''; const r=xs.filter(x=>x.actual==='S').length/xs.length;
+    return `<tr><td>${label}</td><td>${xs.length}</td><td style="width:40%"><div class="bar"><i style="width:${Math.round(r*100)}%"></i></div></td><td><span class="c-S">${pct(r)}</span>／<span class="c-B">${pct(1-r)}</span></td></tr>`; };
+  const prev=H.map((x,i)=>({x,pv:H[i-1]&&H[i-1].inning===x.inning?H[i-1].actual:null}));
+  const hasCtx=H.some(x=>x.count);
+  return `<div class="card"><div class="sec mb">配球の傾向</div>
+    <table class="tend"><tr><th>状況</th><th>球数</th><th colspan="2">直球系／変化球系</th></tr>
+    ${hasCtx?COUNT_GROUPS.map(g=>row(g,H.filter(x=>countGroup(x.count)===g))).join('')+row('走者なし',H.filter(x=>x.count&&x.run!=='1'))+row('走者あり',H.filter(x=>x.run==='1')):''}
+    ${row('ワインド',H.filter(x=>x.set!=='S'))}${row('セット',H.filter(x=>x.set==='S'))}
+    ${row('前の球が直球系',prev.filter(y=>y.pv==='S').map(y=>y.x))}${row('前の球が変化球系',prev.filter(y=>y.pv==='B').map(y=>y.x))}
+    </table>
+    <div class="help">球数が少ない状況の割合は、偶然に左右されやすいので参考程度にしてください。${hasCtx?'':'カウントと走者は、設定で記録をオンにすると集計します。'}</div></div>`;
 }
 function shareText(p){
   const ov=overall(p), H=p.pitches, nS=H.filter(x=>x.actual==='S').length;
@@ -1355,7 +1426,9 @@ function vSettings(){
     <div class="seg">
       <button class="${F.wake?'on':''}" onclick="S.form.wake=!S.form.wake;render()">計測中は画面を消さない</button>
       <button class="${F.haptic?'on':''}" onclick="S.form.haptic=!S.form.haptic;render()">振動で知らせる</button>
-    </div></div>
+    </div>
+    <div class="seg mt"><button class="${F.ctx?'on':''}" onclick="S.form.ctx=!S.form.ctx;render()">カウントと走者も記録する</button></div>
+    <div class="help">カウントや走者の有無で球種の傾向が変わる投手がいるため、記録すると予測に反映します。記録の手間を減らしたい場合は切ってください。</div></div>
   <button class="btn btn-main full mb" onclick="saveSettingsForm()">設定を保存</button>
   <div class="field"><label>データの保存・移行</label>
     <div class="grid2">
@@ -1472,7 +1545,7 @@ function saveSettingsForm(){
   if(F.mode==='ai' && !String(F.apiKey||'').trim()){ toast('AI併用にはAPIキーが必要です','warn'); return; }
   SET={...SET, mode:F.mode, apiKey:String(F.apiKey||'').trim(), model:F.model, theme:F.theme,
     minN:clamp(Math.round(Number(F.minN))||8,4,40), win:clamp(Math.round(Number(F.win))||8,4,20), drop:clamp(Math.round(Number(F.drop))||50,20,80),
-    wake:!!F.wake, haptic:!!F.haptic};
+    wake:!!F.wake, haptic:!!F.haptic, ctx:!!F.ctx};
   saveSettings(); applyTheme(); S.modal=null; S.form={}; render(); toast('設定を保存しました','ok');
 }
 async function showUsage(){
@@ -1512,7 +1585,7 @@ function deletePitcher(id){
     S.modal=null; goList(); toast('削除しました');
   });
 }
-function resetWork(){ stopTick(); S.cur={obs:{},tempo:{},inning:'1',set:'W'}; S.scan=freshScan(); S.ai=freshAi(); S.open={}; S.logLimit=40; }
+function resetWork(){ stopTick(); S.va=freshVa(); S.vaD=null; S.cur={obs:{},tempo:{},inning:'1',set:'W',count:'0-0',run:'0'}; S.scan=freshScan(); S.ai=freshAi(); S.open={}; S.logLimit=40; }
 function openPitcher(id){
   S.pid=id; S.screen='pitcher'; resetWork();
   const p=curP(); const last=p?.pitches[p.pitches.length-1];
@@ -1566,7 +1639,8 @@ function recordPitch(side,kind){
   }
   const no=(p.pitches[p.pitches.length-1]?.no||p.pitches.length)+1;
   const tempo={}; for(const [tid,c] of Object.entries(S.cur.tempo)) if(c.sec!=null) tempo[tid]=c.sec;
-  p.pitches.push({id:uid(),no,ts:Date.now(),inning:S.cur.inning,set:S.cur.set,obs:{...S.cur.obs},tempo,pred:predSide,predProb,actual:side,kind});
+  p.pitches.push({id:uid(),no,ts:Date.now(),inning:S.cur.inning,set:S.cur.set,obs:{...S.cur.obs},tempo,pred:predSide,predProb,actual:side,kind,
+    ...(SET.ctx?{count:S.cur.count,run:S.cur.run}:{})});
   Store.save();
   S.cur.obs={}; S.cur.tempo={};
   const after=overall(p).level;
@@ -1730,8 +1804,8 @@ const dateTag = () => new Date().toISOString().slice(0,10);
 function exportCsv(){
   const p=curP(); if(!p) return;
   const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
-  const head=['番号','日時','回','ワインド/セット',...p.tells.map(t=>t.part),'予測','予測確率','結果(系統)','球種','的中'];
-  const rows=p.pitches.map(x=>[x.no,new Date(x.ts).toLocaleString('ja-JP'),x.inning,x.set==='S'?'セット':'ワインド',
+  const head=['番号','日時','回','カウント','走者','ワインド/セット',...p.tells.map(t=>t.part),'予測','予測確率','結果(系統)','球種','的中'];
+  const rows=p.pitches.map(x=>[x.no,new Date(x.ts).toLocaleString('ja-JP'),x.inning,x.count||'',x.count?(x.run==='1'?'あり':'なし'):'',x.set==='S'?'セット':'ワインド',
     ...p.tells.map(t=>{ const v=x.tempo?.[t.id]; if(typeof v==='number') return v.toFixed(2); const o=x.obs?.[t.id]; return o?obsLabel(t,o):''; }),
     x.pred?SIDE_NAME[x.pred]:'',x.predProb??'',SIDE_NAME[x.actual],x.kind,x.pred?(x.pred===x.actual?'○':'×'):'']);
   const body=[head,...rows].map(r=>r.map(q).join(',')).join('\r\n');
@@ -1760,6 +1834,390 @@ async function importAll(ev){
       Store.save(); S.modal=null; S.form={}; goList(); toast('読み込みました','ok');
     },false);
   }catch(e){ toast('読み込めませんでした：'+e.message,'crit',4000); }
+}
+
+// ══════════════════════════════════════════════
+// 映像分析
+//   同じ位置から撮った1本の動画で、投球ごとに同じ局面のコマを切り出して比べる。
+//   ・コマを重ねて、ずれを目で確かめる（重ね表示・ちらつき比較・差分）
+//   ・画面をマス目に分け、直球と変化球を見分けられる場所を自動で探す
+//   ・局面の印から、動作の時間をコマ単位で測る
+//   動画そのものは保存しない（大きすぎるため）。切り出したコマ（縮小JPEG）と時刻だけを保存する。
+// ══════════════════════════════════════════════
+const VA_W=160;            // 解析に使う横幅（画素）。小さいほど速いが細部は落ちる
+const VA_CELL=16;          // 自動探索のマス目の一辺（解析画像上の画素）
+const VA_SHIFT=6;          // 手ぶれ補正で探すずれの範囲（解析画像上の画素）
+const VA_DISP=480;         // 保存・表示用のコマの横幅
+const VA_MIN_EACH=3;       // 解析に必要な、直球・変化球それぞれの球数
+const FPS_OPTS=[30,60,120,240], SLOW_OPTS=[1,2,4,8];
+const PHASE_OF_POINT={'返球を受けた':'サイン交換・準備','サインを見始めた':'サイン交換・準備','セット完了':'セット・構え',
+  '始動（足を上げ始める）':'始動・足上げ','足が一番高い所':'始動・足上げ','前足の着地':'トップ','リリース':'リリース直前'};
+const V={url:null,name:'',fps:30,slow:1,cur:{t:{},f:{},set:'W'},ghost:{mode:'none',phase:'',alpha:0.45},ghostImg:null};
+
+// ── 動画パネル（描画のたびに作り直さないよう、#app の外に置く） ──
+function openVideoPanel(file){
+  closeVideoPanel(true);
+  V.url=URL.createObjectURL(file); V.name=file.name||'動画';
+  V.cur={t:{},f:{},set:V.cur?.set||'W'};
+  const el=document.createElement('div'); el.id='vpanel'; el.className='vpanel'; el.setAttribute('lang','ja');
+  el.innerHTML=`
+  <div class="vp-head"><button class="icon-btn" onclick="closeVideoPanel()" aria-label="映像分析に戻る">${ic('back',24)}</button>
+    <div class="grow"><b>投球を切り出す</b><div class="small" id="vp-count"></div></div></div>
+  <div class="vp-body">
+    <div class="vp-stage"><video id="vv" playsinline muted preload="auto" src="${V.url}"></video><canvas id="vghost" aria-hidden="true"></canvas></div>
+    <input id="vslider" type="range" min="0" max="0" step="0.001" value="0" aria-label="再生位置">
+    <div class="ftime" id="vtime">読み込み中…</div>
+    <div class="vp-ctrl">
+      <button class="btn sm" onclick="vpStep(-10)">←10</button><button class="btn sm" onclick="vpStep(-1)">←1</button>
+      <button class="btn sm" id="vplay" onclick="vpPlay()">再生 1/4</button>
+      <button class="btn sm" onclick="vpStep(1)">1→</button><button class="btn sm" onclick="vpStep(10)">10→</button>
+    </div>
+    <details class="vp-set"><summary>コマ数・重ね表示の設定</summary>
+      <div class="grid2 mt">
+        <div class="field"><label>動画のコマ数（1秒あたり）</label><select class="sel" onchange="V.fps=Number(this.value);vpTime()">${FPS_OPTS.map(f=>`<option ${V.fps===f?'selected':''}>${f}</option>`).join('')}</select></div>
+        <div class="field"><label>スロー撮影の倍率</label><select class="sel" onchange="V.slow=Number(this.value);vpTime()">${SLOW_OPTS.map(f=>`<option value="${f}" ${V.slow===f?'selected':''}>${f===1?'等速':f+'倍スロー'}</option>`).join('')}</select></div>
+      </div>
+      <div class="help">スロー撮影の動画が実際より遅く再生される場合は、その倍率を選ぶと、時間を実際の秒数に直して計算します。機種によって保存のされ方が違うので、分からなければ等速のままにしてください。</div>
+      <div class="field mt"><label>重ね表示（前の投球のコマを薄く重ねる）</label>
+        <div class="grid2">
+          <select class="sel" id="vg-mode" onchange="V.ghost.mode=this.value;vpGhost()">
+            <option value="none">重ねない</option><option value="prev">直前に保存した投球</option><option value="S">直球の平均</option><option value="B">変化球の平均</option></select>
+          <select class="sel" id="vg-phase" onchange="V.ghost.phase=this.value;vpGhost()"></select>
+        </div>
+        <input type="range" min="0.1" max="0.9" step="0.05" value="${V.ghost.alpha}" oninput="V.ghost.alpha=Number(this.value);vpDrawGhost()" aria-label="重ねる濃さ">
+      </div>
+    </details>
+    <div class="step"><span>1</span>局面のコマで印を付ける（1つ以上）</div>
+    <div class="vp-marks" id="vp-marks"></div>
+    <div class="vp-row"><div class="seg" id="vp-set"></div><button class="btn sm" onclick="vpClearMarks()">印を消す</button></div>
+    <div class="step"><span>2</span>球種を押して保存</div>
+    <div class="res-h s">直球系</div><div class="res-grid">${PITCHES.S.map(k=>`<button class="res s" onclick="vpSave('S','${k}')">${k}</button>`).join('')}</div>
+    <div class="res-h b">変化球系</div><div class="res-grid">${PITCHES.B.map(k=>`<button class="res b" onclick="vpSave('B','${k}')">${k}</button>`).join('')}</div>
+    <div class="help mt">同じ位置・同じズームで撮った動画を使ってください。カメラが動いたりズームが変わったりすると、癖ではない違いが出てしまいます。</div>
+  </div>`;
+  document.body.appendChild(el);
+  document.body.classList.add('vp-open');
+  const v=document.getElementById('vv'), s=document.getElementById('vslider');
+  v.addEventListener('loadedmetadata',()=>{ s.max=v.duration||0; v.currentTime=Math.min(0.05,v.duration||0); vpTime(); vpGhost(); });
+  ['timeupdate','seeked'].forEach(e=>v.addEventListener(e,vpTime));
+  v.addEventListener('pause',()=>{ const b=document.getElementById('vplay'); if(b) b.textContent='再生 1/4'; });
+  v.addEventListener('error',()=>toast('この動画形式は読み込めませんでした','crit',4000));
+  s.addEventListener('input',()=>{ v.pause(); v.currentTime=parseFloat(s.value)||0; });
+  vpUpdate();
+}
+function closeVideoPanel(silent){
+  const el=document.getElementById('vpanel'); if(el) el.remove();
+  document.body.classList.remove('vp-open');
+  if(V.url){ URL.revokeObjectURL(V.url); V.url=null; }
+  if(!silent) render();
+}
+const vpFrame = t => Math.round(t*V.fps);
+function vpTime(){
+  const v=document.getElementById('vv'), s=document.getElementById('vslider'), el=document.getElementById('vtime'); if(!v||!el) return;
+  s.value=v.currentTime;
+  el.textContent=`${vpFrame(v.currentTime)}コマ目（${v.currentTime.toFixed(3)}秒）・1コマ＝実際の${(1000/(V.fps*V.slow)).toFixed(1)}ミリ秒`;
+}
+function vpStep(d){ const v=document.getElementById('vv'); if(!v) return; v.pause(); v.currentTime=clamp(v.currentTime+d/V.fps,0,v.duration||0); }
+function vpPlay(){ const v=document.getElementById('vv'), b=document.getElementById('vplay'); if(!v) return;
+  if(v.paused){ v.playbackRate=0.25; v.play().catch(()=>{}); b.textContent='停止'; } else v.pause(); }
+function vpUpdate(){
+  const p=curP(); if(!p) return;
+  const c=document.getElementById('vp-count');
+  if(c){ const nS=p.vp.filter(x=>x.actual==='S').length; c.textContent=`保存済み ${p.vp.length}球（直球${nS}・変化球${p.vp.length-nS}）・${V.name}`; }
+  const m=document.getElementById('vp-marks');
+  if(m) m.innerHTML=TEMPO_POINTS.map((pt,i)=>{ const t=V.cur.t[pt];
+    return `<button class="mk ${t!=null?'on':''}" onclick="vpMark(${i})"><b>${esc(pointName(pt))}</b><small>${t!=null?vpFrame(t)+'コマ目':'印なし'}</small></button>`; }).join('');
+  const st=document.getElementById('vp-set');
+  if(st) st.innerHTML=[['W','ワインド'],['S','セット']].map(([k,l])=>`<button class="${V.cur.set===k?'on':''}" onclick="V.cur.set='${k}';vpUpdate()">${l}</button>`).join('');
+  const gp=document.getElementById('vg-phase');
+  if(gp){ const have=TEMPO_POINTS.filter(pt=>p.vp.some(x=>x.f?.[pt]));
+    if(!V.ghost.phase||!have.includes(V.ghost.phase)) V.ghost.phase=have[0]||'';
+    gp.innerHTML=have.length?have.map(pt=>`<option value="${esc(pt)}" ${V.ghost.phase===pt?'selected':''}>${esc(pointName(pt))}</option>`).join(''):'<option value="">（まだ保存したコマがありません）</option>'; }
+}
+function vpMark(i){
+  const v=document.getElementById('vv'); if(!v||!v.videoWidth){ toast('まだ動画を読み込み中です','warn'); return; }
+  const pt=TEMPO_POINTS[i];
+  V.cur.t[pt]=v.currentTime; V.cur.f[pt]=drawToJpeg(v,v.videoWidth,v.videoHeight,VA_DISP,0.78);
+  haptic(10); vpUpdate();
+  if(V.ghost.mode!=='none'&&V.ghost.phase!==pt){ V.ghost.phase=pt; vpGhost(); }
+}
+function vpClearMarks(){ V.cur.t={}; V.cur.f={}; vpUpdate(); }
+async function vpSave(side,kind){
+  const p=curP(); if(!p) return;
+  const pts=Object.keys(V.cur.t); if(!pts.length){ toast('先に局面の印を1つ以上付けてください','warn'); return; }
+  const f={}; for(const pt of pts) f[pt]=await storeImg(V.cur.f[pt]);
+  p.vp.push({id:uid(),ts:Date.now(),src:V.name,fps:V.fps,slow:V.slow,set:V.cur.set,actual:side,kind,t:{...V.cur.t},f});
+  Store.save(); V.cur={t:{},f:{},set:V.cur.set};
+  haptic(25); toast(`${p.vp.length}球目を保存しました（${kind}）`,'ok',1500); vpUpdate(); vpGhost();
+}
+// 重ね表示
+async function vpGhost(){
+  const p=curP(), mode=V.ghost.mode, ph=V.ghost.phase; V.ghostImg=null;
+  if(p&&mode!=='none'&&ph){
+    const xs=p.vp.filter(x=>x.f?.[ph]&&IMG[x.f[ph]]);
+    let srcs=[];
+    if(mode==='prev'){ const last=xs[xs.length-1]; if(last) srcs=[IMG[last.f[ph]]]; }
+    else srcs=xs.filter(x=>x.actual===mode).map(x=>IMG[x.f[ph]]);
+    if(srcs.length) V.ghostImg=await averageImage(srcs);
+  }
+  vpDrawGhost();
+}
+function vpDrawGhost(){
+  const c=document.getElementById('vghost'), v=document.getElementById('vv'); if(!c||!v) return;
+  c.width=VA_DISP; c.height=Math.round(VA_DISP*((v.videoHeight||9)/(v.videoWidth||16)));
+  const g=c.getContext('2d'); g.clearRect(0,0,c.width,c.height);
+  if(V.ghostImg){ g.globalAlpha=V.ghost.alpha; g.drawImage(V.ghostImg,0,0,c.width,c.height); g.globalAlpha=1; }
+}
+// 複数のコマの平均（色付き）を作る
+async function averageImage(srcs,crop){
+  const ims=await Promise.all(srcs.map(loadImage));
+  const w=crop?crop.w:ims[0].naturalWidth, h=crop?crop.h:ims[0].naturalHeight;
+  const c=document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d',{willReadFrequently:true});
+  const acc=new Float32Array(w*h*4);
+  ims.forEach((im,i)=>{
+    g.clearRect(0,0,w,h);
+    if(crop){ const s=crop.shift?.[i]||{dx:0,dy:0}; g.drawImage(im,crop.x+s.dx,crop.y+s.dy,w,h,0,0,w,h); }
+    else g.drawImage(im,0,0,w,h);
+    const d=g.getImageData(0,0,w,h).data; for(let k=0;k<d.length;k++) acc[k]+=d[k];
+  });
+  const out=g.createImageData(w,h); for(let k=0;k<acc.length;k++) out.data[k]=acc[k]/ims.length;
+  g.putImageData(out,0,0); return c;
+}
+
+// ── 解析の計算 ──
+const VA_CACHE={};
+async function grayOf(src,w,h){
+  const im=await loadImage(src);
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const g=c.getContext('2d',{willReadFrequently:true}); g.drawImage(im,0,0,w,h);
+  const d=g.getImageData(0,0,w,h).data, out=new Float32Array(w*h);
+  for(let i=0;i<w*h;i++) out[i]=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];
+  return out;
+}
+// 手ぶれ補正：基準のコマに一番よく重なる上下左右のずれを探す
+function bestShift(ref,img,w,h,R){
+  let best={dx:0,dy:0,e:Infinity};
+  for(let dy=-R;dy<=R;dy++) for(let dx=-R;dx<=R;dx++){
+    let e=0,n=0;
+    for(let y=R;y<h-R;y+=2) for(let x=R;x<w-R;x+=2){ e+=Math.abs(ref[y*w+x]-img[(y+dy)*w+(x+dx)]); n++; }
+    e/=n; if(e<best.e) best={dx,dy,e};
+  }
+  return best;
+}
+function shifted(img,w,h,dx,dy){
+  const out=new Float32Array(w*h);
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const sx=clamp(x+dx,0,w-1), sy=clamp(y+dy,0,h-1); out[y*w+x]=img[sy*w+sx]; }
+  return out;
+}
+function normalized(a){ const m=mean(a); let v=0; for(const x of a) v+=(x-m)**2; const s=Math.sqrt(v/a.length)||1; return a.map(x=>(x-m)/s); }
+// 1球ずつ抜いて、残りの直球の平均・変化球の平均のどちらに近いかで当てる（後出しの当てはめを防ぐ）
+function looNearest(feats,lab){
+  const n=feats.length, d=feats[0].length, sS=new Float32Array(d), sB=new Float32Array(d); let nS=0,nB=0;
+  feats.forEach((f,i)=>{ const s=lab[i]==='S'?sS:sB; for(let k=0;k<d;k++) s[k]+=f[k]; lab[i]==='S'?nS++:nB++; });
+  let hit=0;
+  feats.forEach((f,i)=>{
+    const isS=lab[i]==='S', cs=isS?nS-1:nS, cb=isS?nB:nB-1; if(cs<1||cb<1) return;
+    let dS=0,dB=0;
+    for(let k=0;k<d;k++){ const ms=(sS[k]-(isS?f[k]:0))/cs, mb=(sB[k]-(isS?0:f[k]))/cb; dS+=(f[k]-ms)**2; dB+=(f[k]-mb)**2; }
+    if((dS<dB?'S':'B')===lab[i]) hit++;
+  });
+  return hit;
+}
+function regionFeats(norm,w,r){ return norm.map(a=>{ const f=new Float32Array(r.w*r.h); let k=0; for(let y=r.y;y<r.y+r.h;y++) for(let x=r.x;x<r.x+r.w;x++) f[k++]=a[y*w+x]; return f; }); }
+function judge(k,n,lab,alpha){
+  const nS=lab.filter(x=>x==='S').length, p0=Math.max(nS/n,1-nS/n,0.5), pval=binomTail(k,n,p0);
+  return {k,n,acc:k/n,p0,pval,ev:pval<alpha?'strong':pval<0.05?'promising':'weak'};
+}
+async function vaData(p,phase){
+  const items=p.vp.filter(x=>x.f?.[phase]&&IMG[x.f[phase]]);
+  const key=phase+'|'+items.map(x=>x.id+x.actual).join(',');
+  if(VA_CACHE[key]) return VA_CACHE[key];
+  const lab=items.map(x=>x.actual), nS=lab.filter(x=>x==='S').length, nB=lab.length-nS;
+  if(nS<VA_MIN_EACH||nB<VA_MIN_EACH) return {items,nS,nB,short:true};
+  const im0=await loadImage(IMG[items[0].f[phase]]);
+  const w=VA_W, h=Math.max(VA_CELL*2,Math.round(VA_W*im0.naturalHeight/im0.naturalWidth));
+  const raw=[]; for(const x of items) raw.push(await grayOf(IMG[x.f[phase]],w,h));
+  const shifts=raw.map(g=>bestShift(raw[0],g,w,h,VA_SHIFT));
+  const aligned=raw.map((g,i)=>shifted(g,w,h,shifts[i].dx,shifts[i].dy));
+  const norm=aligned.map(normalized);
+  // 画素ごとの差（ばらつきに比べて差が大きい場所ほど赤く表示）
+  const N=w*h, mS=new Float32Array(N), mB=new Float32Array(N), vS=new Float32Array(N), vB=new Float32Array(N), mAll=new Float32Array(N), rS=new Float32Array(N), rB=new Float32Array(N);
+  norm.forEach((a,i)=>{ const isS=lab[i]==='S'; for(let k=0;k<N;k++){ (isS?mS:mB)[k]+=a[k]/(isS?nS:nB); mAll[k]+=aligned[i][k]/lab.length; (isS?rS:rB)[k]+=aligned[i][k]/(isS?nS:nB); } });
+  norm.forEach((a,i)=>{ const isS=lab[i]==='S'; for(let k=0;k<N;k++){ const d=a[k]-(isS?mS:mB)[k]; (isS?vS:vB)[k]+=d*d/Math.max(1,(isS?nS:nB)-1); } });
+  const tmap=new Float32Array(N); let tmax=0;
+  for(let k=0;k<N;k++){ tmap[k]=Math.abs(mS[k]-mB[k])/Math.sqrt(vS[k]/nS+vB[k]/nB+0.02); if(tmap[k]>tmax) tmax=tmap[k]; }
+  // マス目ごとに、直球と変化球を見分けられるかを調べる
+  const cells=[], gx=Math.floor(w/VA_CELL), gy=Math.floor(h/VA_CELL);
+  for(let cy=0;cy<gy;cy++) for(let cx=0;cx<gx;cx++){
+    const r={x:cx*VA_CELL,y:cy*VA_CELL,w:VA_CELL,h:VA_CELL};
+    cells.push({...r,...judge(looNearest(regionFeats(norm,w,r),lab),lab.length,lab,0.05/(gx*gy))});
+  }
+  const res={items,lab,nS,nB,w,h,shifts,norm,tmap,tmax,mAll,rS,rB,cells,alpha:0.05/(gx*gy)};
+  VA_CACHE[key]=res; return res;
+}
+// 動作の時間：局面の印のすべての組み合わせで、直球と変化球を見分けられるか
+function vaTiming(p){
+  const rows=[];
+  for(let a=0;a<TEMPO_POINTS.length;a++) for(let b=a+1;b<TEMPO_POINTS.length;b++){
+    const A=TEMPO_POINTS[a], B=TEMPO_POINTS[b];
+    const xs=p.vp.filter(x=>x.t?.[A]!=null&&x.t?.[B]!=null&&x.t[B]>x.t[A]).map(x=>({v:(x.t[B]-x.t[A])/(x.slow||1),s:x.actual,step:1/((x.fps||30)*(x.slow||1))}));
+    const sS=xs.filter(x=>x.s==='S').map(x=>x.v), sB=xs.filter(x=>x.s==='B').map(x=>x.v);
+    if(sS.length<VA_MIN_EACH||sB.length<VA_MIN_EACH) continue;
+    let hit=0;
+    xs.forEach((x,i)=>{ const oS=xs.filter((y,j)=>j!==i&&y.s==='S').map(y=>y.v), oB=xs.filter((y,j)=>j!==i&&y.s==='B').map(y=>y.v);
+      if(!oS.length||!oB.length) return; const mS=mean(oS), mB=mean(oB), thr=(mS+mB)/2;
+      const pred=(x.v<thr)===(mB<mS)?'B':'S'; if(pred===x.s) hit++; });
+    rows.push({A,B,mS:mean(sS),mB:mean(sB),dS:sd(sS),dB:sd(sB),step:Math.max(...xs.map(x=>x.step)),...judge(hit,xs.length,xs.map(x=>x.s),1)});
+  }
+  const alpha=0.05/Math.max(1,rows.length);
+  rows.forEach(r=>{ r.ev=r.pval<alpha?'strong':r.pval<0.05?'promising':'weak'; });
+  return rows.sort((x,y)=>x.pval-y.pval);
+}
+
+// ── 映像タブ ──
+function freshVa(){ return {phase:'',view:'heat',roi:null,xf:0.5}; }
+function vVideo(p){
+  const vp=p.vp, nS=vp.filter(x=>x.actual==='S').length;
+  const phases=TEMPO_POINTS.filter(pt=>vp.some(x=>x.f?.[pt]));
+  if(!S.va.phase||!phases.includes(S.va.phase)) S.va.phase=phases.sort((a,b)=>vp.filter(x=>x.f?.[b]).length-vp.filter(x=>x.f?.[a]).length)[0]||'';
+  let h=`<div class="card">
+    <div class="sec mb">映像から投球を比べる</div>
+    <div class="note">同じ位置から撮った試合やブルペンの動画を読み込み、投球ごとに同じ局面のコマを切り出します。直球と変化球のコマを重ねて、わずかなずれを探します。</div>
+    ${pickButtons('vid')}
+    <div class="small mt">保存済み ${vp.length}球（直球${nS}・変化球${vp.length-nS}）。続きは同じ動画をもう一度開いて追加できます。</div>
+  </div>`;
+  if(!vp.length) return h+`<div class="empty sm">
+    <b>使い方</b>
+    <ol class="steps">
+      <li>動画を開き、1球目の「セット完了」などのコマで印を付ける</li>
+      <li>実際の球種を押して保存する。これを投球の数だけ繰り返す</li>
+      <li>直球と変化球が${VA_MIN_EACH}球ずつ貯まると、違いのある場所と時間を自動で探します</li>
+    </ol>
+    局面の印は、比べたい局面だけでも構いません。時間を測るには、2つ以上の局面に印を付けてください。</div>`;
+  h+=`<div class="card">
+    <div class="row-between" style="margin:0 0 8px"><div class="sec">形の違いを探す</div>
+      <select class="sel" style="width:auto" aria-label="比べる局面" onchange="S.va.phase=this.value;S.va.roi=null;render()">${phases.map(pt=>`<option value="${esc(pt)}" ${S.va.phase===pt?'selected':''}>${esc(pointName(pt))}（${vp.filter(x=>x.f?.[pt]).length}球）</option>`).join('')}</select></div>
+    <div class="seg mb">${[['heat','違いの場所'],['flip','ちらつき比較'],['blend','重ねる'],['S','直球の平均'],['B','変化球の平均']].map(([k,l])=>`<button class="${S.va.view===k?'on':''}" onclick="S.va.view='${k}';render()">${l}</button>`).join('')}</div>
+    <div class="va-stage"><canvas id="va-canvas"></canvas><div class="va-flip" id="va-flip"></div></div>
+    ${S.va.view==='blend'?`<input type="range" min="0" max="1" step="0.01" value="${S.va.xf}" oninput="S.va.xf=Number(this.value);vaDraw()" aria-label="直球と変化球の割合"><div class="row-between small" style="margin:0"><span class="c-S">直球の平均</span><span class="c-B">変化球の平均</span></div>`:''}
+    <div class="help">画像の上を指でなぞると、その範囲だけで直球と変化球を見分けられるかを調べます。</div>
+    <div id="va-result" class="mt"><div class="small">計算中…</div></div>
+  </div>`;
+  const rows=vaTiming(p);
+  h+=`<div class="card"><div class="sec mb">動作の時間（コマ単位）</div>`;
+  if(!rows.length) h+=`<div class="small">2つ以上の局面に印を付けた投球が、直球・変化球${VA_MIN_EACH}球ずつ貯まると表示します。</div>`;
+  else h+=`<div class="note">局面の印のすべての組み合わせで、直球と変化球の時間を比べ、見分けられる順に並べています。調べる組み合わせが多いほど、「有効」の基準を厳しくしています。</div>`+rows.slice(0,8).map(r=>`
+    <div class="va-row">
+      <div class="grow"><b>${esc(pointName(r.A))}→${esc(pointName(r.B))}</b>
+        <div class="small"><span class="c-S">直球 ${r.mS.toFixed(3)}秒</span>（±${r.dS.toFixed(3)}）・<span class="c-B">変化球 ${r.mB.toFixed(3)}秒</span>（±${r.dB.toFixed(3)}）・差 ${(Math.abs(r.mS-r.mB)*1000).toFixed(0)}ミリ秒（1コマ＝${(r.step*1000).toFixed(1)}ミリ秒）</div>
+        <div class="small">1球ずつ抜いて当てると ${r.k}/${r.n}（基準${pct(r.p0)}）</div></div>
+      <div class="va-side">${vaBadge(r)}<button class="btn xs" onclick="vaTempoTell('${esc(r.A)}','${esc(r.B)}')">項目に登録</button></div>
+    </div>`).join('');
+  h+=`</div>`;
+  if(S.va.phase){
+    const xs=vp.filter(x=>x.f?.[S.va.phase]);
+    h+=`<div class="card"><div class="sec mb">${esc(pointName(S.va.phase))}のコマ一覧</div>
+      ${['S','B'].map(sd=>`<div class="res-h ${sd.toLowerCase()}">${SIDE_NAME[sd]}（${xs.filter(x=>x.actual===sd).length}球）</div>
+      <div class="va-thumbs">${xs.filter(x=>x.actual===sd).map(x=>`<figure><img src="${imgSrc(x.f[S.va.phase])}" alt="${esc(x.kind)}"><figcaption>${esc(x.kind)}<button class="x" onclick="delVp('${x.id}')" aria-label="この投球を削除">×</button></figcaption></figure>`).join('')}</div>`).join('')}
+    </div>`;
+  }
+  return h;
+}
+function vaBadge(r){ return r.ev==='strong'?`<span class="badge c-ok">有効 ${pct(r.acc)}</span>`:r.ev==='promising'?`<span class="badge c-warn">有望 ${pct(r.acc)}</span>`:`<span class="badge c-dim">未確認 ${pct(r.acc)}</span>`; }
+let vaTimer=null;
+async function vaAfterRender(){
+  clearInterval(vaTimer); vaTimer=null;
+  const p=curP(), box=document.getElementById('va-result'); if(!p||!box||!S.va.phase) return;
+  const phase=S.va.phase, d=await vaData(p,phase);
+  if(S.tab!=='video'||S.va.phase!==phase||!document.getElementById('va-result')) return;
+  if(d.short){ document.getElementById('va-result').innerHTML=`<div class="small">この局面は直球${d.nS}球・変化球${d.nB}球です。それぞれ${VA_MIN_EACH}球以上になると、違いを探せます。</div>`; vaDraw(d); return; }
+  S.vaD=d; vaDraw(d); vaBindRoi(d); vaShowResult(d);
+  if(S.va.view==='flip'){ let on=false; vaTimer=setInterval(()=>{ on=!on; vaDraw(d,on?'B':'S'); },550); }
+}
+function vaDraw(d=S.vaD,force){
+  const c=document.getElementById('va-canvas'); if(!c||!d) return;
+  if(d.short){ const x=d.items[d.items.length-1]; if(!x) return; loadImage(IMG[x.f[S.va.phase]]).then(im=>{ c.width=im.naturalWidth; c.height=im.naturalHeight; c.getContext('2d').drawImage(im,0,0); }); return; }
+  const {w,h}=d, g=c.getContext('2d'); c.width=w; c.height=h;
+  const img=g.createImageData(w,h), view=force||S.va.view, flip=document.getElementById('va-flip');
+  if(flip) flip.textContent=view==='flip'?'':(force?SIDE_NAME[force]+'の平均':'');
+  for(let k=0;k<w*h;k++){
+    let v=view==='S'?d.rS[k]:view==='B'?d.rB[k]:view==='blend'?d.rS[k]*(1-S.va.xf)+d.rB[k]*S.va.xf:d.mAll[k];
+    let r=v,gg=v,b=v;
+    if(view==='heat'){ const a=Math.pow(Math.min(1,d.tmap[k]/(d.tmax||1)),1.6)*0.85; r=v*(1-a)+255*a; gg=v*(1-a)+40*a; b=v*(1-a)+40*a; }
+    img.data[k*4]=r; img.data[k*4+1]=gg; img.data[k*4+2]=b; img.data[k*4+3]=255;
+  }
+  g.putImageData(img,0,0);
+  if(view==='heat'){
+    g.lineWidth=1;
+    d.cells.filter(x=>x.ev!=='weak').forEach(x=>{ g.strokeStyle=x.ev==='strong'?'#2fd27a':'#f5b52e'; g.strokeRect(x.x+0.5,x.y+0.5,x.w-1,x.h-1); });
+  }
+  if(S.va.roi){ const r=S.va.roi; g.strokeStyle='#4f95ff'; g.lineWidth=1.5; g.strokeRect(r.x+0.5,r.y+0.5,r.w-1,r.h-1); }
+}
+function vaBindRoi(d){
+  const c=document.getElementById('va-canvas'); if(!c) return;
+  let st=null;
+  const pos=e=>{ const b=c.getBoundingClientRect(); return {x:clamp(Math.round((e.clientX-b.left)/b.width*d.w),0,d.w-1),y:clamp(Math.round((e.clientY-b.top)/b.height*d.h),0,d.h-1)}; };
+  c.onpointerdown=e=>{ e.preventDefault(); c.setPointerCapture(e.pointerId); st=pos(e); };
+  c.onpointermove=e=>{ if(!st) return; const q=pos(e); S.va.roi={x:Math.min(st.x,q.x),y:Math.min(st.y,q.y),w:Math.max(2,Math.abs(q.x-st.x)),h:Math.max(2,Math.abs(q.y-st.y))}; vaDraw(d); };
+  c.onpointerup=e=>{ if(!st) return; const q=pos(e);
+    if(Math.abs(q.x-st.x)<3&&Math.abs(q.y-st.y)<3){ const cell=d.cells.find(x=>st.x>=x.x&&st.x<x.x+x.w&&st.y>=x.y&&st.y<x.y+x.h); S.va.roi=cell?{x:cell.x,y:cell.y,w:cell.w,h:cell.h}:null; }
+    st=null; vaDraw(d); vaShowResult(d); };
+}
+function vaShowResult(d){
+  const box=document.getElementById('va-result'); if(!box) return;
+  const top=d.cells.slice().sort((a,b)=>a.pval-b.pval||b.acc-a.acc).slice(0,4);
+  const nGood=d.cells.filter(x=>x.ev!=='weak').length;
+  let h=`<div class="small mb">直球${d.nS}球・変化球${d.nB}球を、手ぶれを補正して重ねました（ずれの補正 最大${Math.max(...d.shifts.map(s=>Math.max(Math.abs(s.dx),Math.abs(s.dy))))}画素）。
+    赤いほど、直球と変化球の差がばらつきより大きい場所です。枠は1球ずつ抜いて当てたときに見分けられたマス目です（<span class="c-ok">緑＝有効</span>・<span class="c-warn">黄＝有望</span>）。</div>`;
+  if(!nGood) h+=`<div class="small mb">今のところ、偶然と区別できるほどはっきり見分けられるマス目はありません。球数を増やすか、別の局面を試してください。</div>`;
+  h+=`<div class="small" style="font-weight:800">見分けやすい順</div>`+top.map((x,i)=>`<div class="va-row"><div class="grow">マス目${i+1}（左から${x.x/VA_CELL+1}・上から${x.y/VA_CELL+1}）<div class="small">1球ずつ抜いて当てると ${x.k}/${x.n}（基準${pct(x.p0)}）</div></div>
+    <div class="va-side">${vaBadge(x)}<button class="btn xs" onclick="S.va.roi={x:${x.x},y:${x.y},w:${x.w},h:${x.h}};vaDraw();vaShowResult(S.vaD)">選ぶ</button></div></div>`).join('');
+  if(S.va.roi){
+    const r=S.va.roi, j=judge(looNearest(regionFeats(d.norm,d.w,r),d.lab),d.lab.length,d.lab,d.alpha);
+    h+=`<div class="va-roi mt"><div class="row-between" style="margin:0"><b>選んだ範囲</b>${vaBadge(j)}</div>
+      <div class="small">1球ずつ抜いて当てると ${j.k}/${j.n}（基準${pct(j.p0)}・偶然この成績になる確率 約${j.pval<0.001?'0.1%未満':(j.pval*100).toFixed(1)+'%'}）</div>
+      <div class="small mb">なぞって選んだ範囲は、何度も選び直すと偶然よく見える範囲に当たりやすくなります。マス目の判定と合わせて見てください。</div>
+      ${['S','B'].map(sd=>`<div class="res-h ${sd.toLowerCase()}">${SIDE_NAME[sd]}</div><div class="va-crops">${d.items.map((x,i)=>x.actual===sd?`<canvas class="va-crop" data-i="${i}" title="${esc(x.kind)}"></canvas>`:'').join('')}</div>`).join('')}
+      <div class="help">赤く出た場所が、ボールや打者・捕手など投手の癖と関係のないものでないか、必ず目で確かめてください。</div>
+      <button class="btn btn-main full mt" onclick="vaRoiTell()">この範囲を観察項目に登録</button></div>`;
+  }
+  box.innerHTML=h;
+  if(S.va.roi) vaDrawCrops(d);
+}
+async function vaDrawCrops(d){
+  const r=S.va.roi, k=VA_DISP/d.w, pad=4;
+  for(const c of document.querySelectorAll('.va-crop')){
+    const i=Number(c.dataset.i), x=d.items[i], s=d.shifts[i], im=await loadImage(IMG[x.f[S.va.phase]]);
+    const kk=im.naturalWidth/d.w, sx=(r.x-pad+s.dx)*kk, sy=(r.y-pad+s.dy)*kk, sw=(r.w+pad*2)*kk, sh=(r.h+pad*2)*kk;
+    c.width=Math.round(sw); c.height=Math.round(sh); c.getContext('2d').drawImage(im,sx,sy,sw,sh,0,0,c.width,c.height);
+  }
+}
+async function vaRoiTell(){
+  const p=curP(), d=S.vaD, r=S.va.roi; if(!p||!d||!r) return;
+  const pad=4, mk=async side=>{
+    const idx=d.items.map((x,i)=>i).filter(i=>d.items[i].actual===side);
+    const im0=await loadImage(IMG[d.items[idx[0]].f[S.va.phase]]), kk=im0.naturalWidth/d.w;
+    const crop={x:Math.round((r.x-pad)*kk),y:Math.round((r.y-pad)*kk),w:Math.round((r.w+pad*2)*kk),h:Math.round((r.h+pad*2)*kk),shift:idx.map(i=>({dx:Math.round(d.shifts[i].dx*kk),dy:Math.round(d.shifts[i].dy*kk)}))};
+    const c=await averageImage(idx.map(i=>IMG[d.items[i].f[S.va.phase]]),crop);
+    const big=document.createElement('canvas'); big.width=Math.max(160,c.width); big.height=Math.round(big.width*c.height/c.width);
+    big.getContext('2d').drawImage(c,0,0,big.width,big.height); return big.toDataURL('image/jpeg',0.85);
+  };
+  const imgS=await mk('S'), imgB=await mk('B');
+  S.form={type:'state',category:'その他',part:`${pointName(S.va.phase)}の注目範囲`,timing:PHASE_OF_POINT[S.va.phase]||'セット・構え',
+    la:'直球の時の形',lb:'変化球の時の形',map:'aS',hint:'映像分析で、直球と変化球で見え方が違った範囲です。下の参考画像（左が直球・右が変化球の平均）を見比べ、見たままの言葉に直してください。',
+    straight:'',breaking:'',action:'',side:'B',tStart:TP_START,tEnd:TP_END,dir:'auto',cue:'',importance:'中',visibility:3,baseline:'映像分析で見つけた範囲',imgS,imgB,_ph:''};
+  S.modal='tell'; render();
+}
+function vaTempoTell(A,B){
+  const p=curP(); if(!p) return;
+  const x=normalizePitcher({tells:[{type:'tempo',category:'テンポ・リズム',part:`${pointName(A)}から${pointName(B)}の時間`,tStart:A,tEnd:B,dir:'auto',
+    hint:'映像分析で、直球と変化球で時間に差があった区間です。計測画面のストップウォッチで試合中も確かめてください。',importance:'中',visibility:3}]}).tells[0];
+  if(p.tells.some(t=>t.type==='tempo'&&t.tStart===A&&t.tEnd===B)){ toast('同じ区間の項目がすでにあります'); return; }
+  p.tells.push(x); Store.save(); render(); toast('時間の観察項目に登録しました','ok');
+}
+function delVp(id){
+  const p=curP(), x=p?.vp.find(y=>y.id===id); if(!x) return;
+  askConfirm(`映像の${x.kind}の投球を削除します。`,'削除する',()=>{ Object.values(x.f||{}).forEach(i=>IDB.del(i)); p.vp=p.vp.filter(y=>y.id!==id); Store.save(); render(); toast('削除しました'); });
 }
 
 // サンプル投手（使い方を試すための例。実在の投手ではない）
