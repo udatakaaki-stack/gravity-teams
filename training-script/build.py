@@ -156,7 +156,7 @@ def build_html():
       <div class='kicker'>研修シナリオ台本</div>
       <h1>少年期に大切な<br>姿勢・休息・動き・視る力</h1>
       <div><span class='rev'>改訂版</span></div>
-      <p>{esc(SUBTITLE)}</p><p>{esc(SPEAKER)}</p>
+      <p>{esc(SUBTITLE)}</p>
       <img src='slides/s-01.png'>
     </section>""")
 
@@ -180,7 +180,7 @@ def build_html():
       <div>ふつうの書体の文章は、そのまま声に出して読める話し言葉です。</div>
       <div><span class='tag t-note'>進行</span>動き、間の取り方、問いかけなどのメモです。読み上げません。</div>
       <div><span class='tag t-prep'>準備</span>本番前にやっておくことです。</div>
-      <div><span class='tag t-fill'>要記入</span>宇田さんご自身の言葉を書き込む欄です。</div>
+      <div><span class='tag t-fill'>要記入</span>講師ご自身の言葉を書き込む欄です。</div>
       <div><span class='tag rev'>改訂</span>今回の改訂で追加・変更したところです。</div>
       <div><span class='meta'><span class='clock'>開始 12:30</span></span>研修の開始から何分何秒の時点でこのスライドに入るかの目安です。</div>
       <h3 style='margin-top:5mm'>話すときの心がけ</h3>
@@ -217,7 +217,7 @@ def build_html():
     tagmap = {"必須": "must", "必須（確認）": "must", "推奨": "rec", "要判断": "ask"}
     out.append("<section class='page'><h2 class='sec-title'>付録　スライド修正リスト</h2>"
                "<p class='lead'>PowerPoint側で直してほしい箇所です。「必須」は本番前に必ず、「推奨」はできれば、"
-               "「要判断」は宇田さんのご判断でお願いします。</p>"
+               "「要判断」は講師のご判断でお願いします。</p>"
                "<table><tr><th>番号</th><th>スライド</th><th>区分</th><th>内容</th></tr>")
     for i, (no, level, what) in enumerate(SLIDE_FIXES, 1):
         out.append(f"<tr><td>{i}</td><td class='nowrap'>{esc(no)}</td>"
