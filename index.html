@@ -238,6 +238,9 @@ pre.share{white-space:pre-wrap;font:13px/1.7 inherit;background:var(--bg);border
 .dlg-msg{font-size:15px;line-height:1.8;margin-bottom:16px;white-space:pre-wrap}
 .dlg textarea{width:100%;min-height:200px;font:12px/1.5 ui-monospace,monospace;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);margin-bottom:10px}
 .sample-note{border:2px dashed var(--warn);color:var(--text);border-radius:14px;padding:10px 14px;margin-bottom:10px;font-size:13px;line-height:1.7}
+.chk{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+.chk input{width:22px;height:22px;flex-shrink:0;accent-color:var(--accent)}
+.chk b{display:block;font-size:15px}.chk small{font-size:12px;color:var(--sub)}
 .cand{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;background:var(--bg)}
 
 /* トースト */
@@ -259,17 +262,17 @@ pre.share{white-space:pre-wrap;font:13px/1.7 inherit;background:var(--bg);border
 // ══════════════════════════════════════════════
 // 定数
 // ══════════════════════════════════════════════
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '2.3.0';
 // 共有ページ（claude.ai のアーティファクト等）で開いたとき true。ファイル保存・AI通信・オフライン化が使えない
 const EMBED = !!window.TELL_EMBED;
 const LS_DATA = 'tell_alert_v2';
 const LS_SET = 'tell_alert_settings_v2';
 const LS_OLD = 'tell_alert_final'; // 旧バージョンのデータ（引き継ぎ用）
 
-const CATEGORIES = ['グラブ','握り・手首','肘','肩甲骨・肩','腰・骨盤','ステップ','頭・目線','テンポ・リズム','その他'];
-const CAT_COLOR = {'グラブ':'#f27020','握り・手首':'#20c060','肘':'#f0a020','肩甲骨・肩':'#e84040','腰・骨盤':'#06b0c8','ステップ':'#8060f0','頭・目線':'#e040b0','テンポ・リズム':'#a080f0','その他':'#7a90a8'};
+const CATEGORIES = ['グラブ','握り・手首','肘','肩甲骨・肩','腕の振り','腰・骨盤','脚・足上げ','ステップ','体の向き','頭・目線','準備動作','テンポ・リズム','その他'];
+const CAT_COLOR = {'グラブ':'#f27020','握り・手首':'#20c060','肘':'#f0a020','肩甲骨・肩':'#e84040','腰・骨盤':'#06b0c8','ステップ':'#8060f0','頭・目線':'#e040b0','テンポ・リズム':'#a080f0','その他':'#7a90a8','腕の振り':'#d05030','脚・足上げ':'#5070f0','体の向き':'#30a090','準備動作':'#a0a040'};
 // 打者が使えるのは「リリースより前」に出るテルだけなので、フォロースルーは選択肢から外している
-const TIMINGS = ['セット・構え','始動・足上げ','テイクバック','トップ','リリース直前'];
+const TIMINGS = ['サイン交換・準備','セット・構え','始動・足上げ','テイクバック','トップ','リリース直前'];
 const IMPORTANCE = ['高','中','低'];
 const INNINGS = ['1','2','3','4','5','6','7','8','9','10','11','12'];
 const HANDS = ['右投げ','左投げ'];
@@ -277,15 +280,82 @@ const PITCHES = { S:['ストレート','ツーシーム','カット'], B:['ス�
 const SIDE_NAME = { S:'直球系', B:'変化球系' };
 const other = side => side==='S'?'B':'S';
 // テルの型：形が2通り／出たら分かる／動作の速さ
-const TELL_TYPES = [['pair','形が違う','直球と変化球で形が変わる'],['presence','出たら分かる','癖が出た・出ないで見分ける'],['tempo','動作の速さ','モーションの時間を測る']];
-const TEMPO_POINTS = ['セット完了','始動（足を上げ始める）','足が一番高い所','前足の着地','リリース'];
+const TELL_TYPES = [['state','2つの状態','どちらの状態だったかを記録'],['tempo','時間を測る','動作の時間をストップウォッチで']];
+const LEGACY_TYPES = {pair:'形が違う（旧）',presence:'出たら分かる（旧）'};
+const TEMPO_POINTS = ['返球を受けた','サインを見始めた','セット完了','始動（足を上げ始める）','足が一番高い所','前足の着地','リリース'];
+const TP_START='始動（足を上げ始める）', TP_END='前足の着地';
 const pointName = s => String(s||'').replace(/（.*?）/,'');
 const TEMPO_MIN_EACH = 3; // 境目を決めるのに必要な、直球・変化球それぞれの球数
-const TEMPLATES = [
-  {label:'グラブを斜めに動かす → 直球', type:'presence', category:'グラブ', part:'グラブを斜めに動かす', action:'グラブを少し斜めに動かす', side:'S', cue:'グラブが斜めなら直球'},
-  {label:'モーションが速くなる → 変化球', type:'tempo', category:'テンポ・リズム', part:'モーションの速さ', tStart:'始動（足を上げ始める）', tEnd:'前足の着地', dir:'Bfast', cue:'動きが速ければ変化球'},
-  {label:'アゴを引く → 変化球', type:'presence', category:'頭・目線', part:'アゴを引く', action:'アゴを引く', side:'B', cue:'アゴを引いたら変化球'},
+
+// ── 観察項目カタログ ──
+// 投球動作を局面ごとに分け、目で見て2つの状態に分けられる点・時間を測れる点を候補として並べたもの。
+// 「この項目がテルになる」という意味ではない。どれが球種と結びつくかは、計測の記録で確かめる。
+const PHASES = [
+  {key:'prep',  name:'準備・サイン交換', timing:'サイン交換・準備'},
+  {key:'set',   name:'セット・構え',     timing:'セット・構え'},
+  {key:'lift',  name:'始動・足上げ',     timing:'始動・足上げ'},
+  {key:'back',  name:'テイクバック',     timing:'テイクバック'},
+  {key:'rel',   name:'トップからリリース', timing:'リリース直前'},
+  {key:'tempo', name:'テンポ・間合い',   timing:'始動・足上げ'},
 ];
+const ST=(ph,category,part,la,lb,hint='')=>({ph,category,part,type:'state',la,lb,hint});
+const TM=(ph,category,part,tStart,tEnd,hint='')=>({ph,category,part,type:'tempo',tStart,tEnd,hint});
+const CATALOG = [
+  // 準備・サイン交換
+  ST('prep','準備動作','サインへの首振り','振った','振らない','捕手のサインに首を振ったかどうか'),
+  ST('prep','準備動作','プレートを踏む位置','一塁側','三塁側','投手板のどこを踏んで構えたか'),
+  ST('prep','握り・手首','グラブの中で握りを探る','探る','探らない','サインを見た後、グラブの中で手が動くか'),
+  ST('prep','準備動作','ロジン・帽子などを触る','触る','触らない','投球前の決まった動作の有無'),
+  ST('prep','頭・目線','サインを見る姿勢','深くかがむ','浅い','サインをのぞき込む前かがみの深さ'),
+  TM('prep','頭・目線','サインを見る時間','サインを見始めた','セット完了','サインを見始めてから構え終わるまで'),
+  // セット・構え
+  ST('set','グラブ','グラブの高さ','胸の前','ベルト付近'),
+  ST('set','グラブ','グラブの角度','立てる','寝かせる','グラブの指先が上を向くか、横を向くか'),
+  ST('set','グラブ','グラブのふくらみ','ふくらむ','閉じている','握りによってグラブの形が変わるか'),
+  ST('set','グラブ','グラブから指を出す','出す','出さない','人差し指などをグラブの外に出しているか'),
+  ST('set','グラブ','グラブと体の距離','体に付ける','体から離す'),
+  ST('set','握り・手首','グラブの中の手首の角度','立っている','寝ている','グラブの中に入れた手の手首の向き'),
+  ST('set','握り・手首','握り替えの動き','ある','ない','構えてから手が動いて握り直すか'),
+  ST('set','握り・手首','前腕・手首の筋の浮き','浮く','浮かない','握りの強さや指の開きで前腕の見え方が変わるか'),
+  ST('set','肘','肘の張り','張る','締める'),
+  ST('set','肩甲骨・肩','肩の高さ・傾き','水平','傾く'),
+  ST('set','体の向き','スタンスの幅','広い','狭い'),
+  ST('set','頭・目線','アゴ・顔の角度','引く','引かない'),
+  ST('set','頭・目線','目線','捕手を見る','下・手元を見る'),
+  ST('set','頭・目線','口元・呼吸','口が開く・息を吐く','閉じている'),
+  TM('set','テンポ・リズム','セットの静止時間','セット完了','始動（足を上げ始める）','構えて止まってから動き出すまで'),
+  // 始動・足上げ
+  ST('lift','脚・足上げ','足を上げる高さ','高い','低い'),
+  ST('lift','脚・足上げ','足上げの勢い','速い','ゆっくり','目で見た印象。時間を測る場合は「足上げの時間」'),
+  ST('lift','脚・足上げ','上げた足のひざの向き','内側に入る','まっすぐ'),
+  ST('lift','腰・骨盤','足上げ時の上体の傾き','後ろに反る','まっすぐ'),
+  ST('lift','グラブ','足上げ時のグラブの位置','高い','低い'),
+  ST('lift','テンポ・リズム','足上げの一瞬の静止','止まる','止まらない','足が一番高い所で間があるか'),
+  TM('lift','脚・足上げ','足上げの時間','始動（足を上げ始める）','足が一番高い所'),
+  // テイクバック
+  ST('back','握り・手首','グラブから手を出すタイミング','早い','遅い'),
+  ST('back','握り・手首','握りの見え方','ボールが多く見える','ほとんど見えない','打者側・三塁側などから握りやボールの白さが見えるか'),
+  ST('back','握り・手首','テイクバックの手首の向き','立てる','寝かせる'),
+  ST('back','腕の振り','腕の引き方','大きい','小さい'),
+  ST('back','腕の振り','腕が背中側に入る','入る','入らない'),
+  ST('back','肘','テイクバックの肘の高さ','肩より上','肩より下'),
+  ST('back','グラブ','グラブ側の腕','伸ばす','曲げる'),
+  ST('back','肩甲骨・肩','グラブ側の肩甲骨の寄せ','深い','浅い'),
+  // トップからリリース
+  ST('rel','腕の振り','腕の振りの強さ','強い','緩い','目で見た印象'),
+  ST('rel','腕の振り','腕の角度','上から','横から'),
+  ST('rel','ステップ','踏み出す足の位置','内側に踏む','外側に踏む'),
+  ST('rel','ステップ','踏み出しの幅','広い','狭い'),
+  ST('rel','腰・骨盤','体の開き','早い','遅い'),
+  ST('rel','頭・目線','リリース時の頭の傾き','傾く','まっすぐ'),
+  TM('rel','テンポ・リズム','着地からリリースの時間','前足の着地','リリース','打者が投球中に使うには遅い局面。配球の傾向をつかむ用途向け'),
+  // テンポ・間合い
+  TM('tempo','テンポ・リズム','始動から着地の時間','始動（足を上げ始める）','前足の着地','「モーションが速い・遅い」を数字で確かめる'),
+  TM('tempo','テンポ・リズム','始動からリリースの時間','始動（足を上げ始める）','リリース'),
+  TM('tempo','テンポ・リズム','投球間隔','返球を受けた','始動（足を上げ始める）','捕手からの返球を受けてから次に動き出すまで'),
+  ST('tempo','テンポ・リズム','クイック','クイック','通常の足上げ','走者がいる時のクイックの有無'),
+].map((x,i)=>({...x,cid:'c'+i}));
+const phaseOf = key => PHASES.find(p=>p.key===key);
 
 const STATUS = {
   INTACT:      {label:'正常', c:'ok',    icon:'○'},
@@ -437,8 +507,9 @@ function normalizePitcher(p){
       timing:TIMINGS.includes(t.timing)?t.timing:(t.timing==='リリース直前'?'リリース直前':'トップ'),
       straight:t.straight||'', breaking:t.breaking||'', baseline:t.baseline||'', cue:t.cue||'',
       importance:IMPORTANCE.includes(t.importance)?t.importance:'中', visibility:Number(t.visibility)||3,
-      type:['pair','presence','tempo'].includes(t.type)?t.type:'pair', action:t.action||'', side:t.side==='S'?'S':'B',
-      tStart:TEMPO_POINTS.includes(t.tStart)?t.tStart:TEMPO_POINTS[1], tEnd:TEMPO_POINTS.includes(t.tEnd)?t.tEnd:TEMPO_POINTS[3], dir:t.dir==='Bslow'?'Bslow':'Bfast',
+      type:['state','pair','presence','tempo'].includes(t.type)?t.type:'pair', action:t.action||'', side:t.side==='S'?'S':'B',
+      la:t.la||'', lb:t.lb||'', map:['aS','aB','auto'].includes(t.map)?t.map:'auto', hint:t.hint||'',
+      tStart:TEMPO_POINTS.includes(t.tStart)?t.tStart:TP_START, tEnd:TEMPO_POINTS.includes(t.tEnd)?t.tEnd:TP_END, dir:['Bfast','Bslow','auto'].includes(t.dir)?t.dir:'Bfast',
       imgS:t.imgS||null, imgB:t.imgB||null, active:t.active!==false, source:t.source||'manual', createdAt:t.createdAt||Date.now(),
     })),
     pitches:Array.isArray(p.pitches)?p.pitches:[],
@@ -580,31 +651,67 @@ function closeFrame(){ if(FR){ URL.revokeObjectURL(FR.url); FR=null; } document.
 // 分析ロジック（オフラインで動く。アプリの心臓部）
 // ══════════════════════════════════════════════
 // 各テルの「サインの見え方」を言葉にする
-function signText(t,side){
+// 「2つの状態」型：どちらの状態が直球に多いかを記録から決める
+// 状態ごとに2球以上、直球・変化球それぞれ2球以上の記録があるときだけ決める（少なすぎる記録で決めつけない）
+function stateCounts(pitches,t){ const c={aS:0,aB:0,bS:0,bB:0}; for(const x of pitches){ const o=x.obs?.[t.id]; if(o==='a'||o==='b') c[o+x.actual]++; } return c; }
+function learnState(c){
+  const na=c.aS+c.aB, nb=c.bS+c.bB;
+  if(na<2||nb<2||c.aS+c.bS<2||c.aB+c.bB<2) return null;
+  const pa=c.aS/na, pb=c.bS/nb; if(pa===pb) return null;
+  return pa>pb?'aS':'aB';
+}
+function stateMap(p,t){ return t.map==='auto'?learnState(stateCounts(p.pitches,t)):t.map; }
+function stateSide(o,m){ if(o==='?') return '?'; if((o!=='a'&&o!=='b')||!m) return null; return (o==='a')===(m==='aS')?'S':'B'; }
+// 各テルの「サインの見え方」を言葉にする
+function signText(t,side,p){
+  if(t.type==='state'){
+    const m=p?stateMap(p,t):(t.map==='auto'?null:t.map);
+    if(!m) return `「${t.la}」か「${t.lb}」（記録から判断中）`;
+    return `「${(side==='S')===(m==='aS')?t.la:t.lb}」`;
+  }
   if(t.type==='presence') return side===t.side?`「${t.action}」が出る`:`「${t.action}」が出ない`;
-  if(t.type==='tempo'){ const fast=(t.dir!=='Bslow')===(side==='B'); return `${pointName(t.tStart)}→${pointName(t.tEnd)}が${fast?'速い':'遅い'}`; }
+  if(t.type==='tempo'){
+    const bf=tempoBFast(t,p?tempoInfo(p,t):null);
+    if(bf==null) return `${pointName(t.tStart)}→${pointName(t.tEnd)}の時間（記録から判断中）`;
+    const fast=bf===(side==='B'); return `${pointName(t.tStart)}→${pointName(t.tEnd)}が${fast?'速い':'遅い'}`;
+  }
   return side==='S'?t.straight:t.breaking;
 }
 // テンポ型：直球・変化球それぞれの平均から境目を決める
 const mean = a => a.reduce((x,y)=>x+y,0)/a.length;
 const sd = a => a.length>1?Math.sqrt(a.reduce((x,y)=>x+(y-mean(a))**2,0)/(a.length-1)):0;
 function tempoThr(sS,sB){ return (sS.length>=TEMPO_MIN_EACH && sB.length>=TEMPO_MIN_EACH) ? (mean(sS)+mean(sB))/2 : null; }
-function tempoSide(t,sec,thr){ const fast=sec<thr; return t.dir==='Bslow' ? (fast?'S':'B') : (fast?'B':'S'); }
+// 変化球の時に速いか（Bfast/Bslow は指定どおり、auto は平均の比較で決める）
+function tempoBFast(t,info){ if(t.dir==='Bfast') return true; if(t.dir==='Bslow') return false; if(!info||info.thr==null) return null; return info.mB<info.mS; }
+function tempoSide(t,sec,thr,bFast){ const fast=sec<thr; return bFast?(fast?'B':'S'):(fast?'S':'B'); }
 function tempoInfo(p,t){
   const sS=[],sB=[];
   p.pitches.forEach(x=>{ const v=x.tempo?.[t.id]; if(typeof v==='number') (x.actual==='S'?sS:sB).push(v); });
-  return {sS,sB,thr:tempoThr(sS,sB),mS:sS.length?mean(sS):null,mB:sB.length?mean(sB):null,dS:sd(sS),dB:sd(sB)};
+  const thr=tempoThr(sS,sB);
+  return {sS,sB,thr,mS:sS.length?mean(sS):null,mB:sB.length?mean(sB):null,dS:sd(sS),dB:sd(sB)};
 }
 // 1球ごとのサイン（'S' / 'B' / '?' / null=未確認）
 // テンポ型は、その球より「前」の記録だけで決めた境目で判定する（後から当てはめて的中率を水増ししないため）
 function obsSeries(p,t){
+  if(t.type==='state'){
+    // どちらが直球のサインかを記録から決める場合も、その球より前の記録だけで決める
+    const out=[], c={aS:0,aB:0,bS:0,bB:0};
+    for(const x of p.pitches){
+      const o=x.obs?.[t.id];
+      if(o==='?'){ out.push('?'); continue; }
+      if(o!=='a'&&o!=='b'){ out.push(null); continue; }
+      out.push(stateSide(o, t.map==='auto'?learnState(c):t.map));
+      c[o+x.actual]++;
+    }
+    return out;
+  }
   if(t.type!=='tempo') return p.pitches.map(x=>x.obs?.[t.id]||null);
   const out=[], sS=[], sB=[];
   for(const x of p.pitches){
     const v=x.tempo?.[t.id];
     if(typeof v!=='number'){ out.push(x.obs?.[t.id]==='?'?'?':null); continue; }
     const thr=tempoThr(sS,sB);
-    out.push(thr==null?null:tempoSide(t,v,thr));
+    out.push(thr==null?null:tempoSide(t,v,thr,tempoBFast(t,{thr,mS:mean(sS),mB:mean(sB)})));
     (x.actual==='S'?sS:sB).push(v);
   }
   return out;
@@ -629,8 +736,10 @@ function tellStats(p,t){
   }
   const acc=n?k/n:0, pval=n?binomTail(k,n,p0):1;
   const needN=t.type==='presence'?Math.max(4,Math.ceil(minN/2)):minN;
+  // 候補を多く同時に調べるほど、偶然当たって見えるものが出やすい。登録中の項目数で割って基準を厳しくする
+  const nCand=Math.max(1,p.tells.filter(x=>x.active).length), alpha=0.05/nCand;
   let ev;
-  if(n<needN) ev='few'; else if(pval<0.05) ev='strong'; else if(pval<0.2) ev='promising'; else ev='weak';
+  if(n<needN) ev='few'; else if(pval<alpha) ev='strong'; else if(pval<0.2) ev='promising'; else ev='weak';
 
   const rec=seen.slice(-W), rk=rec.filter(hit).length, racc=rec.length?rk/rec.length:0;
   const early=seen.slice(0,-W), ek=early.filter(hit).length, eacc=early.length?ek/early.length:0;
@@ -640,7 +749,7 @@ function tellStats(p,t){
   const split=['W','S'].map(m=>{ const r=seen.filter(x=>x.set===m); return {m,n:r.length,k:r.filter(hit).length}; });
   // 変化が起きる前の時点で「有効」だったか（主力テルの消失は緊急扱いにするため）
   const eS=early.filter(x=>x.actual==='S').length;
-  const earlyStrong=early.length>=minN && binomTail(ek,early.length,Math.max(eS/early.length,1-eS/early.length,0.5))<0.05;
+  const earlyStrong=early.length>=minN && binomTail(ek,early.length,Math.max(eS/early.length,1-eS/early.length,0.5))<alpha;
   // 変化検知：それまで当たっていたテルが直近で当たらなくなった／見えなくなった
   let alert=null;
   if(early.length>=minN && eacc>=0.7 && rec.length>=W && racc<=SET.drop/100){
@@ -650,7 +759,7 @@ function tellStats(p,t){
   }else if(early.length>=minN && eacc>=0.7 && rec.length>=W && racc<eacc-0.2){
     alert={level:'CAUTION', msg:`直近${rec.length}球の的中が${rk}/${rec.length}とやや低下（それまで${pct(eacc)}）`};
   }
-  return {asked:asked.length,n,k,acc,p0,pval,ev,needN,nAll,kAll,n0,k0,earlyStrong,rec:rec.length,rk,racc,cov,split,alert,
+  return {asked:asked.length,n,k,acc,p0,pval,ev,alpha,nCand,needN,nAll,kAll,n0,k0,earlyStrong,rec:rec.length,rk,racc,cov,split,alert,
     tempo:t.type==='tempo'?tempoInfo(p,t):null};
 }
 const EV_RANK={strong:0,promising:1,few:2,weak:3};
@@ -691,12 +800,15 @@ function overall(p){
 // 今の1球で見えたサイン
 function curObs(p,t){
   const o=S.cur.obs[t.id];
+  if(t.type==='state') return o?stateSide(o,stateMap(p,t)):null;
   if(t.type!=='tempo') return o||null;
   if(o==='?') return '?';
   const sec=S.cur.tempo[t.id]?.sec; if(sec==null) return null;
-  const thr=tempoInfo(p,t).thr; return thr==null?null:tempoSide(t,sec,thr);
+  const info=tempoInfo(p,t); if(info.thr==null) return null;
+  const bf=tempoBFast(t,info); return bf==null?null:tempoSide(t,sec,info.thr,bf);
 }
 function obsLabel(t,o,sec){
+  if(t.type==='state') return o==='a'?t.la:o==='b'?t.lb:'見えず';
   if(o==='?') return t.type==='tempo'?'測れず':'見えず';
   if(t.type==='tempo') return sec!=null?sec.toFixed(2)+'秒':(o==='S'?'直':'変');
   if(t.type==='presence') return o===t.side?'出た':'出ない';
@@ -714,7 +826,7 @@ function predict(p){
     let a=0,b=0,tS=0,tB=0;
     H.forEach((x,i)=>{ const so=ser[i]; if(so!=='S'&&so!=='B') return; if(x.actual==='S'){tS++; if(so===o)a++;} else {tB++; if(so===o)b++;} });
     lo+=Math.log(((a+1)/(tS+2))/((b+1)/(tB+2)));
-    used.push({tell:t,o,n:tS+tB,label:obsLabel(t,o,S.cur.tempo[t.id]?.sec)});
+    used.push({tell:t,o,n:tS+tB,label:t.type==='state'?obsLabel(t,S.cur.obs[t.id]):obsLabel(t,o,S.cur.tempo[t.id]?.sec)});
   }
   const probS=1/(1+Math.exp(-lo));
   const votes=used.reduce((s,u)=>s+(u.o==='S'?1:-1),0);
@@ -809,7 +921,7 @@ function promptScan(p,tells){
 最後の画像が「今回のコマ」、それより前の画像は登録時の参考画像です。
 
 テル一覧：
-${JSON.stringify(tells.map(t=>({tell_id:t.id,part:t.part,timing:t.timing,straight_sign:signText(t,'S'),breaking_sign:signText(t,'B')})),null,1)}
+${JSON.stringify(tells.map(t=>({tell_id:t.id,part:t.part,timing:t.timing,straight_sign:signText(t,'S',p),breaking_sign:signText(t,'B',p)})),null,1)}
 
 1枚のコマでは何を投げたかは分からないため、今回のコマが「直球時の形」か「変化球時の形」のどちらかに当てはまるかを見てください。
 status：INTACT（どちらかの形がはっきり確認できる）、WEAKENED（形の差が小さくなっている）、MODIFIED（どちらにも当てはまらない別の動きになっている）、DISAPPEARED（その部位の特徴が見られない・隠されている）、UNKNOWN（角度・局面・画質のため判断できない）。
@@ -947,6 +1059,12 @@ function vObsRow(p,t){
   const st=tellStats(p,t), o=S.cur.obs[t.id];
   const head=`<div class="obs-h"><b>${esc(t.part)}</b><span class="tm">${esc(timingText(t))}</span>${evBadge(st)}</div>${t.cue?`<div class="cue">打者へ：${esc(t.cue)}</div>`:''}`;
   if(t.type==='tempo') return `<div class="card">${head}${vTempo(p,t,st)}</div>`;
+  if(t.type==='state'){
+    const m=stateMap(p,t), sd=x=>m?((x==='a')===(m==='aS')?'S':'B'):null;
+    const btn=x=>{ const side=sd(x), cls=side?side.toLowerCase():(x==='a'?'p':'n');
+      return `<button class="ob ${cls} ${o===x?'on':''}" onclick="setObs('${t.id}','${x}')"><b>${esc(short(x==='a'?t.la:t.lb,12))}</b><small>${side?`→ ${side==='S'?'直球':'変化球'}`:'→ 記録から判断'}</small></button>`; };
+    return `<div class="card">${head}<div class="obs-btns">${btn('a')}${btn('b')}<button class="ob q ${o==='?'?'on':''}" onclick="setObs('${t.id}','?')"><b>見えず</b></button></div></div>`;
+  }
   if(t.type==='presence') return `<div class="card">${head}
     <div class="obs-btns">
       <button class="ob p ${o===t.side?'on':''}" onclick="setObs('${t.id}','${t.side}')"><b>出た</b><small>${esc(short(t.action,14))} → ${t.side==='S'?'直球':'変化球'}</small></button>
@@ -961,13 +1079,15 @@ function vObsRow(p,t){
     </div></div>`;
 }
 // 動作の速さ：ストップウォッチ（押した瞬間に反応するよう pointerdown を使う）
+// 参考画像の見出し（2つの状態型は、画像1＝状態A、画像2＝状態B）
+const refCap=(t,which)=>t.type==='state'?`参考：${which==='S'?t.la:t.lb}`:`参考：${which==='S'?'直球':'変化球'}の時`;
 const timingText = t => t.type==='tempo'?`${pointName(t.tStart)}→${pointName(t.tEnd)}`:t.timing;
 function vTempo(p,t,st){
   const c=S.cur.tempo[t.id]||{}, ti=st.tempo, o=S.cur.obs[t.id];
   let btn;
   if(c.start!=null) btn=`<span>■ ${esc(t.tEnd)}でタップ</span><span class="big" id="tw-${t.id}">0.00</span>`;
   else if(c.sec!=null){
-    const side=ti.thr!=null?tempoSide(t,c.sec,ti.thr):null;
+    const bf=tempoBFast(t,ti), side=ti.thr!=null&&bf!=null?tempoSide(t,c.sec,ti.thr,bf):null;
     btn=`<span class="big">${c.sec.toFixed(2)}秒</span><small>${side?`→ <span class="c-${side}">${SIDE_NAME[side]}寄り</span>`:'境目はまだ決まっていません'}・タップで測り直し</small>`;
   }else btn=`<span>● ${esc(t.tStart)}でタップ</span><small>もう一度「${esc(t.tEnd)}」でタップ</small>`;
   const info=ti.thr!=null
@@ -1011,14 +1131,17 @@ function pitchLine(p,x){
 
 // ── テルタブ ──
 function vTells(p){
-  const ts=sortedTells(p);
-  let h=`<div class="row-between"><h2 class="sec">登録テル（${p.tells.length}件）</h2><button class="btn btn-main sm" onclick="openTellEdit()">＋ テルを追加</button></div>
-  <div class="note">的中率は「計測」タブの記録から自動で計算します。<br>
+  const ts=sortedTells(p), nAct=p.tells.filter(t=>t.active).length;
+  let h=`<div class="row-between"><h2 class="sec">観察項目（${p.tells.length}件）</h2>
+    <div class="row"><button class="btn sm" onclick="openBulk()">リストから選ぶ</button><button class="btn btn-main sm" onclick="openTellEdit()">＋ 1件追加</button></div></div>
+  <div class="note">的中率は「計測」タブの記録から自動で計算し、当たっている順に並べます。<br>
   <span class="c-ok">有効</span>：いつも多い方の球種を張るより当たっていて、偶然とは考えにくい。<br>
   <span class="c-warn">有望</span>：当たっているが、まだ偶然の可能性も残る。<br>
-  <span class="c-dim">データ不足・未確認</span>：判断できる記録がまだない、または当たり方が偶然と区別できない。</div>`;
+  <span class="c-dim">データ不足・未確認</span>：判断できる記録がまだない、または当たり方が偶然と区別できない。<br>
+  候補を多く調べるほど、偶然当たって見える項目が出やすくなります。そのため「有効」の基準は、計測中の項目数に応じて厳しくしています（今は${nAct}件なので、偶然の確率が${(5/Math.max(1,nAct)).toFixed(nAct>5?1:0)}%未満）。<br>
+  見分けに使えないと分かった項目は「休止」すると、計測画面がすっきりします。</div>`;
   if(SET.mode==='ai') h+=vAiDiff(p);
-  if(!ts.length) h+=`<div class="empty sm">まだテルがありません。気づいた癖を「＋ テルを追加」から書き込みましょう。<br>直球の時と変化球の時の違いを、なるべく具体的に（例：グラブが胸の前か、へその前か）。</div>`;
+  if(!ts.length) h+=`<div class="empty sm">まだ観察項目がありません。「リストから選ぶ」で、気になる項目をまとめて追加できます。<br>どちらが直球のサインかは、記録が貯まるとアプリが判断します。</div>`;
   ts.forEach(t=>{ h+=vTellCard(p,t); });
   return h;
 }
@@ -1031,6 +1154,7 @@ function vTellCard(p,t){
       <div class="tc-bar" style="background:${CAT_COLOR[t.category]||'#888'}"></div>
       <div class="grow">
         <div class="obs-h"><b>${esc(t.part)}</b><span class="tm">${esc(t.category)}・${esc(timingText(t))}・重要度${esc(t.importance)}</span></div>
+        ${t.type==='state'?`<div class="small">${esc(t.la)}／${esc(t.lb)}　${(()=>{const m=stateMap(p,t); return m?`<span class="c-S">「${esc(m==='aS'?t.la:t.lb)}」が直球</span>${t.map==='auto'?'（記録から判断）':''}`:'どちらが直球かは記録から判断中';})()}</div>`:''}
         <div class="row" style="flex-wrap:wrap;gap:6px">${evBadge(st)}${t.source==='ai'?'<span class="badge c-S">AI候補</span>':''}${t.active?'':'<span class="badge c-dim">休止中</span>'}</div>
         <div class="stat-line">
           <span>${t.type==='presence'?'出た時の的中':'的中'} <b>${st.k}/${st.n}</b></span>
@@ -1045,13 +1169,17 @@ function vTellCard(p,t){
     </button>
     ${open?`<div class="tc-body">
       <div class="grid2 mt">
-        <div class="sb s"><div class="k">直球の時</div>${esc(signText(t,'S')||'－')}${imgSrc(t.imgS)?`<img class="refimg" src="${imgSrc(t.imgS)}" alt="直球時の参考画像">`:''}</div>
-        <div class="sb b"><div class="k">変化球の時</div>${esc(signText(t,'B')||'－')}${imgSrc(t.imgB)?`<img class="refimg" src="${imgSrc(t.imgB)}" alt="変化球時の参考画像">`:''}</div>
+        <div class="sb s"><div class="k">直球の時</div>${esc(signText(t,'S',p)||'－')}${imgSrc(t.imgS)?`<img class="refimg" src="${imgSrc(t.imgS)}" alt="${esc(refCap(t,'S'))}">`:''}</div>
+        <div class="sb b"><div class="k">変化球の時</div>${esc(signText(t,'B',p)||'－')}${imgSrc(t.imgB)?`<img class="refimg" src="${imgSrc(t.imgB)}" alt="${esc(refCap(t,'B'))}">`:''}</div>
+      </div>
+      ${t.type==='state'&&(imgSrc(t.imgS)||imgSrc(t.imgB))?`<div class="small">画像：左が「${esc(t.la)}」、右が「${esc(t.lb)}」の参考です。</div>`:''}
+      <div>
       </div>
       ${st.tempo?vTempoDetail(st.tempo):''}
+      ${t.hint?`<div class="small mt">見るところ：${esc(t.hint)}</div>`:''}
       ${t.cue?`<div class="note mt">打者への指示：${esc(t.cue)}</div>`:''}
       ${t.baseline?`<div class="note">メモ：${esc(t.baseline)}</div>`:''}
-      ${st.n?`<div class="small mb">基準（${t.type==='presence'?`普段の${t.side==='S'?'直球':'変化球'}の割合`:'多い方を張った場合'}）${pct(st.p0)}に対して ${pct(st.acc)}。偶然この成績になる確率 約${st.pval<0.001?'0.1%未満':st.pval<0.01?(st.pval*100).toFixed(1)+'%':pct(st.pval)}</div>`:''}
+      ${st.n?`<div class="small mb">基準（${t.type==='presence'?`普段の${t.side==='S'?'直球':'変化球'}の割合`:'多い方を張った場合'}）${pct(st.p0)}に対して ${pct(st.acc)}。偶然この成績になる確率 約${st.pval<0.001?'0.1%未満':st.pval<0.01?(st.pval*100).toFixed(1)+'%':pct(st.pval)}（「有効」の基準は${(st.alpha*100).toFixed(st.alpha<0.01?1:0)}%未満）</div>`:''}
       <div class="grid3">
         <button class="btn xs" onclick="openTellEdit('${t.id}')">編集</button>
         <button class="btn xs" onclick="toggleTellActive('${t.id}')">${t.active?'休止する':'再開する'}</button>
@@ -1123,10 +1251,10 @@ function vCompare(p){
       <div class="obs-h"><b>${esc(t.part)}</b><span class="tm">${esc(t.timing)}</span></div>
       ${(imgSrc(t.imgS)||imgSrc(t.imgB)||C.img)?`<div class="cmp mt">
         ${C.img?`<figure><img src="${C.img}" alt="今回"><figcaption>今回</figcaption></figure>`:''}
-        ${imgSrc(t.imgS)?`<figure><img src="${imgSrc(t.imgS)}" alt="直球時"><figcaption class="c-S">登録時：直球</figcaption></figure>`:''}
-        ${imgSrc(t.imgB)?`<figure><img src="${imgSrc(t.imgB)}" alt="変化球時"><figcaption class="c-B">登録時：変化球</figcaption></figure>`:''}
+        ${imgSrc(t.imgS)?`<figure><img src="${imgSrc(t.imgS)}" alt="${esc(refCap(t,'S'))}"><figcaption>${esc(refCap(t,'S'))}</figcaption></figure>`:''}
+        ${imgSrc(t.imgB)?`<figure><img src="${imgSrc(t.imgB)}" alt="${esc(refCap(t,'B'))}"><figcaption>${esc(refCap(t,'B'))}</figcaption></figure>`:''}
       </div>`:''}
-      <div class="small mt"><span class="c-S">直球：</span>${esc(signText(t,'S')||'－')}　<span class="c-B">変化球：</span>${esc(signText(t,'B')||'－')}</div>
+      <div class="small mt"><span class="c-S">直球：</span>${esc(signText(t,'S',p)||'－')}　<span class="c-B">変化球：</span>${esc(signText(t,'B',p)||'－')}</div>
       ${aiC?`<div class="small c-S mt">AI：${STATUS[aiC.status]?.label||''}・${esc(aiC.looks_like)}：${esc(aiC.note)}</div>`:''}
       <div class="st-btns">${Object.entries(STATUS).map(([k,v])=>`<button class="${s===k?'on '+v.c:''}" onclick="setScanStatus('${t.id}','${k}')">${v.icon}<br>${v.label}</button>`).join('')}</div>
     </div>`;
@@ -1176,8 +1304,9 @@ function shareText(p){
   good.forEach(x=>{
     const t=x.tell, mark=x.st.ev==='strong'?'◎':'○';
     let body;
-    if(t.type==='presence') body=`「${t.action}」が出たら${t.side==='S'?'直球':'変化球'}　出た時${x.st.k}/${x.st.n}`;
-    else if(t.type==='tempo'){ const ti=x.st.tempo; body=`${x.tell.dir==='Bslow'?'遅い':'速い'}と変化球　直球${ti.mS!=null?ti.mS.toFixed(2):'－'}秒／変化球${ti.mB!=null?ti.mB.toFixed(2):'－'}秒　的中${x.st.k}/${x.st.n}`; }
+    if(t.type==='state') body=`${signText(t,'S',p)}なら直球／${signText(t,'B',p)}なら変化球　的中${x.st.k}/${x.st.n}`;
+    else if(t.type==='presence') body=`「${t.action}」が出たら${t.side==='S'?'直球':'変化球'}　出た時${x.st.k}/${x.st.n}`;
+    else if(t.type==='tempo'){ const ti=x.st.tempo; body=`${tempoBFast(t,ti)===false?'遅い':'速い'}と変化球　直球${ti.mS!=null?ti.mS.toFixed(2):'－'}秒／変化球${ti.mB!=null?ti.mB.toFixed(2):'－'}秒　的中${x.st.k}/${x.st.n}`; }
     else body=`直球＝${t.straight||'－'}／変化球＝${t.breaking||'－'}　的中${x.st.k}/${x.st.n}`;
     lines.push(`${mark} ${t.part}（${timingText(t)}）：${body}${t.cue?`\n　打者へ：${t.cue}`:''}`);
   });
@@ -1190,7 +1319,7 @@ function shareText(p){
 // モーダル
 // ══════════════════════════════════════════════
 function vModal(){
-  const body={settings:vSettings,reg:vReg,tell:vTellEdit}[S.modal];
+  const body={settings:vSettings,reg:vReg,tell:vTellEdit,bulk:vBulk}[S.modal];
   if(!body) return '';
   return `<div class="modal-bg" onclick="if(event.target===this&&S.modal==='settings')closeModal()"><div class="modal" role="dialog" aria-modal="true">${body()}</div></div>`;
 }
@@ -1252,15 +1381,25 @@ function vReg(){
 }
 
 function vTellEdit(){
-  const F=S.form, ty=F.type||'pair';
+  const F=S.form, ty=F.type||'state', legacy=!!LEGACY_TYPES[ty];
+  const list=CATALOG.filter(x=>!F._ph||x.ph===F._ph);
+  const late=(ty==='tempo'&&F.tEnd==='リリース')||(ty!=='tempo'&&F.timing==='リリース直前');
   let typeFields;
-  if(ty==='presence') typeFields=`
-  <div class="field"><label>どんな癖か</label><input type="text" data-bind="form.action" value="${esc(F.action)}" placeholder="例：アゴを引く／グラブを少し斜めに動かす"></div>
-  <div class="field"><label>この癖が出たら</label>
-    <div class="seg"><button class="${F.side==='S'?'on':''}" onclick="S.form.side='S';render()">直球</button><button class="${F.side==='B'?'on':''}" onclick="S.form.side='B';render()">変化球</button></div></div>
+  if(ty==='state') typeFields=`
+  <div class="grid2">
+    <div class="field"><label>状態A</label><input type="text" data-bind="form.la" value="${esc(F.la)}" placeholder="例：立てる"></div>
+    <div class="field"><label>状態B</label><input type="text" data-bind="form.lb" value="${esc(F.lb)}" placeholder="例：寝かせる"></div>
+  </div>
+  <div class="field"><label>どちらが直球のサインか</label>
+    <div class="seg">
+      <button class="${F.map==='auto'?'on':''}" onclick="S.form.map='auto';render()">記録から判断</button>
+      <button class="${F.map==='aS'?'on':''}" onclick="S.form.map='aS';render()">Aなら直球</button>
+      <button class="${F.map==='aB'?'on':''}" onclick="S.form.map='aB';render()">Bなら直球</button>
+    </div>
+    <div class="help">分からなければ「記録から判断」のままで構いません。直球と変化球の記録が貯まると、どちらの状態が直球に多いかを自動で決めます。決めるときはその球より前の記録だけを使うので、的中率が良く見えすぎることはありません。</div></div>
   <div class="field"><label>参考画像（任意）</label><div class="grid2">
-    <div><div class="small c-S" style="font-weight:800">直球の時</div>${F.imgS?previewBox(F.imgS,"S.form.imgS=null;render()"):pickButtonsCompact('tellS')}</div>
-    <div><div class="small c-B" style="font-weight:800">変化球の時</div>${F.imgB?previewBox(F.imgB,"S.form.imgB=null;render()"):pickButtonsCompact('tellB')}</div>
+    <div><div class="small" style="font-weight:800">状態A</div>${F.imgS?previewBox(F.imgS,"S.form.imgS=null;render()"):pickButtonsCompact('tellS')}</div>
+    <div><div class="small" style="font-weight:800">状態B</div>${F.imgB?previewBox(F.imgB,"S.form.imgB=null;render()"):pickButtonsCompact('tellB')}</div>
   </div></div>`;
   else if(ty==='tempo') typeFields=`
   <div class="grid2">
@@ -1268,34 +1407,60 @@ function vTellEdit(){
     <div class="field"><label>測り終わり</label><select data-bind="form.tEnd">${TEMPO_POINTS.map(c=>`<option ${F.tEnd===c?'selected':''}>${c}</option>`).join('')}</select></div>
   </div>
   <div class="field"><label>変化球の時は</label>
-    <div class="seg"><button class="${F.dir!=='Bslow'?'on':''}" onclick="S.form.dir='Bfast';render()">速くなる</button><button class="${F.dir==='Bslow'?'on':''}" onclick="S.form.dir='Bslow';render()">遅くなる</button></div>
-    <div class="help">計測画面のストップウォッチで1球ずつ測ります。直球と変化球が${TEMPO_MIN_EACH}球ずつ貯まると、平均の真ん中を境目にして自動で判定します。</div></div>`;
+    <div class="seg"><button class="${F.dir==='auto'?'on':''}" onclick="S.form.dir='auto';render()">記録から判断</button><button class="${F.dir==='Bfast'?'on':''}" onclick="S.form.dir='Bfast';render()">速くなる</button><button class="${F.dir==='Bslow'?'on':''}" onclick="S.form.dir='Bslow';render()">遅くなる</button></div>
+    <div class="help">計測画面のストップウォッチで1球ずつ測ります。直球と変化球が${TEMPO_MIN_EACH}球ずつ貯まると、平均の真ん中を境目にして判定します。</div></div>`;
+  else if(ty==='presence') typeFields=`
+  <div class="field"><label>どんな癖か</label><input type="text" data-bind="form.action" value="${esc(F.action)}"></div>
+  <div class="field"><label>この癖が出たら</label>
+    <div class="seg"><button class="${F.side==='S'?'on':''}" onclick="S.form.side='S';render()">直球</button><button class="${F.side==='B'?'on':''}" onclick="S.form.side='B';render()">変化球</button></div></div>`;
   else typeFields=`
-  <div class="field"><label class="c-S">直球の時の見え方</label><textarea data-bind="form.straight" placeholder="例：グラブが胸の高さで止まる">${esc(F.straight)}</textarea>
-    ${F.imgS?previewBox(F.imgS,"S.form.imgS=null;render()"):`<div class="mt">${pickButtons('tellS')}</div>`}</div>
-  <div class="field"><label class="c-B">変化球の時の見え方</label><textarea data-bind="form.breaking" placeholder="例：グラブがへその高さまで下がる">${esc(F.breaking)}</textarea>
-    ${F.imgB?previewBox(F.imgB,"S.form.imgB=null;render()"):`<div class="mt">${pickButtons('tellB')}</div>`}</div>`;
-  return `${mHead(F.id?'テルを編集':'テルを追加')}
-  ${F.id?'':`<div class="small" style="font-weight:800;margin-bottom:6px">例から入れる</div><div class="tpl">${TEMPLATES.map((x,i)=>`<button onclick="applyTemplate(${i})">${esc(x.label)}</button>`).join('')}</div>`}
-  <div class="field"><label>テルの種類</label>
-    <div class="seg">${TELL_TYPES.map(([k,l,d])=>`<button class="${ty===k?'on':''}" onclick="S.form.type='${k}';render()">${l}<br><small>${d}</small></button>`).join('')}</div></div>
-  <div class="field"><label>名前（必須）</label><input type="text" data-bind="form.part" value="${esc(F.part)}" placeholder="例：セット時のグラブ"></div>
+  <div class="field"><label class="c-S">直球の時の見え方</label><textarea data-bind="form.straight">${esc(F.straight)}</textarea></div>
+  <div class="field"><label class="c-B">変化球の時の見え方</label><textarea data-bind="form.breaking">${esc(F.breaking)}</textarea></div>`;
+  return `${mHead(F.id?'観察項目を編集':'観察項目を追加')}
+  ${F.id?'':`<div class="card" style="background:var(--bg)">
+    <div class="small" style="font-weight:800;margin-bottom:6px">リストから選ぶ</div>
+    <div class="grid2">
+      <select class="sel" aria-label="局面" onchange="S.form._ph=this.value;render()"><option value="">すべての局面</option>${PHASES.map(ph=>`<option value="${ph.key}" ${F._ph===ph.key?'selected':''}>${ph.name}</option>`).join('')}</select>
+      <select class="sel" aria-label="観察項目" onchange="applyCatalog(this.value)"><option value="">項目を選ぶ</option>${
+        CATEGORIES.map(cat=>{ const xs=list.filter(x=>x.category===cat); return xs.length?`<optgroup label="${cat}">${xs.map(x=>`<option value="${x.cid}" ${F._cid===x.cid?'selected':''}>${esc(x.part)}</option>`).join('')}</optgroup>`:''; }).join('')}</select>
+    </div>
+    <div class="help">選ぶと下の欄が埋まります。状態の言葉は、見たままの表現に直して構いません。</div>
+  </div>`}
+  <div class="field"><label>記録のしかた</label>
+    <div class="seg">${TELL_TYPES.map(([k,l,d])=>`<button class="${ty===k?'on':''}" onclick="S.form.type='${k}';render()">${l}<br><small>${d}</small></button>`).join('')}${legacy?`<button class="on">${LEGACY_TYPES[ty]}</button>`:''}</div></div>
+  <div class="field"><label>項目名（必須）</label><input type="text" data-bind="form.part" value="${esc(F.part)}" placeholder="例：グラブの角度"></div>
+  ${F.hint?`<div class="help mb" style="margin-top:-6px">見るところ：${esc(F.hint)}</div>`:''}
   ${ty==='tempo'?`<div class="field"><label>部位の分類</label><select data-bind="form.category">${CATEGORIES.map(c=>`<option ${F.category===c?'selected':''}>${c}</option>`).join('')}</select></div>`:`
   <div class="grid2">
     <div class="field"><label>部位の分類</label><select data-bind="form.category">${CATEGORIES.map(c=>`<option ${F.category===c?'selected':''}>${c}</option>`).join('')}</select></div>
-    <div class="field"><label>出るタイミング</label><select data-bind="form.timing">${TIMINGS.map(c=>`<option ${F.timing===c?'selected':''}>${c}</option>`).join('')}</select></div>
-  </div>
-  <div class="help mb" style="margin-top:-6px">早いタイミングで出るテルほど、打者が反応する時間を取れます。</div>`}
+    <div class="field"><label>出るタイミング</label><select data-bind="form.timing" onchange="S.form.timing=this.value;render()">${TIMINGS.map(c=>`<option ${F.timing===c?'selected':''}>${c}</option>`).join('')}</select></div>
+  </div>`}
+  ${late?`<div class="help mb c-warn">この局面は投球の終わり近くなので、打者が投球中に見て反応するには遅い可能性があります。配球の傾向をつかむ用途に向きます。</div>`:''}
   ${typeFields}
-  <div class="field"><label>打者への指示（短く）</label><input type="text" data-bind="form.cue" value="${esc(F.cue)}" maxlength="30" placeholder="例：アゴを引いたら変化球"></div>
+  <div class="field"><label>打者への指示（短く）</label><input type="text" data-bind="form.cue" value="${esc(F.cue)}" maxlength="30" placeholder="例：グラブが寝たら変化球"></div>
   <div class="grid2">
     <div class="field"><label>重要度</label><select data-bind="form.importance">${IMPORTANCE.map(c=>`<option ${F.importance===c?'selected':''}>${c}</option>`).join('')}</select></div>
     <div class="field"><label>見やすさ</label><select data-bind="form.visibility">${[1,2,3,4,5].map(v=>`<option value="${v}" ${Number(F.visibility)===v?'selected':''}>${v}：${['','見えにくい','やや見にくい','普通','見やすい','とても見やすい'][v]}</option>`).join('')}</select></div>
   </div>
-  <div class="field"><label>メモ</label><input type="text" data-bind="form.baseline" value="${esc(F.baseline)}" placeholder="例：一塁側ベンチからだとよく見える"></div>
+  <div class="field"><label>メモ</label><input type="text" data-bind="form.baseline" value="${esc(F.baseline)}" placeholder="例：三塁側ベンチからよく見える"></div>
   <button class="btn btn-main full" onclick="saveTell()">${F.id?'保存する':'＋ 追加する'}</button>`;
 }
 
+// まとめて追加（スカウティングの最初に、候補を広く記録して絞り込む）
+function vBulk(){
+  const F=S.form, p=curP(), have=new Set((p?.tells||[]).map(t=>t.part));
+  const n=Object.values(F.sel||{}).filter(Boolean).length;
+  return `${mHead('リストから観察項目を選ぶ')}
+  <div class="note">気になる項目に印を付けて、まとめて追加します。どちらが直球のサインかは決めなくて構いません。記録が貯まると自動で判断し、球種と関係のない項目は「未確認」のまま下に並びます。<br>
+  1人で同時に見られる数には限りがあるので、多く選んだときは局面ごとに担当を分けるか、使えない項目を早めに休止するのがおすすめです。</div>
+  <select class="sel mb" aria-label="局面" onchange="S.form._ph=this.value;render()"><option value="">すべての局面</option>${PHASES.map(ph=>`<option value="${ph.key}" ${F._ph===ph.key?'selected':''}>${ph.name}</option>`).join('')}</select>
+  ${PHASES.filter(ph=>!F._ph||ph.key===F._ph).map(ph=>`<div class="res-h">${ph.name}</div>`+CATALOG.filter(x=>x.ph===ph.key).map(x=>{
+    const done=have.has(x.part);
+    return `<label class="chk ${done?'dim':''}"><input type="checkbox" ${done?'disabled checked':''} ${F.sel?.[x.cid]?'checked':''} onchange="S.form.sel['${x.cid}']=this.checked;updBulk()">
+      <span class="grow"><b>${esc(x.part)}</b><small>${x.type==='tempo'?`時間を測る：${esc(pointName(x.tStart))}→${esc(pointName(x.tEnd))}`:`${esc(x.la)}／${esc(x.lb)}`}${done?'（追加済み）':''}</small></span></label>`;
+  }).join('')).join('')}
+  <button class="btn btn-main full mt" id="bulk-add" onclick="addBulk()" ${n?'':'disabled'}>${n?`選んだ${n}項目を追加`:'項目を選んでください'}</button>`;
+}
 // ══════════════════════════════════════════════
 // 操作
 // ══════════════════════════════════════════════
@@ -1337,7 +1502,7 @@ async function saveReg(){
     S.pid=p.id; S.screen='pitcher'; S.tab='tells'; resetWork();
   }
   Store.save(); S.modal=null; S.form={}; render();
-  toast(F.id?'保存しました':'登録しました。次はテルを追加しましょう','ok',3000);
+  toast(F.id?'保存しました':'登録しました。次は観察項目を追加しましょう','ok',3000);
 }
 function deletePitcher(id){
   const p=Store.data.pitchers.find(x=>x.id===id); if(!p) return;
@@ -1429,17 +1594,38 @@ function delPitch(id){
 }
 
 // テル
-function applyTemplate(i){ S.form={...S.form,...TEMPLATES[i]}; delete S.form.label; render(); }
+function applyCatalog(cid){
+  const x=CATALOG.find(c=>c.cid===cid); if(!x) return;
+  S.form={...S.form,_cid:cid,type:x.type,category:x.category,part:x.part,hint:x.hint||'',timing:phaseOf(x.ph).timing,
+    la:x.la||'',lb:x.lb||'',map:'auto',tStart:x.tStart||TP_START,tEnd:x.tEnd||TP_END,dir:'auto'};
+  render();
+}
+function catalogTell(x){
+  return normalizePitcher({tells:[{type:x.type,category:x.category,part:x.part,hint:x.hint,timing:phaseOf(x.ph).timing,
+    la:x.la,lb:x.lb,map:'auto',tStart:x.tStart,tEnd:x.tEnd,dir:'auto',importance:'中',visibility:3}]}).tells[0];
+}
+function openBulk(){ S.form={_ph:S.form?._ph||'',sel:{}}; S.modal='bulk'; render(); }
+function updBulk(){
+  const n=Object.values(S.form.sel||{}).filter(Boolean).length, b=document.getElementById('bulk-add');
+  if(b){ b.disabled=!n; b.textContent=n?`選んだ${n}項目を追加`:'項目を選んでください'; }
+}
+function addBulk(){
+  const p=curP(); if(!p) return;
+  const xs=CATALOG.filter(x=>S.form.sel?.[x.cid]&&!p.tells.some(t=>t.part===x.part));
+  xs.forEach(x=>p.tells.push(catalogTell(x)));
+  Store.save(); S.modal=null; S.form={}; render(); toast(`${xs.length}項目を追加しました`,'ok');
+}
 function openTellEdit(id){
   const t=id?curP()?.tells.find(x=>x.id===id):null;
-  S.form=t?{...t}:{type:'pair',category:'グラブ',part:'',timing:'セット・構え',straight:'',breaking:'',action:'',side:'B',tStart:TEMPO_POINTS[1],tEnd:TEMPO_POINTS[3],dir:'Bfast',cue:'',importance:'中',visibility:3,baseline:'',imgS:null,imgB:null};
+  S.form=t?{...t}:{type:'state',category:'グラブ',part:'',timing:'セット・構え',la:'',lb:'',map:'auto',hint:'',straight:'',breaking:'',action:'',side:'B',tStart:TP_START,tEnd:TP_END,dir:'auto',cue:'',importance:'中',visibility:3,baseline:'',imgS:null,imgB:null,_ph:''};
   S.modal='tell'; render();
 }
 async function saveTell(){
   const F=S.form, p=curP(); if(!p) return;
   const part=String(F.part||'').trim();
-  if(!part){ toast('部位・名前を入力してください','warn'); return; }
-  const ty=F.type||'pair';
+  if(!part){ toast('項目名を入力してください','warn'); return; }
+  const ty=F.type||'state';
+  if(ty==='state' && (!String(F.la||'').trim()||!String(F.lb||'').trim())){ toast('状態Aと状態Bを入力してください','warn'); return; }
   if(ty==='pair' && !String(F.straight||'').trim() && !String(F.breaking||'').trim()){ toast('直球か変化球、どちらかの見え方を書いてください','warn'); return; }
   if(ty==='presence' && !String(F.action||'').trim()){ toast('どんな癖かを書いてください','warn'); return; }
   if(ty==='tempo' && TEMPO_POINTS.indexOf(F.tStart)>=TEMPO_POINTS.indexOf(F.tEnd)){ toast('測り終わりは、測り始めより後の動作にしてください','warn'); return; }
@@ -1447,11 +1633,12 @@ async function saveTell(){
   const t={...(old||{id:uid(),active:true,source:'manual',createdAt:Date.now()}),
     part, category:F.category, timing:F.timing, straight:String(F.straight||'').trim(), breaking:String(F.breaking||'').trim(),
     cue:String(F.cue||'').trim(), importance:F.importance, visibility:Number(F.visibility)||3, baseline:String(F.baseline||'').trim(),
-    type:ty, action:String(F.action||'').trim(), side:F.side==='S'?'S':'B', tStart:F.tStart, tEnd:F.tEnd, dir:F.dir==='Bslow'?'Bslow':'Bfast'};
+    type:ty, action:String(F.action||'').trim(), side:F.side==='S'?'S':'B', tStart:F.tStart, tEnd:F.tEnd, dir:['Bfast','Bslow','auto'].includes(F.dir)?F.dir:'auto',
+    la:String(F.la||'').trim(), lb:String(F.lb||'').trim(), map:['aS','aB','auto'].includes(F.map)?F.map:'auto', hint:F.hint||''};
   if(ty==='tempo'){ if(old?.imgS) IDB.del(old.imgS); if(old?.imgB) IDB.del(old.imgB); F.imgS=null; F.imgB=null; }
   t.imgS=await commitImg(F.imgS,old?.imgS); t.imgB=await commitImg(F.imgB,old?.imgB);
   if(old) p.tells[p.tells.indexOf(old)]=t; else p.tells.push(t);
-  Store.save(); S.modal=null; S.form={}; render(); toast(old?'保存しました':'テルを追加しました','ok');
+  Store.save(); S.modal=null; S.form={}; render(); toast(old?'保存しました':'観察項目を追加しました','ok');
 }
 function delTell(id){
   const p=curP(); const t=p?.tells.find(x=>x.id===id); if(!t) return;
@@ -1478,7 +1665,7 @@ async function runAiDiff(){
 }
 async function adoptCandidate(i){
   const p=curP(), c=S.ai.result?.candidates?.[i]; if(!p||!c) return;
-  const t=normalizePitcher({tells:[{...c, id:uid(), source:'ai', importance:c.confidence==='高'?'高':'中', baseline:`AI候補（確からしさ${c.confidence}）：${c.reason}`}]}).tells[0];
+  const t=normalizePitcher({tells:[{...c, type:'state', la:c.straight, lb:c.breaking, map:'aS', id:uid(), source:'ai', importance:c.confidence==='高'?'高':'中', baseline:`AI候補（確からしさ${c.confidence}）：${c.reason}`}]}).tells[0];
   t.imgS=await storeImg(S.ai.imgS); t.imgB=await storeImg(S.ai.imgB);
   p.tells.push(t); Store.save(); S.ai.adopted[i]=true; render(); toast('未検証のテルとして登録しました。計測で確かめましょう','ok',3000);
 }
@@ -1578,21 +1765,21 @@ async function importAll(ev){
 // サンプル投手（使い方を試すための例。実在の投手ではない）
 function makeSample(){
   let seed=20261110; const rnd=()=>((seed=(seed*1103515245+12345)%2147483648)/2147483648);
-  const tpl=i=>({...TEMPLATES[i]});
+  const pick=name=>catalogTell(CATALOG.find(x=>x.part===name));
   const p=normalizePitcher({name:'サンプル投手（例）',team:'例のデータ',hand:'右投げ',
-    memo:'30球目以降、アゴを毎球引くようになった（クセを隠し始めた）想定にしています。',
-    tells:[tpl(0),tpl(1),tpl(2)].map(t=>({...t,timing:t.type==='tempo'?'テイクバック':'セット・構え'}))});
+    memo:'リストから4項目を選び、どちらが直球かは「記録から判断」で38球記録した例です。足を上げる高さは球種と関係がない想定、30球目以降はアゴを毎球引くようになった（クセを隠し始めた）想定です。'});
   p.sample=true;
-  const [glove,tempo,chin]=p.tells;
+  const glove=pick('グラブの角度'), chin=pick('アゴ・顔の角度'), legs=pick('足を上げる高さ'), tempo=pick('始動から着地の時間');
+  p.tells=[glove,chin,legs,tempo];
   const t0=Date.now()-38*60000;
   for(let i=0;i<38;i++){
     const B=rnd()<0.38, actual=B?'B':'S';
     const kind=B?['スライダー','スライダー','フォーク','カーブ'][Math.floor(rnd()*4)]:(rnd()<0.8?'ストレート':'ツーシーム');
     const obs={}, tm={};
-    obs[glove.id]=rnd()<0.12?'?':((B?rnd()<0.15:rnd()<0.8)?'S':'B');                  // 直球の時にグラブを斜めに動かす
-    tm[tempo.id]=Math.round(((B?0.84:0.94)+(rnd()-0.5)*0.16)*100)/100;                 // 変化球の時はモーションが速い
-    obs[chin.id]= i<30 ? ((B?rnd()<0.85:rnd()<0.1)?'B':'S') : 'B';                       // 30球目以降は毎球アゴを引く
-    // その時点までの記録で予測を出しておく（実際の計測と同じ流れ）
+    obs[glove.id]=rnd()<0.12?'?':((B?rnd()<0.12:rnd()<0.9)?'a':'b');                    // 直球の時はグラブを立てることが多い
+    obs[chin.id]= i<30 ? ((B?rnd()<0.85:rnd()<0.1)?'a':'b') : 'a';                       // 変化球の時にアゴを引く。30球目以降は毎球
+    obs[legs.id]=rnd()<0.5?'a':'b';                                                      // 球種と関係なし
+    tm[tempo.id]=Math.round(((B?0.84:0.94)+(rnd()-0.5)*0.16)*100)/100;                   // 変化球の時はやや速い
     const keep=S.cur; S.cur={obs:{...obs},tempo:{[tempo.id]:{start:null,sec:tm[tempo.id]}},inning:'1',set:'W'};
     const pr=predict(p); S.cur=keep;
     let pred=null, predProb=null;
