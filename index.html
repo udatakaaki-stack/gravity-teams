@@ -59,7 +59,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
 img{display:block;max-width:100%}
 .vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
 
-.wrap{max-width:720px;margin:0 auto;padding:12px 14px calc(100px + env(safe-area-inset-bottom))}
+.wrap{max-width:720px;margin:0 auto;padding-block:12px calc(100px + env(safe-area-inset-bottom));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 
 /* ヘッダー */
 .hdr{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:var(--bg);border-bottom:1px solid var(--line)}
@@ -134,7 +134,7 @@ img{display:block;max-width:100%}
 @keyframes pulse{50%{transform:scale(1.015)}}
 
 /* 下部タブ */
-.tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;display:grid;grid-template-columns:repeat(4,1fr);background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;display:grid;grid-template-columns:repeat(4,1fr);background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
 .tab{min-height:60px;font-size:13px;font-weight:800;color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .tab .ti{line-height:1;display:flex}
 .tab.on{color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
@@ -234,6 +234,10 @@ pre.share{white-space:pre-wrap;font:13px/1.7 inherit;background:var(--bg);border
 .frame-modal video{width:100%;max-height:52vh;background:#000;border-radius:10px;margin:8px 0}
 .frame-modal input[type=range]{width:100%;height:36px}
 .ftime{text-align:center;font-size:13px;color:var(--sub);margin-bottom:8px}
+.dlg{max-width:440px;border-radius:18px}
+.dlg-msg{font-size:15px;line-height:1.8;margin-bottom:16px;white-space:pre-wrap}
+.dlg textarea{width:100%;min-height:200px;font:12px/1.5 ui-monospace,monospace;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);margin-bottom:10px}
+.sample-note{border:2px dashed var(--warn);color:var(--text);border-radius:14px;padding:10px 14px;margin-bottom:10px;font-size:13px;line-height:1.7}
 .cand{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;background:var(--bg)}
 
 /* トースト */
@@ -247,6 +251,7 @@ pre.share{white-space:pre-wrap;font:13px/1.7 inherit;background:var(--bg);border
 <body>
 <div id="app"></div>
 <div id="overlay"></div>
+<div id="dialog"></div>
 <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -254,7 +259,9 @@ pre.share{white-space:pre-wrap;font:13px/1.7 inherit;background:var(--bg);border
 // ══════════════════════════════════════════════
 // 定数
 // ══════════════════════════════════════════════
-const APP_VERSION = '2.1.2';
+const APP_VERSION = '2.2.0';
+// 共有ページ（claude.ai のアーティファクト等）で開いたとき true。ファイル保存・AI通信・オフライン化が使えない
+const EMBED = !!window.TELL_EMBED;
 const LS_DATA = 'tell_alert_v2';
 const LS_SET = 'tell_alert_settings_v2';
 const LS_OLD = 'tell_alert_final'; // 旧バージョンのデータ（引き継ぎ用）
@@ -349,6 +356,33 @@ function binomTail(k,n,p){
   return Math.min(1,s);
 }
 
+// 画面内の確認ダイアログ
+let DLG=null;
+function askConfirm(msg,yesLabel,onYes,danger=true){
+  DLG={onYes};
+  document.getElementById('dialog').innerHTML=`<div class="modal-bg" style="z-index:250;align-items:center"><div class="modal dlg" role="alertdialog" aria-modal="true">
+    <div class="dlg-msg">${esc(msg)}</div>
+    <div class="grid2"><button class="btn" onclick="closeDlg()">やめる</button><button class="btn ${danger?'btn-danger':'btn-main'}" id="dlg-yes" onclick="dlgYes()">${esc(yesLabel)}</button></div>
+  </div></div>`;
+  document.getElementById('dlg-yes').focus();
+}
+function dlgYes(){ const f=DLG?.onYes; closeDlg(); if(f) f(); }
+function closeDlg(){ DLG=null; document.getElementById('dialog').innerHTML=''; }
+// 文字を表示してコピーさせるダイアログ（ファイル保存ができない共有ページ用）
+function showText(title,text){
+  document.getElementById('dialog').innerHTML=`<div class="modal-bg" style="z-index:250;align-items:center"><div class="modal dlg" role="dialog" aria-modal="true">
+    <div class="m-head"><b>${esc(title)}</b><button class="x" onclick="closeDlg()" aria-label="閉じる">×</button></div>
+    <div class="small mb">このページではファイルを保存できないため、文字で表示しています。コピーして表計算ソフトやメモに貼り付けてください。</div>
+    <textarea id="dlg-text" readonly>${esc(text)}</textarea>
+    <button class="btn btn-main full" onclick="copyFrom('dlg-text')">コピー</button>
+  </div></div>`;
+}
+async function copyFrom(id){
+  const el=document.getElementById(id);
+  try{ await navigator.clipboard.writeText(el.value??el.textContent); toast('コピーしました','ok'); }
+  catch{ if(el.select) el.select(); else { const r=document.createRange(); r.selectNodeContents(el); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); } toast('文字を選択しました。長押しでコピーしてください','warn',3000); }
+}
+
 let toastTimer;
 function toast(msg, kind='info', ms=2200){
   const el=document.getElementById('toast');
@@ -374,7 +408,7 @@ function saveSettings(){ try{ localStorage.setItem(LS_SET, JSON.stringify(SET));
 function applyTheme(){
   document.documentElement.dataset.theme = SET.theme;
   const light = SET.theme==='light' || (SET.theme==='auto' && matchMedia('(prefers-color-scheme: light)').matches);
-  document.querySelector('meta[name=theme-color]').setAttribute('content', light?'#ffffff':'#050b14');
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', light?'#ffffff':'#050b14');
 }
 
 // ══════════════════════════════════════════════
@@ -395,7 +429,7 @@ const Store = {
   },
 };
 function normalizePitcher(p){
-  return {
+  return { sample:!!p.sample,
     id:p.id||uid(), name:p.name||'名称未設定', team:p.team||'', hand:p.hand||'右投げ', memo:p.memo||'',
     createdAt:p.createdAt||Date.now(), thumbId:p.thumbId||null,
     tells:(p.tells||[]).map(t=>({
@@ -842,7 +876,7 @@ function vList(){
         <li>「計測」タブで、1球ごとに「見えたサイン」と「実際の球種」をタップ</li>
         <li>的中率が上がったテルだけを、打者に伝える</li>
       </ol>
-      <button class="btn btn-main" onclick="openReg()">＋ 最初の投手を登録</button>
+      <div class="grid2"><button class="btn btn-main" onclick="openReg()">＋ 最初の投手を登録</button><button class="btn" onclick="loadSample()">サンプルで試す</button></div>
     </div>`;
     return h;
   }
@@ -869,7 +903,7 @@ function vTabs(){
 function vPitcher(){
   const p=curP(); if(!p) return '';
   const ov=overall(p);
-  return vBanner(ov) + ({live:vLive,tells:vTells,compare:vCompare,log:vLog}[S.tab]||vLive)(p,ov);
+  return (p.sample?`<div class="sample-note">これは使い方を試すための<b>サンプルデータ</b>です（実在の投手ではありません）。${esc(p.memo)}</div>`:'') + vBanner(ov) + ({live:vLive,tells:vTells,compare:vCompare,log:vLog}[S.tab]||vLive)(p,ov);
 }
 function vBanner(ov){
   if(lvRank(ov.level)<lvRank('CAUTION')) return '';
@@ -1017,7 +1051,7 @@ function vTellCard(p,t){
       ${st.tempo?vTempoDetail(st.tempo):''}
       ${t.cue?`<div class="note mt">打者への指示：${esc(t.cue)}</div>`:''}
       ${t.baseline?`<div class="note">メモ：${esc(t.baseline)}</div>`:''}
-      ${st.n?`<div class="small mb">基準（${t.type==='presence'?`普段の${t.side==='S'?'直球':'変化球'}の割合`:'多い方を張った場合'}）${pct(st.p0)}に対して ${pct(st.acc)}。偶然この成績になる確率 約${st.pval<0.001?'0.1%未満':pct(st.pval)}</div>`:''}
+      ${st.n?`<div class="small mb">基準（${t.type==='presence'?`普段の${t.side==='S'?'直球':'変化球'}の割合`:'多い方を張った場合'}）${pct(st.p0)}に対して ${pct(st.acc)}。偶然この成績になる確率 約${st.pval<0.001?'0.1%未満':st.pval<0.01?(st.pval*100).toFixed(1)+'%':pct(st.pval)}</div>`:''}
       <div class="grid3">
         <button class="btn xs" onclick="openTellEdit('${t.id}')">編集</button>
         <button class="btn xs" onclick="toggleTellActive('${t.id}')">${t.active?'休止する':'再開する'}</button>
@@ -1168,7 +1202,7 @@ function vSettings(){
   <div class="field"><label>動作モード</label>
     <div class="seg">
       <button class="${F.mode==='offline'?'on':''}" onclick="S.form.mode='offline';render()">オフライン<br><small>通信不要</small></button>
-      <button class="${F.mode==='ai'?'on':''}" onclick="S.form.mode='ai';render()">AI併用<br><small>要通信・APIキー</small></button>
+      <button class="${F.mode==='ai'?'on':''}" onclick="S.form.mode='ai';render()" ${EMBED?'disabled':''}>AI併用<br><small>${EMBED?'このページでは不可':'要通信・APIキー'}</small></button>
     </div>
     <div class="help">${F.mode==='offline'
       ?'記録・的中率・予測・変化検知はすべて端末内で動きます。電波のない球場でも使えます。'
@@ -1307,10 +1341,11 @@ async function saveReg(){
 }
 function deletePitcher(id){
   const p=Store.data.pitchers.find(x=>x.id===id); if(!p) return;
-  if(!confirm(`${p.name} のデータ（記録${p.pitches.length}球を含む）を削除します。元に戻せません。よろしいですか？`)) return;
-  pitcherImgIds(p).forEach(i=>IDB.del(i));
-  Store.data.pitchers=Store.data.pitchers.filter(x=>x.id!==id); Store.save();
-  S.modal=null; goList(); toast('削除しました');
+  askConfirm(`${p.name} のデータ（記録${p.pitches.length}球を含む）を削除します。元に戻せません。`,'削除する',()=>{
+    pitcherImgIds(p).forEach(i=>IDB.del(i));
+    Store.data.pitchers=Store.data.pitchers.filter(x=>x.id!==id); Store.save();
+    S.modal=null; goList(); toast('削除しました');
+  });
 }
 function resetWork(){ stopTick(); S.cur={obs:{},tempo:{},inning:'1',set:'W'}; S.scan=freshScan(); S.ai=freshAi(); S.open={}; S.logLimit=40; }
 function openPitcher(id){
@@ -1389,8 +1424,8 @@ function undoPitch(){
 }
 function delPitch(id){
   const p=curP(); if(!p) return;
-  if(!confirm('この1球の記録を削除しますか？')) return;
-  p.pitches=p.pitches.filter(x=>x.id!==id); Store.save(); render();
+  const x=p.pitches.find(y=>y.id===id); if(!x) return;
+  askConfirm(`#${x.no||''}（${x.kind}）の記録を削除します。`,'削除する',()=>{ p.pitches=p.pitches.filter(y=>y.id!==id); Store.save(); render(); toast('削除しました'); });
 }
 
 // テル
@@ -1420,9 +1455,10 @@ async function saveTell(){
 }
 function delTell(id){
   const p=curP(); const t=p?.tells.find(x=>x.id===id); if(!t) return;
-  if(!confirm(`テル「${t.part}」を削除しますか？（このテルの的中記録も見えなくなります）`)) return;
-  IDB.del(t.imgS); IDB.del(t.imgB);
-  p.tells=p.tells.filter(x=>x.id!==id); Store.save(); render();
+  askConfirm(`テル「${t.part}」を削除します。このテルの的中記録も見えなくなります。`,'削除する',()=>{
+    IDB.del(t.imgS); IDB.del(t.imgB);
+    p.tells=p.tells.filter(x=>x.id!==id); Store.save(); render(); toast('削除しました');
+  });
 }
 function toggleTellActive(id){ const t=curP()?.tells.find(x=>x.id===id); if(!t) return; t.active=!t.active; Store.save(); render(); }
 
@@ -1484,8 +1520,7 @@ async function saveScan(){
 }
 function delScan(id){
   const p=curP(); const s=p?.scans.find(x=>x.id===id); if(!s) return;
-  if(!confirm('この比較記録を削除しますか？')) return;
-  IDB.del(s.imgId); p.scans=p.scans.filter(x=>x.id!==id); Store.save(); render();
+  askConfirm('この比較記録を削除します。','削除する',()=>{ IDB.del(s.imgId); p.scans=p.scans.filter(x=>x.id!==id); Store.save(); render(); toast('削除しました'); });
 }
 
 // 共有・書き出し
@@ -1512,10 +1547,13 @@ function exportCsv(){
   const rows=p.pitches.map(x=>[x.no,new Date(x.ts).toLocaleString('ja-JP'),x.inning,x.set==='S'?'セット':'ワインド',
     ...p.tells.map(t=>{ const v=x.tempo?.[t.id]; if(typeof v==='number') return v.toFixed(2); const o=x.obs?.[t.id]; return o?obsLabel(t,o):''; }),
     x.pred?SIDE_NAME[x.pred]:'',x.predProb??'',SIDE_NAME[x.actual],x.kind,x.pred?(x.pred===x.actual?'○':'×'):'']);
-  const csv='﻿'+[head,...rows].map(r=>r.map(q).join(',')).join('\r\n');
+  const body=[head,...rows].map(r=>r.map(q).join(',')).join('\r\n');
+  if(EMBED){ showText(`${p.name} の記録（CSV）`,body); return; }
+  const csv='\uFEFF'+body;
   saveFile(new Blob([csv],{type:'text/csv'}),`tell-${p.name}-${dateTag()}.csv`);
 }
 function exportAll(){
+  if(EMBED){ askConfirm('この共有ページではファイルを保存できません。バックアップは、URLで公開したアプリ本体から行ってください。','閉じる',()=>{},false); return; }
   const images={};
   Store.data.pitchers.forEach(p=>pitcherImgIds(p).forEach(i=>{ if(IMG[i]) images[i]=IMG[i]; }));
   const json=JSON.stringify({app:'tell-alert',version:2,exportedAt:new Date().toISOString(),pitchers:Store.data.pitchers,images});
@@ -1526,14 +1564,46 @@ async function importAll(ev){
   try{
     const d=JSON.parse(await f.text());
     if(d.app!=='tell-alert'||!Array.isArray(d.pitchers)) throw new Error('TELL ALERTのバックアップではありません');
-    if(!confirm(`${d.pitchers.length}人分のデータを読み込みます。同じ投手がいる場合は、読み込む側の内容で上書きします。よろしいですか？`)) return;
-    for(const [id,v] of Object.entries(d.images||{})){ if(String(v).startsWith('data:image/')) await IDB.put(id,v); }
-    d.pitchers.map(normalizePitcher).forEach(np=>{
-      const i=Store.data.pitchers.findIndex(x=>x.id===np.id);
-      if(i>=0) Store.data.pitchers[i]=np; else Store.data.pitchers.push(np);
-    });
-    Store.save(); S.modal=null; S.form={}; goList(); toast('読み込みました','ok');
+    askConfirm(`${d.pitchers.length}人分のデータを読み込みます。同じ投手がいる場合は、読み込む側の内容で上書きします。`,'読み込む',async()=>{
+      for(const [id,v] of Object.entries(d.images||{})){ if(String(v).startsWith('data:image/')) await IDB.put(id,v); }
+      d.pitchers.map(normalizePitcher).forEach(np=>{
+        const i=Store.data.pitchers.findIndex(x=>x.id===np.id);
+        if(i>=0) Store.data.pitchers[i]=np; else Store.data.pitchers.push(np);
+      });
+      Store.save(); S.modal=null; S.form={}; goList(); toast('読み込みました','ok');
+    },false);
   }catch(e){ toast('読み込めませんでした：'+e.message,'crit',4000); }
+}
+
+// サンプル投手（使い方を試すための例。実在の投手ではない）
+function makeSample(){
+  let seed=20261110; const rnd=()=>((seed=(seed*1103515245+12345)%2147483648)/2147483648);
+  const tpl=i=>({...TEMPLATES[i]});
+  const p=normalizePitcher({name:'サンプル投手（例）',team:'例のデータ',hand:'右投げ',
+    memo:'30球目以降、アゴを毎球引くようになった（クセを隠し始めた）想定にしています。',
+    tells:[tpl(0),tpl(1),tpl(2)].map(t=>({...t,timing:t.type==='tempo'?'テイクバック':'セット・構え'}))});
+  p.sample=true;
+  const [glove,tempo,chin]=p.tells;
+  const t0=Date.now()-38*60000;
+  for(let i=0;i<38;i++){
+    const B=rnd()<0.38, actual=B?'B':'S';
+    const kind=B?['スライダー','スライダー','フォーク','カーブ'][Math.floor(rnd()*4)]:(rnd()<0.8?'ストレート':'ツーシーム');
+    const obs={}, tm={};
+    obs[glove.id]=rnd()<0.12?'?':((B?rnd()<0.15:rnd()<0.8)?'S':'B');                  // 直球の時にグラブを斜めに動かす
+    tm[tempo.id]=Math.round(((B?0.84:0.94)+(rnd()-0.5)*0.16)*100)/100;                 // 変化球の時はモーションが速い
+    obs[chin.id]= i<30 ? ((B?rnd()<0.85:rnd()<0.1)?'B':'S') : 'B';                       // 30球目以降は毎球アゴを引く
+    // その時点までの記録で予測を出しておく（実際の計測と同じ流れ）
+    const keep=S.cur; S.cur={obs:{...obs},tempo:{[tempo.id]:{start:null,sec:tm[tempo.id]}},inning:'1',set:'W'};
+    const pr=predict(p); S.cur=keep;
+    let pred=null, predProb=null;
+    if(pr.used.length&&!pr.unverified){ pred=pr.probS>=0.5?'S':'B'; predProb=Math.round(Math.max(pr.probS,1-pr.probS)*100); }
+    p.pitches.push({id:uid(),no:i+1,ts:t0+i*60000,inning:String(1+Math.floor(i/5)),set:rnd()<0.5?'W':'S',obs,tempo:tm,pred,predProb,actual,kind});
+  }
+  return p;
+}
+function loadSample(){
+  if(Store.data.pitchers.some(p=>p.sample)){ toast('サンプルはすでに入っています'); return; }
+  Store.data.pitchers.unshift(makeSample()); Store.save(); render(); toast('サンプル投手を追加しました','ok');
 }
 
 // 旧バージョン（tell_alert_final）からの引き継ぎ
@@ -1555,6 +1625,8 @@ async function migrateLegacy(){
   if(Store.save()) toast(`以前のデータ（${old.pitchers.length}人）を引き継ぎました`,'ok',3500);
 }
 
+function localStorage_has(k){ try{ return localStorage.getItem(k)!=null; }catch{ return false; } }
+
 // 計測中は画面を消さない
 let wakeLock=null;
 async function syncWake(){
@@ -1571,15 +1643,18 @@ matchMedia('(prefers-color-scheme: light)').addEventListener?.('change',()=>{ if
 // 起動
 // ══════════════════════════════════════════════
 (async function init(){
-  loadSettings(); applyTheme();
+  loadSettings();
+  if(EMBED){ SET.mode='offline'; if(!localStorage_has(LS_SET)) SET.theme='auto'; }
+  applyTheme();
   Store.load();
   render();
   await IDB.open();
   if(!IDB.ok) toast('この環境では画像を保存できません（プライベートブラウズ等）','warn',4000);
   await IDB.loadAll();
   await migrateLegacy();
+  if(EMBED && !Store.data.pitchers.length){ Store.data.pitchers.push(makeSample()); Store.save(); }
   render();
-  if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+  if(!EMBED && 'serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
 </script>
 </body>

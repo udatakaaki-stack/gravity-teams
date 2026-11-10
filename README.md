@@ -71,4 +71,12 @@ python3 tools/check_japanese.py
 - `sw.js` オフライン用
 - `manifest.webmanifest`, `icon*.png`, `icon.svg` ホーム画面追加用
 - `fonts/` 同梱の日本語フォントとライセンス（SIL Open Font License 1.1）
-- `tools/` 日本語表示のチェックとフォント作成のスクリプト
+- `tools/` 日本語表示のチェック、フォント作成、共有ページ（claude.ai のアーティファクト）作成のスクリプト
+
+## 共有ページ版
+
+`python3 tools/build_artifact.py 出力先.html` で、claude.ai で表示・共有するためのページを作れます。
+この版はサンプル投手（例のデータ）が最初から入っていて、使い方の検討や説明に使えます。
+ただし、ファイルの保存、AI機能、オフラインでの起動は使えません。データはその端末のブラウザにだけ残ります。
+
+最初の画面の「サンプルで試す」から、アプリ本体でも同じサンプルを入れられます。
