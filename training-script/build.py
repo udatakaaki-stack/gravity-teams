@@ -148,12 +148,11 @@ def block_html(kind, text):
 
 
 def build_html():
-    out = [f"<!doctype html><html lang='ja'><head><meta charset='utf-8'><title>研修シナリオ台本（改訂版）</title>"
+    out = [f"<!doctype html><html lang='ja'><head><meta charset='utf-8'><title>{esc(TITLE)}（改訂版）</title>"
            f"<style>{CSS}</style></head><body>"]
 
     # 表紙
     out.append(f"""<section class='cover'>
-      <div class='kicker'>研修シナリオ台本</div>
       <h1>少年期に大切な<br>姿勢・休息・動き・視る力</h1>
       <div><span class='rev'>改訂版</span></div>
       <p>{esc(SUBTITLE)}</p>
@@ -246,7 +245,7 @@ def main():
     pdf_path = HERE / "研修シナリオ台本_改訂版.pdf"
     footer = ("<div style='width:100%;font-size:7.5pt;color:#5b6878;font-family:IPAPGothic;"
               "padding:0 15mm;display:flex;justify-content:space-between'>"
-              f"<span>研修シナリオ台本（改訂版）　{esc(TITLE)}</span>"
+              f"<span>{esc(TITLE)}（改訂版）</span>"
               "<span><span class='pageNumber'></span> / <span class='totalPages'></span></span></div>")
     js = ("const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();"
           "const p=await b.newPage();await p.goto(process.argv[1]);await p.waitForLoadState('networkidle');"
