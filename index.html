@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
@@ -40,7 +40,10 @@
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--bg)}
-body{color:var(--text);font:15px/1.55 system-ui,-apple-system,"Hiragino Sans","Noto Sans JP","Yu Gothic",sans-serif;-webkit-text-size-adjust:100%;min-height:100vh;overflow-x:hidden}
+body{color:var(--text);font:15px/1.6 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo",system-ui,sans-serif;-webkit-text-size-adjust:100%;min-height:100vh;overflow-x:hidden;
+  word-break:auto-phrase;line-break:strict;overflow-wrap:anywhere;font-feature-settings:"palt" 0}
+.ic{display:inline-block;vertical-align:-0.2em;flex-shrink:0}
+.logo{color:#fff}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent;background:none;border:none;touch-action:manipulation}
 button:disabled{opacity:.4;cursor:not-allowed}
@@ -51,11 +54,11 @@ img{display:block;max-width:100%}
 
 /* ヘッダー */
 .hdr{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:var(--bg);border-bottom:1px solid var(--line)}
-.logo{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .hdr-t{flex:1;min-width:0}
 .brand{font-weight:900;letter-spacing:.08em;color:var(--accent);font-size:15px}
 .hdr-sub{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.icon-btn{min-width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);font-size:20px;display:flex;align-items:center;justify-content:center}
+.icon-btn{min-width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--sub);display:flex;align-items:center;justify-content:center}
 .chip{font-size:11px;font-weight:800;padding:4px 8px;border-radius:20px;border:1px solid var(--line);white-space:nowrap}
 .chip-ai{color:var(--S);border-color:var(--S)}
 .chip-off{color:var(--ok);border-color:var(--ok)}
@@ -109,7 +112,7 @@ img{display:block;max-width:100%}
 .pcard{display:flex;align-items:center;gap:12px;width:100%;text-align:left}
 .pcard.lv-alert,.pcard.lv-crit{border-width:2px}
 .pcard.lv-alert{border-color:var(--alert)}.pcard.lv-crit{border-color:var(--crit)}
-.thumb{width:64px;height:52px;border-radius:9px;object-fit:cover;flex-shrink:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-size:22px}
+.thumb{width:64px;height:52px;border-radius:9px;object-fit:cover;flex-shrink:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;color:var(--dim)}
 .pname{font-size:17px;font-weight:900}
 .hand{font-size:12px;color:var(--sub);font-weight:700;margin-left:4px}
 .meta{font-size:12px;color:var(--sub)}
@@ -124,7 +127,7 @@ img{display:block;max-width:100%}
 /* 下部タブ */
 .tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;display:grid;grid-template-columns:repeat(4,1fr);background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
 .tab{min-height:60px;font-size:13px;font-weight:800;color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
-.tab .ti{font-size:20px;line-height:1}
+.tab .ti{line-height:1;display:flex}
 .tab.on{color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
 
 /* 計測画面 */
@@ -242,7 +245,7 @@ pre.share{white-space:pre-wrap;font:13px/1.7 inherit;background:var(--bg);border
 // ══════════════════════════════════════════════
 // 定数
 // ══════════════════════════════════════════════
-const APP_VERSION = '2.1.0';
+const APP_VERSION = '2.1.1';
 const LS_DATA = 'tell_alert_v2';
 const LS_SET = 'tell_alert_settings_v2';
 const LS_OLD = 'tell_alert_final'; // 旧バージョンのデータ（引き継ぎ用）
@@ -269,18 +272,18 @@ const TEMPLATES = [
 ];
 
 const STATUS = {
-  INTACT:      {label:'正常', c:'ok',    icon:'✓'},
-  WEAKENED:    {label:'弱化', c:'warn',  icon:'▽'},
-  MODIFIED:    {label:'変化', c:'alert', icon:'⚡'},
-  DISAPPEARED: {label:'消失', c:'crit',  icon:'✕'},
-  UNKNOWN:     {label:'不明', c:'dim',   icon:'?'},
+  INTACT:      {label:'正常', c:'ok',    icon:'○'},
+  WEAKENED:    {label:'弱化', c:'warn',  icon:'△'},
+  MODIFIED:    {label:'変化', c:'alert', icon:'▲'},
+  DISAPPEARED: {label:'消失', c:'crit',  icon:'×'},
+  UNKNOWN:     {label:'不明', c:'dim',   icon:'？'},
 };
 const LEVEL = {
   NODATA:   {label:'記録待ち', c:'dim',   icon:'…'},
-  CLEAR:    {label:'正常',     c:'ok',    icon:'✓'},
-  CAUTION:  {label:'注意',     c:'warn',  icon:'!'},
-  ALERT:    {label:'警戒',     c:'alert', icon:'⚠'},
-  CRITICAL: {label:'緊急',     c:'crit',  icon:'⛔'},
+  CLEAR:    {label:'正常',     c:'ok',    icon:'○'},
+  CAUTION:  {label:'注意',     c:'warn',  icon:'△'},
+  ALERT:    {label:'警戒',     c:'alert', icon:'！'},
+  CRITICAL: {label:'緊急',     c:'crit',  icon:'！！'},
 };
 const LEVEL_ORDER = ['NODATA','CLEAR','CAUTION','ALERT','CRITICAL'];
 const lvRank = l => LEVEL_ORDER.indexOf(l);
@@ -296,6 +299,24 @@ const AI_MODELS = [
   ['claude-opus-5-5','Claude Opus 5.5（標準・高精度）'],
   ['claude-sonnet-5-5','Claude Sonnet 5.5（速い・安い）'],
 ];
+
+// ══════════════════════════════════════════════
+// アイコン（絵文字は端末によって□に化けるため、線画のSVGで描く）
+// ══════════════════════════════════════════════
+const ICONS={
+  back:'<path d="M15 5l-7 7 7 7"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  ball:'<circle cx="12" cy="12" r="9"/><path d="M7 5.5c2 2 2 11 0 13M17 5.5c-2 2-2 11 0 13"/>',
+  pin:'<path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2"/>',
+  images:'<rect x="3" y="5" width="8" height="14" rx="1"/><rect x="13" y="5" width="8" height="14" rx="1"/>',
+  list:'<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+  camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  film:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+  spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+};
+const ic=(n,size=20)=>`<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
 
 // ══════════════════════════════════════════════
 // ユーティリティ
@@ -446,13 +467,13 @@ async function fileToJpeg(file){
 }
 function pickButtons(target){
   return `<div class="pick-row">
-    <label class="btn sm"><input class="vh" type="file" accept="image/*,video/*" capture="environment" data-target="${target}" onchange="onPick(event)">📷 撮影する</label>
-    <label class="btn sm"><input class="vh" type="file" accept="image/*,video/*" data-target="${target}" onchange="onPick(event)">🎞 写真・動画から</label>
+    <label class="btn sm"><input class="vh" type="file" accept="image/*,video/*" capture="environment" data-target="${target}" onchange="onPick(event)">${ic('camera')}撮影する</label>
+    <label class="btn sm"><input class="vh" type="file" accept="image/*,video/*" data-target="${target}" onchange="onPick(event)">${ic('film')}写真・動画から</label>
   </div>`;
 }
 function previewBox(v, clearFn){
   const src=imgSrc(v); if(!src) return '';
-  return `<div class="preview"><img src="${src}" alt=""><button class="x" onclick="${clearFn}" aria-label="画像を外す">✕</button></div>`;
+  return `<div class="preview"><img src="${src}" alt=""><button class="x" onclick="${clearFn}" aria-label="画像を外す">×</button></div>`;
 }
 async function onPick(ev){
   const input=ev.target, f=input.files&&input.files[0], target=input.dataset.target;
@@ -479,30 +500,30 @@ function openFrameModal(file,target){
   FR={url,target};
   document.getElementById('overlay').innerHTML=`
   <div class="modal-bg"><div class="modal frame-modal">
-    <div class="m-head"><b>🎞 コマを選ぶ</b><button class="x" onclick="closeFrame()" aria-label="閉じる">✕</button></div>
+    <div class="m-head"><b>コマを選ぶ</b><button class="x" onclick="closeFrame()" aria-label="閉じる">×</button></div>
     <div class="note">スライダーとコマ送りで、テルが一番はっきり見える瞬間に合わせてください。</div>
     <video id="fv" playsinline muted preload="auto" src="${url}"></video>
     <input id="fslider" type="range" min="0" max="0" step="0.001" value="0" aria-label="再生位置">
     <div class="ftime" id="ftime">読み込み中…</div>
     <div class="grid3 mb">
-      <button class="btn sm" onclick="fStep(-1)">◀ 1コマ</button>
-      <button class="btn sm" id="fplay" onclick="fPlay()">▶ 1/4速</button>
-      <button class="btn sm" onclick="fStep(1)">1コマ ▶</button>
+      <button class="btn sm" onclick="fStep(-1)">← 1コマ</button>
+      <button class="btn sm" id="fplay" onclick="fPlay()">再生 1/4速</button>
+      <button class="btn sm" onclick="fStep(1)">1コマ →</button>
     </div>
-    <button class="btn btn-main full" onclick="fUse()">✓ このコマを使う</button>
+    <button class="btn btn-main full" onclick="fUse()">このコマを使う</button>
   </div></div>`;
   const v=document.getElementById('fv'), s=document.getElementById('fslider');
   const upd=()=>{ s.value=v.currentTime; document.getElementById('ftime').textContent=`${v.currentTime.toFixed(2)}秒 / ${(v.duration||0).toFixed(2)}秒`; };
   v.addEventListener('loadedmetadata',()=>{ s.max=v.duration||0; v.currentTime=Math.min(0.05,v.duration||0); upd(); });
   v.addEventListener('timeupdate',upd); v.addEventListener('seeked',upd);
-  v.addEventListener('pause',()=>{ const b=document.getElementById('fplay'); if(b) b.textContent='▶ 1/4速'; });
+  v.addEventListener('pause',()=>{ const b=document.getElementById('fplay'); if(b) b.textContent='再生 1/4速'; });
   v.addEventListener('error',()=>toast('この動画形式は読み込めませんでした','crit',4000));
   s.addEventListener('input',()=>{ v.pause(); v.currentTime=parseFloat(s.value)||0; });
 }
 function fStep(d){ const v=document.getElementById('fv'); if(!v) return; v.pause(); v.currentTime=clamp(v.currentTime+d/30,0,v.duration||0); }
 function fPlay(){
   const v=document.getElementById('fv'), b=document.getElementById('fplay'); if(!v) return;
-  if(v.paused){ v.playbackRate=0.25; v.play().catch(()=>{}); b.textContent='⏸ 止める'; } else v.pause();
+  if(v.paused){ v.playbackRate=0.25; v.play().catch(()=>{}); b.textContent='停止'; } else v.pause();
 }
 function fUse(){
   const v=document.getElementById('fv');
@@ -784,19 +805,19 @@ function render(){
 function vHeader(){
   const p=S.screen==='pitcher'?curP():null;
   return `<header class="hdr">
-    ${p?`<button class="icon-btn" onclick="goList()" aria-label="投手一覧へ戻る">‹</button>`:`<div class="logo" aria-hidden="true">⚾</div>`}
+    ${p?`<button class="icon-btn" onclick="goList()" aria-label="投手一覧へ戻る">${ic('back',24)}</button>`:`<div class="logo" aria-hidden="true">${ic('ball',22)}</div>`}
     <div class="hdr-t">
       <div class="brand">TELL ALERT</div>
       <div class="hdr-sub">${p?`${esc(p.name)}・${esc(p.hand)}${p.team?'・'+esc(p.team):''}`:'投手の癖を記録して、本物かどうか確かめる'}</div>
     </div>
     <span class="chip ${SET.mode==='ai'?'chip-ai':'chip-off'}">${SET.mode==='ai'?'AI併用':'オフライン'}</span>
-    <button class="icon-btn" onclick="toggleTheme()" aria-label="明るさ切替">${isLight()?'🌙':'☀️'}</button>
-    <button class="icon-btn" onclick="openSettings()" aria-label="設定">⚙️</button>
+    <button class="icon-btn" onclick="toggleTheme()" aria-label="明るさ切替">${ic(isLight()?'moon':'sun',22)}</button>
+    <button class="icon-btn" onclick="openSettings()" aria-label="設定">${ic('gear',22)}</button>
   </header>`;
 }
 const isLight = () => SET.theme==='light' || (SET.theme==='auto' && matchMedia('(prefers-color-scheme: light)').matches);
 
-function thumb(id){ const s=imgSrc(id); return s?`<img class="thumb" src="${s}" alt="">`:`<div class="thumb" aria-hidden="true">⚾</div>`; }
+function thumb(id){ const s=imgSrc(id); return s?`<img class="thumb" src="${s}" alt="">`:`<div class="thumb" aria-hidden="true">${ic('ball',26)}</div>`; }
 
 // ── 投手一覧 ──
 function vList(){
@@ -804,7 +825,7 @@ function vList(){
   let h=`<div class="row-between"><h2 class="sec">登録投手（${ps.length}人）</h2>${ps.length?`<button class="btn btn-main sm" onclick="openReg()">＋ 投手を登録</button>`:''}</div>`;
   if(!ps.length){
     h+=`<div class="empty">
-      <div style="font-size:40px">⚾</div>
+      <div style="color:var(--accent)">${ic('ball',44)}</div>
       <b>まだ投手が登録されていません</b>
       <ol class="steps">
         <li>投手を登録する（名前と投球腕だけでOK）</li>
@@ -833,8 +854,8 @@ function vList(){
 
 // ── 投手画面 ──
 function vTabs(){
-  const tabs=[['live','⚾','計測'],['tells','📌','テル'],['compare','🖼','比較'],['log','📋','記録']];
-  return `<nav class="tabs">${tabs.map(([k,i,l])=>`<button class="tab ${S.tab===k?'on':''}" onclick="setTab('${k}')"><span class="ti">${i}</span>${l}</button>`).join('')}</nav>`;
+  const tabs=[['live','ball','計測'],['tells','pin','テル'],['compare','images','比較'],['log','list','記録']];
+  return `<nav class="tabs">${tabs.map(([k,i,l])=>`<button class="tab ${S.tab===k?'on':''}" onclick="setTab('${k}')"><span class="ti">${ic(i,22)}</span>${l}</button>`).join('')}</nav>`;
 }
 function vPitcher(){
   const p=curP(); if(!p) return '';
@@ -875,13 +896,13 @@ function vLive(p){
 
   <div class="grid2 mt">
     <button class="btn sm" onclick="clearObs()">サインを選び直す</button>
-    <button class="btn sm" onclick="undoPitch()" ${p.pitches.length?'':'disabled'}>↶ 直前の1球を取消</button>
+    <button class="btn sm" onclick="undoPitch()" ${p.pitches.length?'':'disabled'}>直前の1球を取り消す</button>
   </div>
   ${last.length?`<div class="card mt recent"><div class="small" style="font-weight:800;margin-bottom:4px">直近の記録</div>${last.map(x=>`<div>${pitchLine(p,x)}</div>`).join('')}</div>`:''}`;
 }
 function vObsRow(p,t){
   const st=tellStats(p,t), o=S.cur.obs[t.id];
-  const head=`<div class="obs-h"><b>${esc(t.part)}</b><span class="tm">${esc(timingText(t))}</span>${evBadge(st)}</div>${t.cue?`<div class="cue">👀 ${esc(t.cue)}</div>`:''}`;
+  const head=`<div class="obs-h"><b>${esc(t.part)}</b><span class="tm">${esc(timingText(t))}</span>${evBadge(st)}</div>${t.cue?`<div class="cue">打者へ：${esc(t.cue)}</div>`:''}`;
   if(t.type==='tempo') return `<div class="card">${head}${vTempo(p,t,st)}</div>`;
   if(t.type==='presence') return `<div class="card">${head}
     <div class="obs-btns">
@@ -905,7 +926,7 @@ function vTempo(p,t,st){
   else if(c.sec!=null){
     const side=ti.thr!=null?tempoSide(t,c.sec,ti.thr):null;
     btn=`<span class="big">${c.sec.toFixed(2)}秒</span><small>${side?`→ <span class="c-${side}">${SIDE_NAME[side]}寄り</span>`:'境目はまだ決まっていません'}・タップで測り直し</small>`;
-  }else btn=`<span>▶ ${esc(t.tStart)}でタップ</span><small>もう一度「${esc(t.tEnd)}」でタップ</small>`;
+  }else btn=`<span>● ${esc(t.tStart)}でタップ</span><small>もう一度「${esc(t.tEnd)}」でタップ</small>`;
   const info=ti.thr!=null
     ? `直球 平均${ti.mS.toFixed(2)}秒・変化球 平均${ti.mB.toFixed(2)}秒・境目${ti.thr.toFixed(2)}秒`
     : `境目を決めるため、直球と変化球を${TEMPO_MIN_EACH}球ずつ測ってください（今 直球${ti.sS.length}・変化球${ti.sB.length}）`;
@@ -941,8 +962,8 @@ function pitchLine(p,x){
     if(typeof sec==='number') return `${short(t.part,8)}:${sec.toFixed(2)}秒`;
     return o?`${short(t.part,8)}:${obsLabel(t,o)}`:null;
   }).filter(Boolean).join(' ');
-  const res=x.pred? (x.pred===x.actual?'<span class="c-ok">✓的中</span>':'<span class="c-crit">✗外れ</span>') : '';
-  return `#${x.no||''} ${esc(x.inning||'')}回 ${x.set==='S'?'セ':'ワ'}　${esc(obs)||'サインなし'} → <b class="c-${x.actual}">${esc(x.kind)}</b> ${res}`;
+  const res=x.pred? (x.pred===x.actual?'<span class="c-ok">○的中</span>':'<span class="c-crit">×外れ</span>') : '';
+  return `#${x.no||''} ${esc(x.inning||'')}回 ${x.set==='S'?'セット':'ワインド'}　${esc(obs)||'サインなし'} → <b class="c-${x.actual}">${esc(x.kind)}</b> ${res}`;
 }
 
 // ── テルタブ ──
@@ -981,12 +1002,12 @@ function vTellCard(p,t){
     </button>
     ${open?`<div class="tc-body">
       <div class="grid2 mt">
-        <div class="sb s"><div class="k">直球の時</div>${esc(signText(t,'S')||'—')}${imgSrc(t.imgS)?`<img class="refimg" src="${imgSrc(t.imgS)}" alt="直球時の参考画像">`:''}</div>
-        <div class="sb b"><div class="k">変化球の時</div>${esc(signText(t,'B')||'—')}${imgSrc(t.imgB)?`<img class="refimg" src="${imgSrc(t.imgB)}" alt="変化球時の参考画像">`:''}</div>
+        <div class="sb s"><div class="k">直球の時</div>${esc(signText(t,'S')||'－')}${imgSrc(t.imgS)?`<img class="refimg" src="${imgSrc(t.imgS)}" alt="直球時の参考画像">`:''}</div>
+        <div class="sb b"><div class="k">変化球の時</div>${esc(signText(t,'B')||'－')}${imgSrc(t.imgB)?`<img class="refimg" src="${imgSrc(t.imgB)}" alt="変化球時の参考画像">`:''}</div>
       </div>
       ${st.tempo?vTempoDetail(st.tempo):''}
-      ${t.cue?`<div class="note mt">👀 打者への指示：${esc(t.cue)}</div>`:''}
-      ${t.baseline?`<div class="note">📝 ${esc(t.baseline)}</div>`:''}
+      ${t.cue?`<div class="note mt">打者への指示：${esc(t.cue)}</div>`:''}
+      ${t.baseline?`<div class="note">メモ：${esc(t.baseline)}</div>`:''}
       ${st.n?`<div class="small mb">基準（${t.type==='presence'?`普段の${t.side==='S'?'直球':'変化球'}の割合`:'多い方を張った場合'}）${pct(st.p0)}に対して ${pct(st.acc)}。偶然この成績になる確率 約${st.pval<0.001?'0.1%未満':pct(st.pval)}</div>`:''}
       <div class="grid3">
         <button class="btn xs" onclick="openTellEdit('${t.id}')">編集</button>
@@ -1006,14 +1027,14 @@ function vTempoDetail(ti){
 function vAiDiff(p){
   const A=S.ai;
   let h=`<div class="card" style="border-color:var(--S)">
-    <div class="sec c-S mb">🤖 AIでテル候補を探す</div>
+    <div class="sec c-S mb">${ic('spark',18)} AIでテル候補を探す</div>
     <div class="note">直球を投げた時と変化球を投げた時の、同じ局面のコマを1枚ずつ選んでください。AIが2枚の違いを候補として挙げます。候補は「未検証」として登録されるので、必ず計測で確かめてください。</div>
     <div class="grid2">
       <div><div class="small c-S" style="font-weight:800">直球の時</div>${A.imgS?previewBox(A.imgS,"S.ai.imgS=null;render()"):pickButtonsCompact('aiS')}</div>
       <div><div class="small c-B" style="font-weight:800">変化球の時</div>${A.imgB?previewBox(A.imgB,"S.ai.imgB=null;render()"):pickButtonsCompact('aiB')}</div>
     </div>
-    ${A.error?`<div class="alert-msg c-crit">⚠ ${esc(A.error)}</div>`:''}
-    <button class="btn btn-ai full mt" onclick="runAiDiff()" ${A.loading||!A.imgS||!A.imgB?'disabled':''}>${A.loading?'<span class="spin"></span> 分析中…':'🔍 違いを分析'}</button>`;
+    ${A.error?`<div class="alert-msg c-crit">エラー：${esc(A.error)}</div>`:''}
+    <button class="btn btn-ai full mt" onclick="runAiDiff()" ${A.loading||!A.imgS||!A.imgB?'disabled':''}>${A.loading?'<span class="spin"></span> 分析中…':'違いを分析する'}</button>`;
   if(A.result){
     const r=A.result;
     h+=`<div class="note mt">${esc(r.summary)}</div>`;
@@ -1024,16 +1045,16 @@ function vAiDiff(p){
         <div class="small"><span class="c-S">直球：</span>${esc(c.straight)}</div>
         <div class="small"><span class="c-B">変化球：</span>${esc(c.breaking)}</div>
         <div class="small dim">根拠：${esc(c.reason)}</div>
-        <button class="btn xs mt" onclick="adoptCandidate(${i})" ${A.adopted[i]?'disabled':''}>${A.adopted[i]?'✓ 登録済み':'＋ テルとして登録'}</button>
+        <button class="btn xs mt" onclick="adoptCandidate(${i})" ${A.adopted[i]?'disabled':''}>${A.adopted[i]?'登録済み':'＋ テルとして登録'}</button>
       </div>`;
     });
-    h+=`<div class="small mt">⚠ ${esc(r.caution)}</div><div class="small">📷 ${esc(r.shooting_tip)}</div>`;
+    h+=`<div class="small mt">注意：${esc(r.caution)}</div><div class="small">撮影のヒント：${esc(r.shooting_tip)}</div>`;
   }
   return h+`</div>`;
 }
 function pickButtonsCompact(target){
-  return `<label class="btn xs full" style="margin-top:4px"><input class="vh" type="file" accept="image/*,video/*" capture="environment" data-target="${target}" onchange="onPick(event)">📷 撮影</label>
-  <label class="btn xs full" style="margin-top:4px"><input class="vh" type="file" accept="image/*,video/*" data-target="${target}" onchange="onPick(event)">🎞 選ぶ</label>`;
+  return `<label class="btn xs full" style="margin-top:4px"><input class="vh" type="file" accept="image/*,video/*" capture="environment" data-target="${target}" onchange="onPick(event)">${ic('camera',16)}撮影</label>
+  <label class="btn xs full" style="margin-top:4px"><input class="vh" type="file" accept="image/*,video/*" data-target="${target}" onchange="onPick(event)">${ic('film',16)}選ぶ</label>`;
 }
 
 // ── 比較タブ（旧スキャン機能） ──
@@ -1041,18 +1062,18 @@ function vCompare(p){
   const C=S.scan, tells=sortedTells(p).filter(t=>t.active&&t.type!=='tempo');
   let h=`<div class="note">試合の途中でフォームを撮り、登録時の参考画像と並べて目で比べます。投手がテルを修正していないかの確認用です。<br>球数が少ない序盤や、計測ができない打席の補助として使ってください。</div>
   <div class="card">
-    <div class="sec mb">📸 今回のコマ</div>
+    <div class="sec mb">今回のコマ</div>
     ${C.img?previewBox(C.img,"S.scan.img=null;render()"):pickButtons('scan')}
     <div class="grid2 mt">
-      <div class="field" style="margin:0"><label>イニング</label><select data-bind="scan.inning"><option value="">—</option>${INNINGS.map(n=>`<option value="${n}" ${C.inning===n?'selected':''}>${n}回</option>`).join('')}</select></div>
+      <div class="field" style="margin:0"><label>イニング</label><select data-bind="scan.inning"><option value="">－</option>${INNINGS.map(n=>`<option value="${n}" ${C.inning===n?'selected':''}>${n}回</option>`).join('')}</select></div>
       <div class="field" style="margin:0"><label>メモ</label><input type="text" data-bind="scan.memo" value="${esc(C.memo)}" placeholder="例：腕の振りが速くなった"></div>
     </div>
   </div>`;
   if(!tells.length){ h+=`<div class="empty sm">比べるテルがありません。先に「テル」タブで登録してください。</div>`; return h+vScanHistory(p); }
-  if(SET.mode==='ai') h+=`${C.error?`<div class="alert-msg c-crit mb">⚠ ${esc(C.error)}</div>`:''}
-    <button class="btn btn-ai full mb" onclick="runAiScan()" ${C.loading||!C.img?'disabled':''}>${C.loading?'<span class="spin"></span> AIが確認中…':'🤖 AIに下書き判定させる'}</button>`;
+  if(SET.mode==='ai') h+=`${C.error?`<div class="alert-msg c-crit mb">エラー：${esc(C.error)}</div>`:''}
+    <button class="btn btn-ai full mb" onclick="runAiScan()" ${C.loading||!C.img?'disabled':''}>${C.loading?'<span class="spin"></span> AIが確認中…':'AIに下書き判定させる'}</button>`;
   if(C.ai) h+=`<div class="card" style="border-color:var(--S)"><div class="small c-S" style="font-weight:800">AIの見立て（画質：${esc(C.ai.image_quality)}）</div><div class="note" style="margin:4px 0 0">${esc(C.ai.reason)}</div>
-    ${(C.ai.new_findings||[]).map(f=>`<div class="small">⭐ ${esc(f.part)}：${esc(f.desc)}</div>`).join('')}</div>`;
+    ${(C.ai.new_findings||[]).map(f=>`<div class="small">◆ ${esc(f.part)}：${esc(f.desc)}</div>`).join('')}</div>`;
   tells.forEach(t=>{
     const s=C.status[t.id], aiC=C.ai?.checks?.find(c=>c.tell_id===t.id);
     h+=`<div class="card">
@@ -1062,8 +1083,8 @@ function vCompare(p){
         ${imgSrc(t.imgS)?`<figure><img src="${imgSrc(t.imgS)}" alt="直球時"><figcaption class="c-S">登録時：直球</figcaption></figure>`:''}
         ${imgSrc(t.imgB)?`<figure><img src="${imgSrc(t.imgB)}" alt="変化球時"><figcaption class="c-B">登録時：変化球</figcaption></figure>`:''}
       </div>`:''}
-      <div class="small mt"><span class="c-S">直球：</span>${esc(signText(t,'S')||'—')}　<span class="c-B">変化球：</span>${esc(signText(t,'B')||'—')}</div>
-      ${aiC?`<div class="small c-S mt">🤖 ${STATUS[aiC.status]?.label||''}・${esc(aiC.looks_like)}：${esc(aiC.note)}</div>`:''}
+      <div class="small mt"><span class="c-S">直球：</span>${esc(signText(t,'S')||'－')}　<span class="c-B">変化球：</span>${esc(signText(t,'B')||'－')}</div>
+      ${aiC?`<div class="small c-S mt">AI：${STATUS[aiC.status]?.label||''}・${esc(aiC.looks_like)}：${esc(aiC.note)}</div>`:''}
       <div class="st-btns">${Object.entries(STATUS).map(([k,v])=>`<button class="${s===k?'on '+v.c:''}" onclick="setScanStatus('${t.id}','${k}')">${v.icon}<br>${v.label}</button>`).join('')}</div>
     </div>`;
   });
@@ -1080,7 +1101,7 @@ function vScanHistory(p){
       <div class="grow"><span class="badge c-${L.c}">${L.icon} ${L.label}</span> <span class="small">${s.inning?esc(s.inning)+'回・':''}${fmtDate(s.ts)} ${fmtTime(s.ts)}</span>
         <div class="small">${(s.checks||[]).filter(c=>c.status!=='INTACT').map(c=>`${esc(c.part)}:${STATUS[c.status]?.label||esc(c.status)}`).join('・')||'全テル正常'}</div>
         ${s.memo?`<div class="small dim">${esc(s.memo)}</div>`:''}</div>
-      <button class="btn xs" onclick="delScan('${s.id}')" aria-label="削除">✕</button>
+      <button class="btn xs" onclick="delScan('${s.id}')" aria-label="削除">×</button>
     </div>`;
   }).join('');
 }
@@ -1092,17 +1113,17 @@ function vLog(p){
   const list=H.slice().reverse().slice(0,S.logLimit);
   return `<div class="kpi">
       <div><b>${H.length}</b><span>記録した球数</span></div>
-      <div><b>${H.length?pct(nS/H.length):'—'}</b><span>直球系の割合</span></div>
-      <div><b>${withPred.length?pct(hits/withPred.length):'—'}</b><span>予測の的中（${hits}/${withPred.length}）</span></div>
+      <div><b>${H.length?pct(nS/H.length):'－'}</b><span>直球系の割合</span></div>
+      <div><b>${withPred.length?pct(hits/withPred.length):'－'}</b><span>予測の的中（${hits}/${withPred.length}）</span></div>
     </div>
     <div class="card">
-      <div class="sec mb">📣 打者・ベンチへの共有メモ</div>
+      <div class="sec mb">打者・ベンチへの共有メモ</div>
       <pre class="share" id="share-text">${esc(shareText(p))}</pre>
       <div class="grid2"><button class="btn sm" onclick="copyShare()">コピー</button><button class="btn sm" onclick="exportCsv()">CSVで書き出す</button></div>
     </div>
     <div class="row-between"><h2 class="sec">1球ごとの記録</h2><button class="btn xs" onclick="openReg(true)">投手情報を編集</button></div>
     ${H.length?'':`<div class="empty sm">まだ記録がありません。「計測」タブで1球ずつ記録しましょう。</div>`}
-    <div class="card">${list.map(x=>`<div class="log-row"><span class="n">#${x.no||''}</span><span class="grow">${pitchLine(p,x)}</span><button class="x" onclick="delPitch('${x.id}')" aria-label="この記録を削除">✕</button></div>`).join('')}
+    <div class="card">${list.map(x=>`<div class="log-row"><span class="n">#${x.no||''}</span><span class="grow">${pitchLine(p,x)}</span><button class="x" onclick="delPitch('${x.id}')" aria-label="この記録を削除">×</button></div>`).join('')}
     ${H.length>S.logLimit?`<button class="btn sm full mt" onclick="S.logLimit+=40;render()">もっと見る（残り${H.length-S.logLimit}球）</button>`:''}</div>`;
 }
 function shareText(p){
@@ -1113,12 +1134,12 @@ function shareText(p){
     const t=x.tell, mark=x.st.ev==='strong'?'◎':'○';
     let body;
     if(t.type==='presence') body=`「${t.action}」が出たら${t.side==='S'?'直球':'変化球'}　出た時${x.st.k}/${x.st.n}`;
-    else if(t.type==='tempo'){ const ti=x.st.tempo; body=`${x.tell.dir==='Bslow'?'遅い':'速い'}と変化球　直球${ti.mS!=null?ti.mS.toFixed(2):'—'}秒／変化球${ti.mB!=null?ti.mB.toFixed(2):'—'}秒　的中${x.st.k}/${x.st.n}`; }
-    else body=`直球＝${t.straight||'—'}／変化球＝${t.breaking||'—'}　的中${x.st.k}/${x.st.n}`;
-    lines.push(`${mark} ${t.part}（${timingText(t)}）：${body}${t.cue?`\n　👀 ${t.cue}`:''}`);
+    else if(t.type==='tempo'){ const ti=x.st.tempo; body=`${x.tell.dir==='Bslow'?'遅い':'速い'}と変化球　直球${ti.mS!=null?ti.mS.toFixed(2):'－'}秒／変化球${ti.mB!=null?ti.mB.toFixed(2):'－'}秒　的中${x.st.k}/${x.st.n}`; }
+    else body=`直球＝${t.straight||'－'}／変化球＝${t.breaking||'－'}　的中${x.st.k}/${x.st.n}`;
+    lines.push(`${mark} ${t.part}（${timingText(t)}）：${body}${t.cue?`\n　打者へ：${t.cue}`:''}`);
   });
   if(!good.length) lines.push('まだ信頼できるテルはありません（記録を続けてください）');
-  ov.msgs.forEach(m=>lines.push(`⚠ ${m.text}`));
+  ov.msgs.forEach(m=>lines.push(`注意：${m.text}`));
   return lines.join('\n');
 }
 
@@ -1130,15 +1151,15 @@ function vModal(){
   if(!body) return '';
   return `<div class="modal-bg" onclick="if(event.target===this&&S.modal==='settings')closeModal()"><div class="modal" role="dialog" aria-modal="true">${body()}</div></div>`;
 }
-function mHead(title){ return `<div class="m-head"><b>${title}</b><button class="x" onclick="closeModal()" aria-label="閉じる">✕</button></div>`; }
+function mHead(title){ return `<div class="m-head"><b>${title}</b><button class="x" onclick="closeModal()" aria-label="閉じる">×</button></div>`; }
 
 function vSettings(){
   const F=S.form;
-  return `${mHead('⚙️ 設定')}
+  return `${mHead('設定')}
   <div class="field"><label>動作モード</label>
     <div class="seg">
-      <button class="${F.mode==='offline'?'on':''}" onclick="S.form.mode='offline';render()">📴 オフライン<br><small>通信不要</small></button>
-      <button class="${F.mode==='ai'?'on':''}" onclick="S.form.mode='ai';render()">🤖 AI併用<br><small>要通信・APIキー</small></button>
+      <button class="${F.mode==='offline'?'on':''}" onclick="S.form.mode='offline';render()">オフライン<br><small>通信不要</small></button>
+      <button class="${F.mode==='ai'?'on':''}" onclick="S.form.mode='ai';render()">AI併用<br><small>要通信・APIキー</small></button>
     </div>
     <div class="help">${F.mode==='offline'
       ?'記録・的中率・予測・変化検知はすべて端末内で動きます。電波のない球場でも使えます。'
@@ -1183,7 +1204,7 @@ function vReg(){
   </div>
   <div class="field"><label>メモ</label><textarea data-bind="form.memo" placeholder="例：変化球はスライダー中心。セットでグラブが動く">${esc(F.memo)}</textarea></div>
   <div class="field"><label>写真（任意・一覧の目印）</label>${F.img?previewBox(F.img,"S.form.img=null;render()"):pickButtons('reg')}</div>
-  <button class="btn btn-main full mb" onclick="saveReg()">${edit?'✓ 保存する':'＋ 登録する'}</button>
+  <button class="btn btn-main full mb" onclick="saveReg()">${edit?'保存する':'＋ 登録する'}</button>
   ${edit?`<button class="btn btn-danger full" onclick="deletePitcher('${F.id}')">この投手のデータを削除</button>`:''}`;
 }
 
@@ -1229,7 +1250,7 @@ function vTellEdit(){
     <div class="field"><label>見やすさ</label><select data-bind="form.visibility">${[1,2,3,4,5].map(v=>`<option value="${v}" ${Number(F.visibility)===v?'selected':''}>${v}：${['','見えにくい','やや見にくい','普通','見やすい','とても見やすい'][v]}</option>`).join('')}</select></div>
   </div>
   <div class="field"><label>メモ</label><input type="text" data-bind="form.baseline" value="${esc(F.baseline)}" placeholder="例：一塁側ベンチからだとよく見える"></div>
-  <button class="btn btn-main full" onclick="saveTell()">${F.id?'✓ 保存する':'＋ 追加する'}</button>`;
+  <button class="btn btn-main full" onclick="saveTell()">${F.id?'保存する':'＋ 追加する'}</button>`;
 }
 
 // ══════════════════════════════════════════════
@@ -1345,7 +1366,7 @@ function recordPitch(side,kind){
     toast(`${LEVEL[after].icon} ${LEVEL[after].label}：テルが変わった可能性があります`,'crit',4000);
   }else{
     haptic(25);
-    toast(predSide?(predSide===side?`#${no} 記録 ✓ 予測的中`:`#${no} 記録 ✗ 予測外れ`):`#${no} 記録しました`, predSide?(predSide===side?'ok':'warn'):'info',1500);
+    toast(predSide?(predSide===side?`#${no} 記録 ○予測的中`:`#${no} 記録 ×予測外れ`):`#${no} 記録しました`, predSide?(predSide===side?'ok':'warn'):'info',1500);
   }
   const jump=S.flash;
   render();
