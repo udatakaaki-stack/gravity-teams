@@ -41,6 +41,8 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html, body { margin: 0; }
+/* 画面下のメニューに、ボタンや入力欄が隠れないようにする */
+html { scroll-padding-bottom: calc(110px + env(safe-area-inset-bottom)); scroll-padding-top: 16px; }
 body {
   background: var(--bg); background-image: var(--bg-grad); background-attachment: fixed; color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic UI", sans-serif;

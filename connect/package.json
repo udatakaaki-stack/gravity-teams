@@ -1,0 +1,15 @@
+{
+  "name": "diet-connect",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "コーチとクライアントをスマホでつなぐダイエットサポートシステム",
+  "scripts": {
+    "dev": "node server.mjs",
+    "demo": "MEAL_AI_MOCK=1 COACH_PASSWORD=demo node server.mjs"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0"
+  }
+}

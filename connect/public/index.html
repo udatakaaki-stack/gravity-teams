@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ダイエットサポート</title>
+  <meta name="description" content="コーチとクライアントをスマホでつなぐダイエットサポート">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <script>
+    // 招待リンク（#join=…）で開かれた時は、クライアント用アプリへ移る
+    if (/[#&]join=/.test(location.hash)) location.replace('app.html' + location.hash);
+  </script>
+</head>
+<body>
+  <div class="app">
+    <section class="view">
+      <div class="card center-card">
+        <div class="big-icon">🌿</div>
+        <h1 class="page-title">ダイエットサポート</h1>
+        <p class="muted">コーチとクライアントをスマホでつなぎ、食事の写真・体の記録・メッセージを共有します。</p>
+      </div>
+      <a class="card link-card" href="app.html"><span class="big-icon">📱</span><span><b>クライアントの方</b><span class="muted small">コーチから届いた招待リンクを開いてください</span></span></a>
+      <a class="card link-card" href="coach.html"><span class="big-icon">🧑‍🏫</span><span><b>コーチの方</b><span class="muted small">管理画面にログインします</span></span></a>
+    </section>
+  </div>
+</body>
+</html>
