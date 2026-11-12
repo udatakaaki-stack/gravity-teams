@@ -246,7 +246,7 @@
   function openLine(text) { window.open('https://line.me/R/share?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
 
   function registerSw() {
-    if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () { /* 登録できなくても動く */ });
+    if (!root.__DEMO__ && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () { /* 登録できなくても動く */ });
   }
 
   root.UI = {

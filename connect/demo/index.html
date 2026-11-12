@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ダイエットサポート お試し版</title>
+  <meta name="description" content="コーチとクライアントをつなぐダイエットサポートを、サンプルデータで体験できるお試し版">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .demo-who { display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; font: inherit; color: inherit; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; cursor: pointer; box-shadow: var(--shadow); }
+    .demo-who:active { transform: scale(.99); }
+    .demo-who .big-icon { font-size: 30px; margin: 0; flex: none; }
+    .demo-who b { display: block; font-size: 16px; }
+    .demo-who .muted { display: block; margin-top: 2px; line-height: 1.5; }
+    .demo-section { font-size: 14px; color: var(--muted); margin: 22px 4px 8px; font-weight: 600; }
+    .demo-steps { margin: 0; padding-left: 1.3em; line-height: 1.8; }
+    .demo-reset { display: block; margin: 18px auto 0; }
+  </style>
+  <script src="js/demo-backend.js"></script>
+</head>
+<body data-demo-landing>
+  <div class="app">
+    <section class="view">
+      <div class="card center-card">
+        <div class="big-icon">🧪</div>
+        <h1 class="page-title">お試し版</h1>
+        <p class="muted">本番と同じ画面を、架空のコーチ1人とクライアント4人のサンプルデータで動かせます。記録や送信の内容は、このスマホ（ブラウザ）の中にだけ保存されます。</p>
+      </div>
+
+      <p class="demo-section">コーチとして使う</p>
+      <button type="button" class="demo-who" data-coach>
+        <span class="big-icon">🧑‍🏫</span>
+        <span><b>コーチの管理画面を開く</b><span class="muted small">4人の様子、気にかけたい人、定型文・ラポール21日・停滞期サポートの送信を試せます（パスワード demo で自動ログイン）</span></span>
+      </button>
+
+      <p class="demo-section">クライアントとして使う</p>
+      <button type="button" class="demo-who" data-client="hanako">
+        <span class="big-icon">🌸</span>
+        <span><b>はなこさん（40歳・女性）</b><span class="muted small">24日目。体重が2週間ほど横ばいの停滞期。今日は「不安」な気持ち</span></span>
+      </button>
+      <button type="button" class="demo-who" data-client="taro">
+        <span class="big-icon">🏃</span>
+        <span><b>たろうさん（35歳・男性）</b><span class="muted small">41日目。82kg から順調に減量中。ラポール21日は送信済み</span></span>
+      </button>
+      <button type="button" class="demo-who" data-client="yuki">
+        <span class="big-icon">🍀</span>
+        <span><b>ゆきさん（28歳・女性）</b><span class="muted small">11日目。昨日のメモに「めまい」。気持ちの落ち込みが続いている</span></span>
+      </button>
+      <button type="button" class="demo-who" data-client="kenji">
+        <span class="big-icon">💼</span>
+        <span><b>けんじさん（50歳・男性）</b><span class="muted small">31日目。出張が多く、最後の記録から5日あいている</span></span>
+      </button>
+
+      <div class="card">
+        <h2 class="card-title">おすすめの試し方</h2>
+        <ol class="demo-steps">
+          <li>コーチの画面で、はなこさんを開く</li>
+          <li>「停滞期サポート」や「AIで下書き」でメッセージを作って送る</li>
+          <li>右上の「お試し版・切り替え」からここに戻り、はなこさんとして開く</li>
+          <li>届いたメッセージを読み、返信や食事の記録をしてみる</li>
+          <li>もう一度コーチに戻ると、返信と記録が届いています</li>
+        </ol>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">お試し版でできないこと</h2>
+        <p class="muted small">写真の AI 解析とアドバイスは、写真の中身に関係なくサンプルの結果を表示します。本番では Claude API が写真と記録を読み取ります。別のスマホとはデータが共有されないため、コーチとクライアントの切り替えは同じスマホの中で行ってください。</p>
+      </div>
+
+      <button type="button" class="btn demo-reset" data-reset>最初の状態に戻す</button>
+    </section>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script>
+    (function () {
+      var D = window.DemoBackend;
+      D.load();
+      function set(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* 何もしない */ } }
+      document.querySelector('[data-coach]').addEventListener('click', function () {
+        set('connect.coach.token', D.COACH_TOKEN);
+        location.href = 'coach.html';
+      });
+      Array.prototype.forEach.call(document.querySelectorAll('[data-client]'), function (b) {
+        b.addEventListener('click', function () {
+          set('connect.client.code', D.CODES[b.getAttribute('data-client')]);
+          location.href = 'app.html';
+        });
+      });
+      document.querySelector('[data-reset]').addEventListener('click', function () {
+        if (!confirm('記録やメッセージを消して、サンプルデータを最初の状態に戻します。よろしいですか？')) return;
+        D.reset();
+        D.load();
+        var t = document.getElementById('toast');
+        t.textContent = '最初の状態に戻しました';
+        t.classList.add('show');
+        setTimeout(function () { t.classList.remove('show'); }, 2400);
+      });
+    })();
+  </script>
+</body>
+</html>

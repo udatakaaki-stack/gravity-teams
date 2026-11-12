@@ -6,9 +6,12 @@
   "description": "コーチとクライアントをスマホでつなぐダイエットサポートシステム",
   "scripts": {
     "dev": "node server.mjs",
-    "demo": "MEAL_AI_MOCK=1 COACH_PASSWORD=demo node server.mjs"
+    "demo": "MEAL_AI_MOCK=1 COACH_PASSWORD=demo node server.mjs",
+    "build:demo": "node scripts/build-demo.mjs"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0"
   }
