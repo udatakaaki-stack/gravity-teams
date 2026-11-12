@@ -79,8 +79,12 @@ const actions = {
 
   async sendMessage(body) {
     const c = await repo.getClient(body.id);
-    return { message: await repo.addMessage(c, 'coach', body.text) };
+    return { message: await repo.addMessage(c, 'coach', body.text, body.meta) };
   },
+
+  async templates() { return { templates: await repo.listTemplates() }; },
+  async saveTemplate(body) { return { template: await repo.saveTemplate(body.template || {}) }; },
+  async deleteTemplate(body) { await repo.deleteTemplate(body.id); return { ok: true }; },
 
   async markRead(body) {
     const c = await repo.getClient(body.id);

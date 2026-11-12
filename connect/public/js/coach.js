@@ -5,6 +5,9 @@
   'use strict';
   var M = window.MealCalc;
   var U = window.UI;
+  var DD = window.DIET_DATA;
+  var DE = window.DietEngine;
+  var BR = window.DietBridge;
   var $ = U.$, $all = U.$all, esc = U.esc, fmt = U.fmt;
   var TOKEN_KEY = 'connect.coach.token';
 
@@ -12,16 +15,6 @@
   var ov = null;      // 一覧のデータ
   var cur = null;     // 詳細のデータ
   var ui = { view: 'list', dtab: 'records', history: [], sheet: null };
-
-  // よく使う文（{name} は呼び名＋敬称に置き換わる）
-  var QUICK = [
-    ['記録へのお礼', '{name}、毎日の記録ありがとうございます。写真を見ていると、食事の選び方がどんどん上手になっているのが伝わってきます。この調子で、無理なく続けていきましょうね。'],
-    ['体重が増えた時', '{name}、記録ありがとうございます。体重は水分や塩分、食事の量などで1日の中でも上下するものです。増えた分がすべて脂肪というわけではないので、1週間くらいの流れで一緒に見ていきましょう。'],
-    ['停滞期', '{name}、体重が動きにくい時期は本当にもどかしいですよね。体が今の状態に慣れようとしているところなので、決してやり方が間違っているわけではありません。続けていること自体に、大きな意味がありますよ。'],
-    ['食べすぎた時', '{name}、教えてくださってありがとうございます。食べすぎた日があっても、ここまでの積み重ねがなくなることはありません。食事を抜くより、次の食事からいつも通りに戻すことがいちばんの近道です。'],
-    ['記録のお願い', '{name}、お疲れさまです。よろしければ、今日の食事の写真や体重を記録してもらえますか？数字がどうであっても大丈夫です。一緒に見ていきましょう。'],
-    ['励まし', '{name}、毎日本当によく頑張っていますね。完璧じゃなくて大丈夫です。続けていることそのものが、もう立派な成果ですよ。何かあれば、いつでも気軽に話してくださいね。']
-  ];
 
   function call(body) {
     return U.api('api/coach', body, token, function () {
@@ -100,13 +93,26 @@
       '<label class="field">活動量<select name="activity">' + opt(M.ACTIVITY, c.activity || 'low') + '</select></label>' +
       '<label class="field">ペース<select name="pace">' + opt(M.PACES, c.pace || 'gentle') + '</select></label>' +
       '<label class="field">ダイエットの目的<input name="goalNote" value="' + v('goalNote') + '" placeholder="例：来年の旅行で好きな服を着たい"></label>' +
+      '<p class="label-small">プログラム（今日のコメント・ラポール21日・停滞期の判定に使います）</p>' +
+      '<div class="field-row"><label class="field">開始日<input type="date" name="startDate" value="' + v('startDate') + '"></label>' +
+      '<label class="field">期間（1〜365日）<input type="number" name="totalDays" min="1" max="365" inputmode="numeric" value="' + esc(c.totalDays || 90) + '"></label></div>' +
+      '<div class="field-row"><label class="field">開始時の体重（kg）<input type="number" name="startWeight" step="0.1" inputmode="decimal" value="' + v('startWeight') + '"></label>' +
+      '<label class="field">ラポール21日の開始日<input type="date" name="rapportStart" value="' + v('rapportStart') + '"></label></div>' +
+      '<label class="field">声かけのトーン<select name="tone">' + Object.keys(DD.TONES).map(function (k) { return '<option value="' + k + '"' + ((c.tone || 'gentle') === k ? ' selected' : '') + '>' + esc(DD.TONES[k].label) + '</option>'; }).join('') + '</select></label>' +
+      '<div class="field"><span class="label">気になっていること（コメントのヒントに反映）</span><div class="concern-checks">' + DD.CONCERNS.map(function (x) {
+        return '<label><input type="checkbox" name="concerns" value="' + x.id + '"' + ((c.concerns || []).indexOf(x.id) !== -1 ? ' checked' : '') + '> ' + esc(x.label) + '</label>';
+      }).join('') + '</div></div>' +
       '<label class="field">コーチ用メモ（クライアントには見えません）<textarea name="coachMemo" rows="3">' + v('coachMemo') + '</textarea></label>' +
       '<p class="muted small" id="formTarget"></p>' +
       '<button type="submit" class="btn primary block">' + submitLabel + '</button>';
   }
   function readProfile(form) {
     var p = {};
-    ['name', 'honorific', 'sex', 'age', 'height', 'weight', 'goalWeight', 'activity', 'pace', 'goalNote', 'coachMemo'].forEach(function (k) { p[k] = form.elements[k].value.trim ? form.elements[k].value.trim() : form.elements[k].value; });
+    ['name', 'honorific', 'sex', 'age', 'height', 'weight', 'goalWeight', 'activity', 'pace', 'goalNote', 'coachMemo', 'startDate', 'totalDays', 'startWeight', 'rapportStart', 'tone'].forEach(function (k) { p[k] = form.elements[k].value.trim ? form.elements[k].value.trim() : form.elements[k].value; });
+    p.concerns = $all('input[name="concerns"]:checked', form).map(function (i) { return i.value; });
+    // 開始日・開始体重が空なら、今日・今の体重を入れる
+    if (!p.startDate) p.startDate = M.dateKey(new Date());
+    if (!p.startWeight && p.weight) p.startWeight = p.weight;
     return p;
   }
   function showFormTarget(form) {
@@ -143,6 +149,16 @@
     $('#dName').textContent = nameOf(c);
     var meta = [c.age ? c.age + '歳' : '', c.height ? c.height + 'cm' : '', c.weight ? c.weight + 'kg' : '', c.goalWeight ? '目標 ' + c.goalWeight + 'kg' : '', tg ? fmt(tg.kcal) + 'kcal/日' : ''].filter(Boolean);
     $('#dMeta').textContent = meta.join('・') + (c.goalNote ? '｜' + c.goalNote : '');
+    var dc = dietClient();
+    var prog = '';
+    if (c.startDate) {
+      var dn = DE.todayDay(dc);
+      var seg = DE.phaseForDay(DE.buildPlan(dc.totalDays), dn);
+      prog = 'プログラム ' + dn + '日目／全' + DE.clampDays(dc.totalDays) + '日（' + seg.name + '）';
+    }
+    var next = BR.nextRapportDay(cur.messages);
+    prog += (prog ? '・' : '') + (next ? 'ラポール21日：次は' + next + '日目' : 'ラポール21日：すべて送信済み');
+    $('#dProgram').innerHTML = '<span class="program-line">' + esc(prog) + '</span>';
     $('#dWatch').innerHTML = cur.watch.map(function (w) { return '<div class="watch-item ' + w.level + '">' + (w.level === 'urgent' ? '🚨 ' : w.level === 'warn' ? '⚠️ ' : 'ℹ️ ') + esc(w.text) + '</div>'; }).join('');
     $all('[data-dtab]').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-dtab') === ui.dtab); });
     $all('[data-dpanel]').forEach(function (p) { p.hidden = p.getAttribute('data-dpanel') !== ui.dtab; });
@@ -179,9 +195,9 @@
 
     // メッセージ
     var th = $('#dThread');
-    th.innerHTML = U.messagesHtml(cur.messages, 'coach');
+    th.innerHTML = U.messagesHtml(cur.messages, 'coach', { meta: true });
     th.scrollTop = th.scrollHeight;
-    $('#quickChips').innerHTML = QUICK.map(function (q, i) { return '<button type="button" class="chip" data-quick="' + i + '">' + esc(q[0]) + '</button>'; }).join('');
+    renderMake();
 
     // 設定
     var ef = $('#editForm');
@@ -192,6 +208,154 @@
   function markRead() {
     if (!cur || !cur.unread) return;
     call({ action: 'markRead', id: cur.client.id }).then(function () { cur.unread = 0; renderDetail(); });
+  }
+
+
+  // ------------------------------------------------------------------
+  // ダイエットサポート版との連携（定型文・今日のコメント・ラポール21日・停滞期）
+  // ------------------------------------------------------------------
+  var SIGN_KEY = 'connect.coach.sign';
+  var make = { mode: 'ai', variant: 0, tplCat: '', rpDay: null, rpMood: null, sceneId: null, format: 'line', compose: null, myTemplates: [], draftNote: null };
+
+  function sign() { return U.storeGet(SIGN_KEY) || ''; }
+  function dietClient(mood) { return BR.toDietClient(cur.client, cur.days, { sign: sign(), mood: mood }); }
+
+  function setCompose(text, meta) {
+    var ta = $('#dMsgForm').elements.text;
+    ta.value = text;
+    make.compose = meta || null;
+    renderComposeKind();
+    ta.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  function renderComposeKind() {
+    var k = $('#composeKind');
+    k.hidden = !make.compose;
+    k.textContent = make.compose ? '📎 ' + make.compose.label : '';
+  }
+
+  function loadTemplates() {
+    return call({ action: 'templates' }).then(function (d) { make.myTemplates = d.templates || []; }, function () { /* 取れなくても動く */ });
+  }
+
+  function renderMake() {
+    if (!cur) return;
+    $all('[data-make]').forEach(function (b) { b.classList.toggle('active', b.getAttribute('data-make') === make.mode); });
+    $('#signInput').value = sign();
+    var box = $('#makeBody');
+    var dc = dietClient(make.rpMood === null ? undefined : make.rpMood);
+    var h = '';
+    if (make.mode === 'ai') {
+      h = '<label class="field">下書きへの指示（なくても大丈夫）<input id="draftHint" placeholder="例：停滞期で落ち込んでいるので励ましたい"></label>' +
+        '<button type="button" class="btn ghost block" data-act="draft">下書きを作る</button>' +
+        '<p class="muted small">最近3日の食事・体重・気分・メモと、これまでのやり取りを読んで下書きを作ります。</p>' +
+        (make.draftNote ? '<div class="note">' + make.draftNote + '</div>' : '');
+    } else if (make.mode === 'template') {
+      var cats = [['', 'すべて'], ['mine', '登録した定型文']].concat(DD.TEMPLATE_CATEGORIES.map(function (c) { return [c.id, c.label]; }));
+      var list = make.myTemplates.map(function (t) { return Object.assign({ mine: true, cat: 'mine' }, t); }).concat(DD.TEMPLATES);
+      var shown = list.filter(function (t) { return !make.tplCat || t.cat === make.tplCat || (make.tplCat === 'mine' && t.mine); });
+      h = '<label class="field">場面<select data-act="tplcat">' + cats.map(function (c) { return '<option value="' + c[0] + '"' + (make.tplCat === c[0] ? ' selected' : '') + '>' + esc(c[1]) + '</option>'; }).join('') + '</select></label>' +
+        '<div class="tpl-pick">' + shown.map(function (t) {
+          var prev = DE.fillTemplate(dc, t.text, { signature: false }).replace(/\n/g, ' ');
+          return '<div class="tp"><button type="button" class="use" data-tpl="' + esc(t.id) + '">' + (t.mine ? '⭐ ' : '') + esc(t.title) + '<small>' + esc(prev) + '</small></button>' +
+            (t.mine ? '<button type="button" class="del" data-deltpl="' + esc(t.id) + '" aria-label="この定型文を削除">✕</button>' : '') + '</div>';
+        }).join('') + '</div>' +
+        '<p class="muted small">「〇」の部分は、送る前に書き換えてください。下の入力欄の文は「この文を定型文として保存」で登録できます。</p>';
+    } else if (make.mode === 'comment') {
+      var dn = DE.todayDay(dc);
+      var seg = DE.phaseForDay(DE.buildPlan(dc.totalDays), dn);
+      h = '<p class="rp-theme">' + (cur.client.startDate ? dn + '日目（' + esc(seg.name) + '・' + esc(seg.sub) + '）のコメントです。期分化のプラン、最近の体重、曜日、気になっていることに合わせて作ります。' : '開始日が未設定のため、今日を1日目として作ります。設定の画面で開始日を入れてください。') + '</p>' +
+        '<div class="field-row"><label class="field">形式<select data-act="format"><option value="line"' + (make.format === 'line' ? ' selected' : '') + '>しっかり（ヒント・運動つき）</option><option value="short"' + (make.format === 'short' ? ' selected' : '') + '>ひとこと（短め）</option></select></label>' +
+        '<button type="button" class="btn ghost" data-act="comment">作る</button></div>' +
+        '<button type="button" class="link-btn" data-act="comment-again">別の言い回しにする</button>';
+    } else if (make.mode === 'rapport') {
+      var sent = BR.sentRapportDays(cur.messages);
+      var next = BR.nextRapportDay(cur.messages);
+      if (!make.rpDay) make.rpDay = next || 21;
+      var item = DD.RAPPORT_DAYS[make.rpDay - 1];
+      var moodNow = make.rpMood === null ? dc.mood : make.rpMood;
+      h = '<div class="rp-grid">' + DD.RAPPORT_DAYS.map(function (d) {
+        var cls = [sent[d.day] ? 'sent' : '', d.day === next ? 'next' : '', d.day === make.rpDay ? 'active' : ''].join(' ');
+        return '<button type="button" class="' + cls + '" data-rpday="' + d.day + '" title="' + esc(d.theme) + '">' + (sent[d.day] ? '✓' : d.day) + '</button>';
+      }).join('') + '</div>' +
+        '<p class="rp-legend">✓＝送信済み　太い枠＝次に送る日</p>' +
+        '<p class="rp-theme">' + item.day + '日目「' + esc(item.theme) + '」<br><span class="muted small">' + esc(item.coach) + '</span></p>' +
+        '<label class="field">今の気持ち（記録から自動で選んでいます）<select data-act="rpmood">' + DD.MOODS.map(function (m) { return '<option value="' + m.id + '"' + (moodNow === m.id ? ' selected' : '') + '>' + esc(m.label) + '</option>'; }).join('') + '</select></label>' +
+        '<div class="btn-row"><button type="button" class="btn ghost" data-act="rapport" style="flex:1">' + item.day + '日目のメッセージを作る</button><button type="button" class="link-btn" data-act="rapport-again">別の言い回し</button></div>';
+    } else if (make.mode === 'plateau') {
+      var sc = DD.PLATEAU_SCENES.filter(function (x) { return x.id === make.sceneId; })[0];
+      h = '<div class="scene-chips">' + DD.PLATEAU_SCENES.map(function (x) {
+        return '<button type="button" data-scene="' + x.id + '" class="' + (x.id === make.sceneId ? 'active' : '') + '">' + x.icon + ' ' + esc(x.title) + '</button>';
+      }).join('') + '</div>' +
+        (sc ? '<div class="note">クライアントの気持ち：' + esc(sc.feeling) + '<ul>' + sc.causes.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul></div>' : '<p class="muted small">相談があった場面を選ぶと、寄り添ったメッセージができます。</p>');
+    }
+    box.innerHTML = h;
+  }
+
+  function bindMake() {
+    $('#makeTabs').addEventListener('click', function (ev) {
+      var b = ev.target.closest('[data-make]');
+      if (!b) return;
+      make.mode = b.getAttribute('data-make');
+      make.variant = 0;
+      renderMake();
+    });
+    $('#signInput').addEventListener('change', function () { U.storeSet(SIGN_KEY, this.value.trim()); U.toast('署名を保存しました'); renderMake(); });
+    var box = $('#makeBody');
+    box.addEventListener('change', function (ev) {
+      var t = ev.target;
+      if (t.matches('[data-act=tplcat]')) { make.tplCat = t.value; renderMake(); }
+      if (t.matches('[data-act=format]')) { make.format = t.value; }
+      if (t.matches('[data-act=rpmood]')) { make.rpMood = t.value; }
+    });
+    box.addEventListener('click', function (ev) {
+      var t = ev.target.closest('button');
+      if (!t) return;
+      var dc = dietClient(make.rpMood === null ? undefined : make.rpMood);
+      var act = t.getAttribute('data-act');
+      if (t.hasAttribute('data-tpl')) {
+        var id = t.getAttribute('data-tpl');
+        var tpl = make.myTemplates.concat(DD.TEMPLATES).filter(function (x) { return x.id === id; })[0];
+        if (tpl) setCompose(DE.fillTemplate(dc, tpl.text, {}), { kind: 'template', label: '定型文：' + tpl.title });
+        return;
+      }
+      if (t.hasAttribute('data-deltpl')) {
+        var did = t.getAttribute('data-deltpl');
+        if (!window.confirm('この定型文を削除します。よろしいですか？')) return;
+        call({ action: 'deleteTemplate', id: did }).then(function () { make.myTemplates = make.myTemplates.filter(function (x) { return x.id !== did; }); renderMake(); });
+        return;
+      }
+      if (t.hasAttribute('data-rpday')) { make.rpDay = +t.getAttribute('data-rpday'); make.variant = 0; renderMake(); return; }
+      if (t.hasAttribute('data-scene')) {
+        make.sceneId = t.getAttribute('data-scene');
+        var sc = DD.PLATEAU_SCENES.filter(function (x) { return x.id === make.sceneId; })[0];
+        renderMake();
+        setCompose(DE.plateauMessage(dc, make.sceneId, { emoji: 1 }), { kind: 'plateau', label: '停滞期サポート：' + sc.title });
+        return;
+      }
+      if (act === 'comment' || act === 'comment-again') {
+        if (act === 'comment-again') make.variant++;
+        var dn = DE.todayDay(dc);
+        setCompose(DE.generateComment(dc, dn, { format: make.format, emoji: 1, variant: make.variant }), { kind: 'comment', label: '今日のコメント（' + dn + '日目）' });
+      }
+      if (act === 'rapport' || act === 'rapport-again') {
+        if (act === 'rapport-again') make.variant++;
+        var r = DE.rapportMessage(dc, make.rpDay, { format: 'line', emoji: 1, variant: make.variant, mood: make.rpMood === null ? dc.mood : make.rpMood });
+        setCompose(r.text, { kind: 'rapport', day: make.rpDay, label: 'ラポール21日：' + make.rpDay + '日目' });
+      }
+      if (act === 'draft') {
+        t.disabled = true;
+        t.textContent = 'AIが下書きを作っています…';
+        var tg = M.targets(cur.client);
+        call({ action: 'draftReply', id: cur.client.id, instruction: ($('#draftHint') || {}).value || '',
+          targets: tg ? { エネルギー: tg.kcal + 'kcal', たんぱく質: tg.protein_g + 'g', 塩分: tg.salt_g + 'g未満' } : null })
+          .then(function (d) {
+            var text = d.message + (sign() && d.message.indexOf(sign()) === -1 ? '\n\n' + sign() : '');
+            make.draftNote = '📝 下書きで触れたこと' + (d.demo ? '<span class="demo-flag">デモ</span>' : '') + '<ul>' + (d.considered || []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><span class="small muted">内容を確認して、必要なら直してから送ってください。</span>';
+            renderMake();
+            setCompose(text, { kind: 'draft', label: 'AIの下書き' });
+          }, function (e) { U.toast(e.message); renderMake(); });
+      }
+    });
   }
 
   // ------------------------------------------------------------------
@@ -206,6 +370,7 @@
         U.storeSet(TOKEN_KEY, token);
         show('list');
         loadList();
+        loadTemplates();
       }, function (e) { U.toast(e.message); });
     });
     $('#btnLogout').addEventListener('click', function () { token = null; U.storeSet(TOKEN_KEY, null); show('login'); });
@@ -277,41 +442,39 @@
         markRead();
         var ta = $('#dMsgForm').elements.text;
         ta.value = nameOf(cur.client) + '、' + M.dateLabel(ui.sheet.date).replace(/（.）/, '') + 'の' + ui.sheet.type + '（' + ui.sheet.dish + '）の写真、ありがとうございます。\n';
+        make.compose = { kind: 'reply', label: '食事への返信：' + ui.sheet.dish };
+        renderComposeKind();
         ta.focus();
       }
     });
 
-    $('#quickChips').addEventListener('click', function (ev) {
-      var b = ev.target.closest('[data-quick]');
-      if (!b) return;
-      $('#dMsgForm').elements.text.value = QUICK[+b.getAttribute('data-quick')][1].replace('{name}', nameOf(cur.client));
-    });
-    $('#btnDraft').addEventListener('click', function () {
-      var btn = this;
-      btn.disabled = true;
-      btn.textContent = 'AIが下書きを作っています…';
-      var tg = M.targets(cur.client);
-      call({ action: 'draftReply', id: cur.client.id, instruction: $('#draftHint').value.trim(),
-        targets: tg ? { エネルギー: tg.kcal + 'kcal', たんぱく質: tg.protein_g + 'g', 塩分: tg.salt_g + 'g未満' } : null })
-        .then(function (d) {
-          $('#dMsgForm').elements.text.value = d.message;
-          var n = $('#draftNote');
-          n.hidden = false;
-          n.innerHTML = '📝 下書きで触れたこと' + (d.demo ? '<span class="demo-flag">デモ</span>' : '') + '<ul>' + (d.considered || []).map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul><span class="small muted">内容を確認して、必要なら直してから送ってください。</span>';
-        }, function (e) { U.toast(e.message); })
-        .then(function () { btn.disabled = false; btn.textContent = '下書きを作る'; });
-    });
+    bindMake();
     $('#dMsgForm').addEventListener('submit', function (ev) {
       ev.preventDefault();
       var ta = this.elements.text;
       var text = ta.value.trim();
       if (!text) return;
-      call({ action: 'sendMessage', id: cur.client.id, text: text }).then(function (r) {
+      call({ action: 'sendMessage', id: cur.client.id, text: text, meta: make.compose }).then(function (r) {
         cur.messages.push(r.message);
         ta.value = '';
-        $('#draftNote').hidden = true;
+        make.compose = null;
+        make.draftNote = null;
+        renderComposeKind();
         renderDetail();
         U.toast('送信しました');
+      }, function (e) { U.toast(e.message); });
+    });
+    $('#btnSaveTpl').addEventListener('click', function () {
+      var text = $('#dMsgForm').elements.text.value.trim();
+      if (!text) return U.toast('先にメッセージを入力してください');
+      var title = window.prompt('定型文のタイトル（例：朝の記録へのお礼）');
+      if (!title) return;
+      // 呼び名は {name} に戻して、ほかのクライアントにも使えるようにする
+      var generic = text.split(nameOf(cur.client)).join('{name}');
+      call({ action: 'saveTemplate', template: { title: title, text: generic } }).then(function (r) {
+        make.myTemplates.unshift(r.template);
+        U.toast('定型文に保存しました（呼び名は自動で差し込まれます）');
+        if (make.mode === 'template') renderMake();
       }, function (e) { U.toast(e.message); });
     });
 
@@ -355,5 +518,5 @@
   bind();
   U.registerSw();
   checkSetup();
-  if (token) { show('list'); loadList(); } else show('login');
+  if (token) { show('list'); loadList(); loadTemplates(); } else show('login');
 })();

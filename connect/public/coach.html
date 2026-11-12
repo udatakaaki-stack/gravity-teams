@@ -63,7 +63,7 @@
 
     <!-- 詳細 -->
     <section class="view" data-view="detail" hidden>
-      <header class="page-head row"><button type="button" class="back" data-back>‹ 一覧</button><div><h1 id="dName"></h1><p class="muted small" id="dMeta"></p></div></header>
+      <header class="page-head row"><button type="button" class="back" data-back>‹ 一覧</button><div><h1 id="dName"></h1><p class="muted small" id="dMeta"></p><p class="small" id="dProgram"></p></div></header>
       <div id="dWatch" class="watch"></div>
       <nav class="seg" id="dTabs">
         <button type="button" data-dtab="records" class="active">記録</button>
@@ -85,15 +85,23 @@
       <div data-dpanel="messages" hidden>
         <div class="card chat"><div id="dThread" class="thread"></div></div>
         <div class="card">
-          <div class="card-head"><span class="ai-badge">✨ AIで返信の下書き</span></div>
-          <label class="field">下書きへの指示（なくても大丈夫）<input id="draftHint" placeholder="例：停滞期で落ち込んでいるので励ましたい"></label>
-          <button type="button" class="btn ghost block" id="btnDraft">下書きを作る</button>
-          <div id="draftNote" class="note" hidden></div>
-          <p class="label-small">よく使う文</p>
-          <div class="chips" id="quickChips"></div>
+          <h2 class="card-title">✍️ メッセージを作る</h2>
+          <nav class="make-tabs" id="makeTabs">
+            <button type="button" data-make="ai" class="active">✨ AI下書き</button>
+            <button type="button" data-make="template">定型文</button>
+            <button type="button" data-make="comment">今日のコメント</button>
+            <button type="button" data-make="rapport">ラポール21日</button>
+            <button type="button" data-make="plateau">停滞期</button>
+          </nav>
+          <div id="makeBody" class="make-body"></div>
+          <label class="field sign-field">署名（文章の最後に入ります・全員共通）<input id="signInput" placeholder="例：トレーナー 佐藤"></label>
         </div>
         <form id="dMsgForm" class="composer">
-          <textarea name="text" rows="4" placeholder="メッセージ" aria-label="メッセージ"></textarea>
+          <div class="composer-main">
+            <span class="compose-kind" id="composeKind" hidden></span>
+            <textarea name="text" rows="6" placeholder="メッセージ" aria-label="メッセージ"></textarea>
+            <button type="button" class="link-btn" id="btnSaveTpl">この文を定型文として保存</button>
+          </div>
           <button type="submit" class="btn primary">送信</button>
         </form>
       </div>
@@ -125,6 +133,9 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script src="js/calc.js"></script>
+  <script src="js/diet/data.js"></script>
+  <script src="js/diet/engine.js"></script>
+  <script src="js/bridge.js"></script>
   <script src="js/common.js"></script>
   <script src="js/coach.js"></script>
 </body>

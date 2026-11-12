@@ -16,7 +16,8 @@ import { AppError } from './claude.js';
 import { cleanItems, totalsOf } from './ai.js';
 
 const MAX_MESSAGES = 300;
-const PROFILE_KEYS = ['name', 'honorific', 'sex', 'age', 'height', 'weight', 'goalWeight', 'activity', 'pace', 'startDate', 'goalNote', 'coachMemo', 'tone'];
+const PROFILE_KEYS = ['name', 'honorific', 'sex', 'age', 'height', 'weight', 'goalWeight', 'activity', 'pace', 'startDate', 'goalNote', 'coachMemo', 'tone', 'startWeight', 'totalDays', 'rapportStart'];
+const MESSAGE_KINDS = ['template', 'comment', 'rapport', 'plateau', 'reply', 'draft', 'other'];
 const MEAL_TYPES = ['朝食', '昼食', '夕食', '間食'];
 const MOODS = ['good', 'normal', 'tired', 'anxious', 'down'];
 
@@ -34,6 +35,8 @@ function cleanProfile(input) {
   const p = {};
   PROFILE_KEYS.forEach((k) => { if (input[k] !== undefined) p[k] = str(input[k], k === 'coachMemo' ? 1000 : k === 'goalNote' ? 200 : 40); });
   if (p.honorific === undefined && input.name !== undefined) p.honorific = 'さん';
+  // 気になっていること（ダイエットサポート版の項目ID）
+  if (Array.isArray(input.concerns)) p.concerns = input.concerns.slice(0, 20).map((c) => str(c, 20)).filter(Boolean);
   return p;
 }
 
@@ -213,10 +216,22 @@ export async function setBody(client, date, input) {
 // ------------------------------------------------------------------
 // メッセージ
 // ------------------------------------------------------------------
-export async function addMessage(client, from, text) {
+function cleanMeta(meta) {
+  if (!meta || MESSAGE_KINDS.indexOf(meta.kind) === -1) return null;
+  const m = { kind: meta.kind };
+  if (meta.label) m.label = str(meta.label, 60);
+  const d = parseInt(meta.day, 10);
+  if (meta.kind === 'rapport' && d >= 1 && d <= 21) m.day = d;
+  return m;
+}
+
+export async function addMessage(client, from, text, meta) {
   const t = str(text, 2000);
   if (!t) throw new AppError(400, 'メッセージを入力してください。');
   const msg = { id: newId('t'), from: from === 'coach' ? 'coach' : 'client', text: t, at: new Date().toISOString() };
+  // コーチのメッセージには、どの機能で作ったか（ラポール21日の何日目か など）を残す
+  const m = from === 'coach' ? cleanMeta(meta) : null;
+  if (m) msg.meta = m;
   await db().rpush('msgs:' + client.id, msg);
   await db().ltrim('msgs:' + client.id, -MAX_MESSAGES, -1);
   await touch(client, from === 'coach' ? 'coachReadAt' : 'clientReadAt');
@@ -272,4 +287,32 @@ export function watchList(days, today) {
     }
   }
   return out;
+}
+
+// ------------------------------------------------------------------
+// コーチが登録した定型文
+// ------------------------------------------------------------------
+const TPL_KEY = 'coach:templates';
+
+export async function listTemplates() {
+  return (await db().get(TPL_KEY)) || [];
+}
+
+export async function saveTemplate(input) {
+  const title = str(input.title, 60);
+  const text = str(input.text, 2000);
+  if (!title || !text) throw new AppError(400, 'タイトルと本文を入力してください。');
+  const list = await listTemplates();
+  const id = input.id && list.some((t) => t.id === input.id) ? input.id : newId('u');
+  const item = { id, title, text, cat: str(input.cat, 20) || 'mine', updatedAt: new Date().toISOString() };
+  const next = list.filter((t) => t.id !== id);
+  next.unshift(item);
+  if (next.length > 200) throw new AppError(400, '定型文は200件までです。');
+  await db().set(TPL_KEY, next);
+  return item;
+}
+
+export async function deleteTemplate(id) {
+  const list = await listTemplates();
+  await db().set(TPL_KEY, list.filter((t) => t.id !== id));
 }

@@ -213,7 +213,8 @@
   var MOODS = [['good', '😊 よい'], ['normal', '🙂 ふつう'], ['tired', '😮‍💨 疲れ気味'], ['anxious', '😟 不安'], ['down', '😢 落ち込み']];
   function moodLabel(id) { var m = MOODS.filter(function (x) { return x[0] === id; })[0]; return m ? m[1] : ''; }
 
-  function messagesHtml(msgs, me) {
+  function messagesHtml(msgs, me, opts) {
+    opts = opts || {};
     if (!msgs.length) return '<p class="empty">まだメッセージはありません。</p>';
     var last = '';
     return msgs.map(function (m) {
@@ -222,7 +223,8 @@
       var sep = day !== last ? '<div class="msg-day">' + day + '</div>' : '';
       last = day;
       var time = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
-      return sep + '<div class="msg ' + (m.from === me ? 'mine' : 'theirs') + '"><div class="bubble">' + esc(m.text).replace(/\n/g, '<br>') + '</div><span class="msg-time">' + time + '</span></div>';
+      var meta = opts.meta && m.meta && m.meta.label ? '<span class="msg-meta">' + esc(m.meta.label) + '</span>' : '';
+      return sep + '<div class="msg ' + (m.from === me ? 'mine' : 'theirs') + '"><div><div class="bubble">' + esc(m.text).replace(/\n/g, '<br>') + '</div>' + meta + '</div><span class="msg-time">' + time + '</span></div>';
     }).join('');
   }
 

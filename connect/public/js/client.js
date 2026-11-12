@@ -93,7 +93,14 @@
     var streak = M.streak(allMeals(), key);
     var bmi = M.bmi(c);
     $('#helloName').textContent = 'こんにちは、' + (c.name || '') + (c.honorific !== undefined ? c.honorific : 'さん') + ' 👋';
-    $('#helloMeta').textContent = M.dateLabel(key) + (streak ? '・記録 ' + streak + '日連続 🔥' : '');
+    var prog = '';
+    if (c.startDate && window.DietEngine) {
+      var dc = window.DietBridge.toDietClient(c, data.days);
+      var dn = window.DietEngine.todayDay(dc);
+      var seg = window.DietEngine.phaseForDay(window.DietEngine.buildPlan(dc.totalDays), dn);
+      prog = '・プログラム ' + dn + '日目（' + seg.name + '）';
+    }
+    $('#helloMeta').textContent = M.dateLabel(key) + prog + (streak ? '・記録 ' + streak + '日連続 🔥' : '');
     var meta = [];
     if (c.height) meta.push('📏' + c.height + 'cm');
     if (c.weight) meta.push('⚖️' + c.weight + 'kg');

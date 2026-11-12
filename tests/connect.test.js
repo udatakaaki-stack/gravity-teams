@@ -191,3 +191,121 @@ test('JSONスキーマ：構造化出力の条件を満たす', async () => {
   check(ai.ADVICE_SCHEMA, 'advice');
   check(ai.DRAFT_SCHEMA, 'draft');
 });
+
+// ---------------- ダイエットサポート版との連携 ----------------
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
+function loadBrowser(files) {
+  const ctx = { globalThis: {} };
+  ctx.window = ctx;
+  vm.createContext(ctx);
+  for (const f of files) vm.runInContext(fs.readFileSync(path.join(__dirname, '..', f), 'utf8'), ctx);
+  return ctx;
+}
+
+test('連携：connect に入れたダイエットサポート版のファイルが、元のファイルと同じ', () => {
+  for (const f of ['data.js', 'engine.js']) {
+    const a = fs.readFileSync(path.join(__dirname, '../js', f), 'utf8');
+    const b = fs.readFileSync(path.join(__dirname, '../connect/public/js/diet', f), 'utf8');
+    assert.strictEqual(a, b, f + ' が元のファイルと違います。js/' + f + ' を connect/public/js/diet/ にコピーし直してください');
+  }
+});
+
+const ctx = loadBrowser(['connect/public/js/diet/data.js', 'connect/public/js/diet/engine.js', 'connect/public/js/bridge.js']);
+const DD = ctx.DIET_DATA, DE = ctx.DietEngine, BR = ctx.DietBridge;
+const noVars = (t) => assert.ok(!/\{\w+\}|undefined|NaN|null/.test(t), t);
+
+const cClient = { id: 'c1', name: 'はなこ', honorific: 'さん', sex: 'female', age: '40', height: '160', weight: '60.9', startWeight: '62', goalWeight: '56',
+  startDate: '2026-10-20', totalDays: '90', tone: 'gentle', concerns: ['snack', 'night'], goalNote: '旅行で好きな服を着たい', createdAt: '2026-10-20T00:00:00Z' };
+const cDays = [
+  { date: '2026-11-12', meals: [], body: { weight: 60.9, mood: 'anxious', memo: '体重が減らない' } },
+  { date: '2026-11-05', meals: [], body: { weight: 60.7 } },
+  { date: '2026-10-31', meals: [], body: { weight: 60.8, sleep: 6 } },
+  { date: '2026-10-28', meals: [], body: { weight: 60.9 } },
+  { date: '2026-10-20', meals: [], body: {} }
+];
+
+test('連携：つなぐ版の記録を、ダイエットサポート版の形に変換する', () => {
+  const dc = BR.toDietClient(cClient, cDays, { sign: 'トレーナー 佐藤' });
+  assert.strictEqual(dc.gender, 'female');
+  assert.strictEqual(dc.startWeight, '62');
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(dc.logs.map((l) => l.date))), ['2026-10-28', '2026-10-31', '2026-11-05', '2026-11-12']);
+  assert.strictEqual(dc.mood, 'anxious', '最新の記録の気分を使う');
+  assert.strictEqual(dc.coach, 'トレーナー 佐藤');
+  // 開始体重がなければ今の体重、開始日がなければ登録日
+  const dc2 = BR.toDietClient({ id: 'x', name: 'A', weight: '58', createdAt: '2026-11-01T09:00:00Z' }, []);
+  assert.strictEqual(dc2.startWeight, '58');
+  assert.strictEqual(dc2.startDate, '2026-11-01');
+  // 体重が2週間ほど横ばい → 停滞期と判断される
+  assert.strictEqual(DE.progressState(dc, '2026-11-12').state, 'plateau');
+});
+
+test('連携：定型コメント・今日のコメント・ラポール21日・停滞期サポートがすべて作れる', () => {
+  const dc = BR.toDietClient(cClient, cDays, { sign: 'トレーナー 佐藤' });
+  for (const t of DD.TEMPLATES) {
+    const text = DE.fillTemplate(dc, t.text, { day: 24 });
+    assert.ok(!/\{\w+\}/.test(text), t.id);
+    assert.ok(text.includes('はなこさん'), t.id);
+  }
+  for (const format of ['line', 'short']) {
+    const text = DE.generateComment(dc, 24, { format, emoji: 1 });
+    noVars(text);
+    assert.ok(text.startsWith('はなこさん') && text.endsWith('トレーナー 佐藤'));
+  }
+  for (let d = 1; d <= 21; d++) {
+    for (const mood of DD.MOODS.map((m) => m.id)) {
+      const r = DE.rapportMessage(dc, d, { format: 'line', emoji: 1, mood });
+      noVars(r.text);
+    }
+  }
+  // 記録の「不安」と「停滞」に寄り添う言葉が入る
+  const r15 = DE.rapportMessage(dc, 15, { format: 'line', emoji: 1, mood: dc.mood }).text;
+  assert.ok(r15.includes('旅行で好きな服を着たい'));
+  assert.ok(r15.includes('今のはなこさんへ'));
+  for (const s of DD.PLATEAU_SCENES) noVars(DE.plateauMessage(dc, s.id, { emoji: 1 }));
+});
+
+test('連携：送信済みのラポールの日と、次に送る日', () => {
+  const msgs = [
+    { from: 'coach', at: '1', meta: { kind: 'rapport', day: 1 } },
+    { from: 'coach', at: '2', meta: { kind: 'rapport', day: 2 } },
+    { from: 'coach', at: '3', meta: { kind: 'template', label: 'x' } },
+    { from: 'client', at: '4', meta: { kind: 'rapport', day: 3 } }
+  ];
+  assert.deepStrictEqual(Object.keys(BR.sentRapportDays(msgs)).map(Number), [1, 2]);
+  assert.strictEqual(BR.nextRapportDay(msgs), 3);
+  const all = Array.from({ length: 21 }, (_, i) => ({ from: 'coach', at: String(i), meta: { kind: 'rapport', day: i + 1 } }));
+  assert.strictEqual(BR.nextRapportDay(all), null);
+});
+
+test('連携（サーバー）：メッセージの種類の記録、プロフィールの新しい項目、コーチの定型文', async () => {
+  const { coach, client, call } = await setup();
+  const token = (await call(coach, { action: 'login', password: 'correct horse' })).data.token;
+  const { inviteCode, client: c } = (await call(coach, { action: 'createClient', profile: { name: 'はなこ', startDate: '2026-10-20', totalDays: '90', startWeight: '62', tone: 'genki', concerns: ['snack', 'night', 'x'.repeat(50)] } }, token)).data;
+  assert.deepStrictEqual(c.concerns, ['snack', 'night', 'x'.repeat(20)]);
+  assert.strictEqual(c.tone, 'genki');
+  assert.strictEqual(c.startWeight, '62');
+  const sent = await call(coach, { action: 'sendMessage', id: c.id, text: 'ラポール1日目', meta: { kind: 'rapport', day: 1, label: 'ラポール21日：1日目' } }, token);
+  assert.deepStrictEqual(sent.data.message.meta, { kind: 'rapport', label: 'ラポール21日：1日目', day: 1 });
+  const bad = await call(coach, { action: 'sendMessage', id: c.id, text: 'x', meta: { kind: 'hack', day: 99 } }, token);
+  assert.ok(!bad.data.message.meta);
+  // クライアントのメッセージには種類を付けない
+  const cm = await call(client, { action: 'sendMessage', text: 'はい', meta: { kind: 'rapport', day: 2 } }, inviteCode);
+  assert.ok(!cm.data.message.meta);
+  // 定型文
+  const t1 = await call(coach, { action: 'saveTemplate', template: { title: '朝のお礼', text: '{name}、おはようございます' } }, token);
+  assert.strictEqual(t1.status, 200);
+  assert.strictEqual((await call(coach, { action: 'saveTemplate', template: { title: '', text: 'x' } }, token)).status, 400);
+  let list = (await call(coach, { action: 'templates' }, token)).data.templates;
+  assert.strictEqual(list.length, 1);
+  await call(coach, { action: 'saveTemplate', template: { id: t1.data.template.id, title: '朝のお礼（改）', text: '{name}、おはよう' } }, token);
+  list = (await call(coach, { action: 'templates' }, token)).data.templates;
+  assert.strictEqual(list.length, 1);
+  assert.strictEqual(list[0].title, '朝のお礼（改）');
+  await call(coach, { action: 'deleteTemplate', id: t1.data.template.id }, token);
+  assert.strictEqual((await call(coach, { action: 'templates' }, token)).data.templates.length, 0);
+  // クライアントからは定型文を操作できない
+  assert.strictEqual((await call(client, { action: 'templates' }, inviteCode)).status, 400);
+});
