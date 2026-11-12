@@ -245,6 +245,36 @@
 
   function openLine(text) { window.open('https://line.me/R/share?text=' + encodeURIComponent(text), '_blank', 'noopener'); }
 
+  /**
+   * 画面の中に出す確認ダイアログ（ブラウザの confirm / prompt の代わり）
+   * ask('削除しますか？', { ok: '削除する', danger: true }).then(function (yes) { … })
+   * ask('タイトル', { input: true, placeholder: '例：…' }).then(function (text) { … })  キャンセルは null
+   */
+  function ask(message, opts) {
+    opts = opts || {};
+    return new Promise(function (resolve) {
+      var box = document.createElement('div');
+      box.className = 'ask';
+      box.innerHTML = '<div class="ask-bg" data-ask="no"></div><form class="ask-body" role="dialog" aria-modal="true">' +
+        '<p class="ask-msg">' + esc(message) + '</p>' +
+        (opts.input ? '<input class="ask-input" id="askInput" maxlength="60" placeholder="' + esc(opts.placeholder || '') + '">' : '') +
+        '<div class="btn-row"><button type="button" class="btn ghost" data-ask="no">' + esc(opts.cancel || 'やめる') + '</button>' +
+        '<button type="submit" class="btn ' + (opts.danger ? 'danger' : 'primary') + '">' + esc(opts.ok || 'OK') + '</button></div></form>';
+      document.body.appendChild(box);
+      var input = box.querySelector('.ask-input');
+      (input || box.querySelector('[type=submit]')).focus();
+      function done(v) { box.remove(); resolve(v); }
+      box.addEventListener('click', function (ev) { if (ev.target.closest('[data-ask=no]')) done(opts.input ? null : false); });
+      box.querySelector('form').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        if (!opts.input) return done(true);
+        var v = input.value.trim();
+        if (!v) { input.focus(); return; }
+        done(v);
+      });
+    });
+  }
+
   function registerSw() {
     if (!root.__DEMO__ && 'serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(function () { /* 登録できなくても動く */ });
   }
@@ -254,6 +284,6 @@
     api: api, health: health, preparePhoto: preparePhoto, ringSvg: ringSvg, balanceHtml: balanceHtml, sortMeals: sortMeals,
     mealItemHtml: mealItemHtml, tilesHtml: tilesHtml, itemsEditorHtml: itemsEditorHtml, bindItemsEditor: bindItemsEditor, notesHtml: notesHtml,
     kcalChart: kcalChart, weightChart: weightChart, MOODS: MOODS, moodLabel: moodLabel, messagesHtml: messagesHtml,
-    copyText: copyText, openLine: openLine, registerSw: registerSw
+    copyText: copyText, openLine: openLine, registerSw: registerSw, ask: ask
   };
 })(window);

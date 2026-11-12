@@ -382,9 +382,11 @@
           .then(function (r) { putDay(r.day); sh.hidden = true; U.toast('修正を保存しました'); render(); }, function (e) { U.toast(e.message); });
       }
       if (ev.target.closest('#btnSheetDelete')) {
-        if (!window.confirm('この食事の記録を削除します。よろしいですか？')) return;
-        call({ action: 'deleteMeal', date: ui.sheet.date, mealId: ui.sheet.id })
-          .then(function (r) { putDay(r.day); sh.hidden = true; U.toast('削除しました'); render(); }, function (e) { U.toast(e.message); });
+        U.ask('この食事の記録を削除します。よろしいですか？', { ok: '削除する', danger: true }).then(function (yes) {
+          if (!yes) return;
+          call({ action: 'deleteMeal', date: ui.sheet.date, mealId: ui.sheet.id })
+            .then(function (r) { putDay(r.day); sh.hidden = true; U.toast('削除しました'); render(); }, function (e) { U.toast(e.message); });
+        });
       }
     });
     $('#btnAdvice').addEventListener('click', function () { renderAdvice(true); });

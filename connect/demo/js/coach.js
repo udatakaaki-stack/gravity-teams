@@ -320,8 +320,9 @@
       }
       if (t.hasAttribute('data-deltpl')) {
         var did = t.getAttribute('data-deltpl');
-        if (!window.confirm('この定型文を削除します。よろしいですか？')) return;
-        call({ action: 'deleteTemplate', id: did }).then(function () { make.myTemplates = make.myTemplates.filter(function (x) { return x.id !== did; }); renderMake(); });
+        U.ask('この定型文を削除します。よろしいですか？', { ok: '削除する', danger: true }).then(function (yes) {
+          if (yes) call({ action: 'deleteTemplate', id: did }).then(function () { make.myTemplates = make.myTemplates.filter(function (x) { return x.id !== did; }); renderMake(); });
+        });
         return;
       }
       if (t.hasAttribute('data-rpday')) { make.rpDay = +t.getAttribute('data-rpday'); make.variant = 0; renderMake(); return; }
@@ -467,15 +468,16 @@
     $('#btnSaveTpl').addEventListener('click', function () {
       var text = $('#dMsgForm').elements.text.value.trim();
       if (!text) return U.toast('先にメッセージを入力してください');
-      var title = window.prompt('定型文のタイトル（例：朝の記録へのお礼）');
-      if (!title) return;
-      // 呼び名は {name} に戻して、ほかのクライアントにも使えるようにする
-      var generic = text.split(nameOf(cur.client)).join('{name}');
-      call({ action: 'saveTemplate', template: { title: title, text: generic } }).then(function (r) {
-        make.myTemplates.unshift(r.template);
-        U.toast('定型文に保存しました（呼び名は自動で差し込まれます）');
-        if (make.mode === 'template') renderMake();
-      }, function (e) { U.toast(e.message); });
+      U.ask('定型文のタイトルを入れてください', { input: true, placeholder: '例：朝の記録へのお礼', ok: '保存する' }).then(function (title) {
+        if (!title) return;
+        // 呼び名は {name} に戻して、ほかのクライアントにも使えるようにする
+        var generic = text.split(nameOf(cur.client)).join('{name}');
+        call({ action: 'saveTemplate', template: { title: title, text: generic } }).then(function (r) {
+          make.myTemplates.unshift(r.template);
+          U.toast('定型文に保存しました（呼び名は自動で差し込まれます）');
+          if (make.mode === 'template') renderMake();
+        }, function (e) { U.toast(e.message); });
+      });
     });
 
     $('#editForm').addEventListener('input', function () { showFormTarget(this); });
@@ -484,12 +486,14 @@
       call({ action: 'updateClient', id: cur.client.id, profile: readProfile(this) }).then(function (d) { cur.client = d.client; U.toast('保存しました'); renderDetail(); }, function (e) { U.toast(e.message); });
     });
     $('#btnReinvite').addEventListener('click', function () {
-      if (!window.confirm('招待リンクを作り直します。今のリンクは使えなくなります。よろしいですか？')) return;
-      call({ action: 'resetInvite', id: cur.client.id }).then(function (d) { showInvite(cur.client, d.inviteCode); }, function (e) { U.toast(e.message); });
+      U.ask('招待リンクを作り直します。今のリンクは使えなくなります。よろしいですか？', { ok: '作り直す' }).then(function (yes) {
+        if (yes) call({ action: 'resetInvite', id: cur.client.id }).then(function (d) { showInvite(cur.client, d.inviteCode); }, function (e) { U.toast(e.message); });
+      });
     });
     $('#btnDelete').addEventListener('click', function () {
-      if (!window.confirm(nameOf(cur.client) + 'の記録とメッセージをすべて削除します。元に戻せません。よろしいですか？')) return;
-      call({ action: 'deleteClient', id: cur.client.id }).then(function () { U.toast('削除しました'); show('list'); loadList(); }, function (e) { U.toast(e.message); });
+      U.ask(nameOf(cur.client) + 'の記録とメッセージをすべて削除します。元に戻せません。よろしいですか？', { ok: '削除する', danger: true }).then(function (yes) {
+        if (yes) call({ action: 'deleteClient', id: cur.client.id }).then(function () { U.toast('削除しました'); show('list'); loadList(); }, function (e) { U.toast(e.message); });
+      });
     });
 
     setInterval(function () {

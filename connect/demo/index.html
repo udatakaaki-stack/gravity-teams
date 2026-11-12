@@ -20,7 +20,7 @@
   <script src="js/demo-backend.js"></script>
 </head>
 <body data-demo-landing>
-  <div class="app">
+  <div class="app" data-demo-landing>
     <section class="view">
       <div class="card center-card">
         <div class="big-icon">🧪</div>
@@ -87,8 +87,16 @@
           location.href = 'app.html';
         });
       });
-      document.querySelector('[data-reset]').addEventListener('click', function () {
-        if (!confirm('記録やメッセージを消して、サンプルデータを最初の状態に戻します。よろしいですか？')) return;
+      // 2回押すと戻す（間違えて押しても消えないように）
+      var armed = null;
+      var rb = document.querySelector('[data-reset]');
+      rb.addEventListener('click', function () {
+        if (!armed) {
+          rb.textContent = 'もう一度押すと、記録とメッセージが最初の状態に戻ります';
+          armed = setTimeout(function () { armed = null; rb.textContent = '最初の状態に戻す'; }, 5000);
+          return;
+        }
+        clearTimeout(armed); armed = null; rb.textContent = '最初の状態に戻す';
         D.reset();
         D.load();
         var t = document.getElementById('toast');

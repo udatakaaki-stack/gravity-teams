@@ -421,7 +421,7 @@
 
   // お試し版の目印（画面の上に小さく表示）
   document.addEventListener('DOMContentLoaded', function () {
-    if (document.body.hasAttribute('data-demo-landing')) return;
+    if (document.querySelector('[data-demo-landing]')) return;
     var bar = document.createElement('a');
     bar.href = 'index.html';
     bar.className = 'demo-switch';
