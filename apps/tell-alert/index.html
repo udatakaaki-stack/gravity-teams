@@ -1,0 +1,2310 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#050b14">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="TELL ALERT">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preload" href="fonts/NotoSansJP-subset-Bold.woff2" as="font" type="font/woff2" crossorigin>
+<title>TELL ALERT</title>
+<style>
+/* ── 日本語フォント ──
+   端末に日本語フォントが無い・言語設定が日本語でない場合、漢字が中国語の字形（例：直・角・骨）で
+   表示されることがある。どの端末でも日本の字形になるよう、日本語フォント（Noto Sans CJK JPを
+   JIS第1水準漢字とアプリで使う文字に絞ったもの）を同梱して最優先で使う。
+   同梱フォントに無い漢字（人名の珍しい字など）は、下の font-family の順に端末の日本語フォントで表示する。 */
+@font-face{font-family:"TellJP";src:url("fonts/NotoSansJP-subset-Regular.woff2") format("woff2");font-weight:100 500;font-display:swap}
+@font-face{font-family:"TellJP";src:url("fonts/NotoSansJP-subset-Bold.woff2") format("woff2");font-weight:600 900;font-display:swap}
+
+/* ── 配色（ダーク：ベンチ・ナイター向け） ── */
+:root{
+  --bg:#050b14;--bg2:#0c1727;--bg3:#13223a;--line:#22395a;
+  --text:#eef3fa;--sub:#b0c1d6;--dim:#7089a6;
+  --accent:#f27020;--S:#4f95ff;--B:#ff5470;
+  --ok:#2fd27a;--warn:#f5b52e;--alert:#ff8a3d;--crit:#ff4d4d;
+  color-scheme:dark;
+}
+/* ── 配色（屋外：直射日光でも読める高コントラスト） ── */
+:root[data-theme="light"]{
+  --bg:#ffffff;--bg2:#f1f4f8;--bg3:#e1e8f0;--line:#aebdcf;
+  --text:#05090f;--sub:#26354a;--dim:#55657a;
+  --accent:#c2410c;--S:#0040b8;--B:#b80d2a;
+  --ok:#0b6e30;--warn:#8f4f00;--alert:#b83a08;--crit:#a8101a;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: light){
+  :root[data-theme="auto"]{
+    --bg:#ffffff;--bg2:#f1f4f8;--bg3:#e1e8f0;--line:#aebdcf;
+    --text:#05090f;--sub:#26354a;--dim:#55657a;
+    --accent:#c2410c;--S:#0040b8;--B:#b80d2a;
+    --ok:#0b6e30;--warn:#8f4f00;--alert:#b83a08;--crit:#a8101a;
+    color-scheme:light;
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg)}
+body{color:var(--text);font:15px/1.6 "TellJP","Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Noto Sans CJK JP","Yu Gothic UI","Yu Gothic","Meiryo","IPAexGothic","IPAGothic","TakaoGothic","VL Gothic",-apple-system,sans-serif;-webkit-text-size-adjust:100%;min-height:100vh;overflow-x:hidden;
+  word-break:auto-phrase;line-break:strict;overflow-wrap:anywhere;font-feature-settings:"palt" 0}
+.ic{display:inline-block;vertical-align:-0.2em;flex-shrink:0}
+.logo{color:#fff}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent;background:none;border:none;touch-action:manipulation}
+button:disabled{opacity:.4;cursor:not-allowed}
+img{display:block;max-width:100%}
+.vh{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;pointer-events:none}
+
+.wrap{max-width:720px;margin:0 auto;padding-block:12px calc(100px + env(safe-area-inset-bottom));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* ヘッダー */
+.hdr{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:8px;padding:calc(8px + env(safe-area-inset-top)) 12px 8px;background:var(--bg);border-bottom:1px solid var(--line)}
+.logo{width:36px;height:36px;border-radius:10px;background:var(--accent);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.hdr-t{flex:1;min-width:0}
+.brand{font-weight:900;letter-spacing:.08em;color:var(--accent);font-size:15px}
+.hdr-sub{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.icon-btn{min-width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);color:var(--sub);display:flex;align-items:center;justify-content:center}
+.chip{font-size:11px;font-weight:800;padding:4px 8px;border-radius:20px;border:1px solid var(--line);white-space:nowrap}
+.chip-ai{color:var(--S);border-color:var(--S)}
+.chip-off{color:var(--ok);border-color:var(--ok)}
+
+/* 共通部品 */
+.card{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:46px;padding:10px 16px;border-radius:12px;border:1px solid var(--line);background:var(--bg3);font-weight:800;font-size:15px;text-align:center;line-height:1.3}
+.btn:active:not(:disabled){transform:scale(.98);opacity:.85}
+.btn-main{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn-ai{background:var(--S);border-color:var(--S);color:#fff}
+.btn-danger{background:transparent;border-color:var(--crit);color:var(--crit)}
+.btn.sm{min-height:40px;padding:7px 12px;font-size:14px}
+.btn.xs{min-height:34px;padding:4px 10px;font-size:13px;border-radius:9px}
+.btn.full{width:100%}
+.row{display:flex;align-items:center;gap:8px}
+.row-between{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:4px 0 10px}
+.grow{flex:1;min-width:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.mt{margin-top:10px}.mb{margin-bottom:10px}
+.sec{font-size:15px;font-weight:900}
+.note{font-size:13px;color:var(--sub);line-height:1.7;margin-bottom:10px}
+.small{font-size:12px;color:var(--sub)}
+.dim{color:var(--dim)}
+.empty{text-align:center;padding:28px 16px;border:1px dashed var(--line);border-radius:14px;color:var(--sub);font-size:14px;line-height:1.8;margin-bottom:12px}
+.empty.sm{padding:16px;font-size:13px;text-align:left}
+.steps{text-align:left;margin:12px auto 16px;max-width:420px}
+.steps li{margin:0 0 8px 1.2em}
+
+/* フォーム */
+.field{margin-bottom:12px}
+.field>label{display:block;font-size:13px;font-weight:800;color:var(--sub);margin-bottom:5px}
+.field input,.field select,.field textarea,.sel{width:100%;min-height:46px;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font-size:16px;outline:none}
+.field textarea{min-height:70px;resize:vertical}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.help{font-size:12px;color:var(--dim);margin-top:4px;line-height:1.6}
+.seg{display:flex;background:var(--bg3);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;min-height:40px;border-radius:9px;font-weight:800;font-size:14px;color:var(--sub);padding:4px 6px;line-height:1.25}
+.seg button.on{background:var(--accent);color:#fff}
+.pick-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pick-row label{cursor:pointer;position:relative}
+.preview{position:relative;margin-top:8px}
+.preview img{width:100%;max-height:240px;object-fit:contain;border-radius:10px;background:#000}
+.preview .x{position:absolute;top:6px;right:6px;width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.7);color:#fff;font-size:16px}
+
+/* バッジ */
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:12px;font-weight:800;border:1px solid currentColor;white-space:nowrap}
+.c-ok{color:var(--ok)}.c-warn{color:var(--warn)}.c-alert{color:var(--alert)}.c-crit{color:var(--crit)}.c-dim{color:var(--dim)}.c-S{color:var(--S)}.c-B{color:var(--B)}
+
+/* 投手一覧 */
+.pcard{display:flex;align-items:center;gap:12px;width:100%;text-align:left}
+.pcard.lv-alert,.pcard.lv-crit{border-width:2px}
+.pcard.lv-alert{border-color:var(--alert)}.pcard.lv-crit{border-color:var(--crit)}
+.thumb{width:64px;height:52px;border-radius:9px;object-fit:cover;flex-shrink:0;background:var(--bg3);display:flex;align-items:center;justify-content:center;color:var(--dim)}
+.pname{font-size:17px;font-weight:900}
+.hand{font-size:12px;color:var(--sub);font-weight:700;margin-left:4px}
+.meta{font-size:12px;color:var(--sub)}
+
+/* アラートバナー */
+.banner{border-radius:14px;padding:12px 14px;margin-bottom:10px;border:2px solid currentColor;background:var(--bg2)}
+.banner .bt{font-weight:900;font-size:17px}
+.banner .bm{color:var(--text);font-size:14px;margin-top:4px;line-height:1.6}
+.banner.pulse{animation:pulse 1.2s ease-in-out 3}
+@keyframes pulse{50%{transform:scale(1.015)}}
+
+/* 下部タブ */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:60;display:grid;grid-template-columns:repeat(5,1fr);background:var(--bg);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tab{min-height:60px;font-size:13px;font-weight:800;color:var(--dim);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.tab .ti{line-height:1;display:flex}
+.tab.on{color:var(--accent);box-shadow:inset 0 3px 0 var(--accent)}
+
+/* 計測画面 */
+.ctx{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ctx .sel{width:auto;min-width:92px;min-height:42px;padding:6px 10px}
+.ctx .seg{flex:1;min-width:150px}
+.count{font-weight:900;font-size:16px;color:var(--sub)}
+.step{display:flex;align-items:center;gap:8px;font-size:15px;font-weight:900;margin:14px 0 8px}
+.step span{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:14px}
+.obs-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:4px}
+.obs-h b{font-size:16px}
+.tm{font-size:12px;color:var(--dim)}
+.cue{font-size:13px;color:var(--sub);margin-bottom:8px}
+.obs-btns{display:grid;grid-template-columns:1fr 1fr 74px;gap:6px}
+.ob{min-height:66px;border-radius:12px;border:2px solid var(--line);background:var(--bg);padding:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;line-height:1.25}
+.ob b{font-size:15px}
+.ob small{font-size:11px;color:var(--sub);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.ob.s{border-color:var(--S)}.ob.s b{color:var(--S)}
+.ob.b{border-color:var(--B)}.ob.b b{color:var(--B)}
+.ob.on.s{background:var(--S)}.ob.on.b{background:var(--B)}.ob.on.q{background:var(--dim);border-color:var(--dim)}
+.ob.on b,.ob.on small{color:#fff}
+.ob.p{border-color:var(--accent)}.ob.p b{color:var(--accent)}.ob.on.p{background:var(--accent)}
+.ob.n{border-color:var(--line)}.ob.on.n{background:var(--text);border-color:var(--text)}
+.ob.on.p b,.ob.on.p small{color:#fff}.ob.on.n b,.ob.on.n small{color:var(--bg)}
+.tempo-row{display:grid;grid-template-columns:1fr 74px;gap:6px}
+.tw{min-height:96px;border-radius:14px;border:3px solid var(--accent);background:var(--bg);font-weight:900;font-size:16px;color:var(--accent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.tw.run{background:var(--accent);color:#fff}
+.tw .big{font-size:32px;line-height:1.1;font-variant-numeric:tabular-nums}
+.tw small{font-size:12px;font-weight:700;opacity:.9}
+.tpl{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.tpl button{border:1px dashed var(--accent);color:var(--accent);border-radius:20px;padding:7px 12px;font-size:13px;font-weight:800}
+.pred{border-radius:16px;border:2px solid var(--line);padding:12px 14px;margin:12px 0 4px;background:var(--bg2);text-align:center}
+.pred.S{border-color:var(--S)}.pred.B{border-color:var(--B)}
+.pred-l{font-size:12px;font-weight:800;color:var(--sub)}
+.pred-big{font-size:30px;font-weight:900;line-height:1.2;margin:2px 0}
+.pred.S .pred-big{color:var(--S)}.pred.B .pred-big{color:var(--B)}
+.pred-big span{font-size:22px}
+.pred-why{font-size:12px;color:var(--sub)}
+.pred-warn{font-size:12px;color:var(--warn);font-weight:800;margin-top:4px}
+.res-h{font-size:13px;font-weight:900;margin:8px 0 6px}
+.res-h.s{color:var(--S)}.res-h.b{color:var(--B)}
+.res-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.res{min-height:56px;border-radius:12px;border:1px solid var(--line);background:var(--bg2);font-weight:900;font-size:15px}
+.res.s{border-left:6px solid var(--S)}.res.b{border-left:6px solid var(--B)}
+.res:active{transform:scale(.97)}
+.recent{font-size:13px;color:var(--sub)}
+.recent div{padding:5px 0;border-bottom:1px dashed var(--line)}
+
+/* テル一覧 */
+.tcard{padding:0;overflow:hidden}
+.tc-head{display:flex;gap:10px;padding:12px 14px;align-items:flex-start;width:100%;text-align:left}
+.tc-bar{width:5px;align-self:stretch;border-radius:3px;flex-shrink:0}
+.tc-body{padding:0 14px 12px;border-top:1px solid var(--line)}
+.stat-line{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--sub);margin-top:4px}
+.stat-line b{color:var(--text)}
+.alert-msg{font-size:13px;font-weight:800;margin-top:6px}
+.sb{border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.6;border:1px solid var(--line)}
+.sb .k{font-size:12px;font-weight:900;margin-bottom:2px}
+.sb.s{border-color:var(--S)}.sb.s .k{color:var(--S)}
+.sb.b{border-color:var(--B)}.sb.b .k{color:var(--B)}
+.refimg{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:8px;margin-top:6px;background:#000}
+.inactive{opacity:.55}
+
+/* 比較 */
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cmp figure{margin:0}
+.cmp img{width:100%;aspect-ratio:4/3;object-fit:contain;border-radius:8px;background:#000}
+.cmp figcaption{font-size:12px;font-weight:800;color:var(--sub);margin-top:3px}
+.st-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-top:8px}
+.st-btns button{min-height:44px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:12px;font-weight:800;line-height:1.2}
+.st-btns button.on{color:#fff}
+.st-btns button.on.ok{background:var(--ok);border-color:var(--ok)}
+.st-btns button.on.warn{background:var(--warn);border-color:var(--warn)}
+.st-btns button.on.alert{background:var(--alert);border-color:var(--alert)}
+.st-btns button.on.crit{background:var(--crit);border-color:var(--crit)}
+.st-btns button.on.dim{background:var(--dim);border-color:var(--dim)}
+
+/* 記録 */
+.log-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.log-row .n{font-weight:900;width:38px;flex-shrink:0;color:var(--sub)}
+.log-row .x{width:36px;height:36px;border-radius:9px;border:1px solid var(--line);color:var(--dim);flex-shrink:0}
+.kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.kpi div{background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.kpi b{display:block;font-size:22px;font-weight:900}
+.kpi span{font-size:11px;color:var(--sub);font-weight:700}
+pre.share{white-space:pre-wrap;font:13px/1.7 inherit;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px;margin:8px 0}
+
+/* モーダル */
+.modal-bg{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center}
+.modal{background:var(--bg2);width:100%;max-width:560px;max-height:92vh;overflow-y:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));border:1px solid var(--line)}
+@media (min-width:640px){.modal-bg{align-items:center}.modal{border-radius:18px}}
+.m-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px}
+.m-head b{font-size:17px}
+.m-head .x{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);font-size:18px}
+.frame-modal video{width:100%;max-height:52vh;background:#000;border-radius:10px;margin:8px 0}
+.frame-modal input[type=range]{width:100%;height:36px}
+.ftime{text-align:center;font-size:13px;color:var(--sub);margin-bottom:8px}
+.dlg{max-width:440px;border-radius:18px}
+.dlg-msg{font-size:15px;line-height:1.8;margin-bottom:16px;white-space:pre-wrap}
+.dlg textarea{width:100%;min-height:200px;font:12px/1.5 ui-monospace,monospace;padding:8px;border-radius:10px;border:1px solid var(--line);background:var(--bg);margin-bottom:10px}
+.sample-note{border:2px dashed var(--warn);color:var(--text);border-radius:14px;padding:10px 14px;margin-bottom:10px;font-size:13px;line-height:1.7}
+.chk{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 2px;border-bottom:1px solid var(--line);cursor:pointer}
+.chk input{width:22px;height:22px;flex-shrink:0;accent-color:var(--accent)}
+.chk b{display:block;font-size:15px}.chk small{font-size:12px;color:var(--sub)}
+.vpanel{position:fixed;inset:0;z-index:180;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+body.vp-open{overflow:hidden}
+.vp-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:calc(8px + env(safe-area-inset-top)) max(12px,env(safe-area-inset-right,0px)) 8px max(12px,env(safe-area-inset-left,0px));background:var(--bg);border-bottom:1px solid var(--line)}
+.vp-body{max-width:720px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
+.vp-stage{position:relative;background:#000;border-radius:10px;overflow:hidden}
+.vp-stage video{display:block;width:100%;height:auto}
+.vp-stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.vpanel input[type=range]{width:100%;height:36px}
+.vp-ctrl{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:8px}
+.vp-ctrl .btn{padding:6px 4px}
+.vp-set{margin:6px 0;font-size:14px}.vp-set summary{cursor:pointer;font-weight:800;color:var(--sub);min-height:40px;display:flex;align-items:center}
+.vp-marks{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.mk{min-height:56px;border-radius:10px;border:2px solid var(--line);background:var(--bg2);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.25;padding:4px}
+.mk b{font-size:13px}.mk small{font-size:11px;color:var(--dim)}
+.mk.on{border-color:var(--accent);background:var(--accent);color:#fff}.mk.on small{color:#fff}
+.vp-row{display:flex;gap:8px;align-items:center;margin-top:8px}.vp-row .seg{flex:1}
+.va-stage{position:relative}
+.va-stage canvas{display:block;width:100%;height:auto;border-radius:8px;background:#000;touch-action:none;image-rendering:auto}
+.va-flip{position:absolute;left:8px;top:8px;font-size:12px;font-weight:800;color:#fff;text-shadow:0 1px 2px #000}
+.va-row{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}
+.va-side{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
+.va-roi{border:2px solid var(--S);border-radius:12px;padding:10px}
+.va-crops{display:flex;flex-wrap:wrap;gap:4px}
+.va-crop{width:64px;height:auto;border-radius:4px;background:#000}
+.va-thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px}
+.va-thumbs figure{margin:0}.va-thumbs img{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:6px;background:#000}
+.va-thumbs figcaption{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--sub)}
+.va-thumbs .x{width:28px;height:28px;border-radius:7px;border:1px solid var(--line);color:var(--dim)}
+.cnt{display:flex;flex-wrap:wrap;gap:6px;align-items:center;width:100%}
+.cnt .sel{min-width:96px}
+.tend{width:100%;border-collapse:collapse;font-size:13px}
+.tend td,.tend th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}
+.tend th{color:var(--sub);font-weight:800;font-size:12px}
+.tend .bar{height:8px;border-radius:4px;background:var(--B);overflow:hidden}.tend .bar i{display:block;height:100%;background:var(--S)}
+.cand{border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px;background:var(--bg)}
+
+/* トースト */
+.toast{position:fixed;left:50%;bottom:calc(76px + env(safe-area-inset-bottom));transform:translate(-50%,20px);opacity:0;z-index:300;max-width:92vw;padding:12px 18px;border-radius:12px;font-weight:800;font-size:15px;color:#fff;background:#253247;transition:all .2s;pointer-events:none;text-align:center}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.toast.t-ok{background:#0f7a3d}.toast.t-warn{background:#9a5a00}.toast.t-crit{background:#b3141b}
+.spin{width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="overlay"></div>
+<div id="dialog"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script>
+'use strict';
+// ══════════════════════════════════════════════
+// 定数
+// ══════════════════════════════════════════════
+const APP_VERSION = '2.4.0';
+// 共有ページ（claude.ai のアーティファクト等）で開いたとき true。ファイル保存・AI通信・オフライン化が使えない
+const EMBED = !!window.TELL_EMBED;
+const LS_DATA = 'tell_alert_v2';
+const LS_SET = 'tell_alert_settings_v2';
+const LS_OLD = 'tell_alert_final'; // 旧バージョンのデータ（引き継ぎ用）
+
+const CATEGORIES = ['グラブ','握り・手首','肘','肩甲骨・肩','腕の振り','腰・骨盤','脚・足上げ','ステップ','体の向き','頭・目線','準備動作','テンポ・リズム','その他'];
+const CAT_COLOR = {'グラブ':'#f27020','握り・手首':'#20c060','肘':'#f0a020','肩甲骨・肩':'#e84040','腰・骨盤':'#06b0c8','ステップ':'#8060f0','頭・目線':'#e040b0','テンポ・リズム':'#a080f0','その他':'#7a90a8','腕の振り':'#d05030','脚・足上げ':'#5070f0','体の向き':'#30a090','準備動作':'#a0a040'};
+// 打者が使えるのは「リリースより前」に出るテルだけなので、フォロースルーは選択肢から外している
+const TIMINGS = ['サイン交換・準備','セット・構え','始動・足上げ','テイクバック','トップ','リリース直前'];
+const IMPORTANCE = ['高','中','低'];
+const INNINGS = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+const HANDS = ['右投げ','左投げ'];
+const PITCHES = { S:['ストレート','ツーシーム','カット'], B:['スライダー','カーブ','フォーク','チェンジアップ','シュート','その他'] };
+const SIDE_NAME = { S:'直球系', B:'変化球系' };
+const COUNTS = ['0-0','1-0','2-0','3-0','0-1','1-1','2-1','3-1','0-2','1-2','2-2','3-2'];
+// カウントのまとまり（数の少ないカウントでも傾向をつかめるように、近い状況をまとめる）
+function countGroup(c){ if(!c) return null; const [b,s]=c.split('-').map(Number); if(b===0&&s===0) return '初球'; if(s===2) return '2ストライク'; if(b>s) return '打者有利'; if(s>b) return '投手有利'; return '並行'; }
+const COUNT_GROUPS=['初球','投手有利','並行','打者有利','2ストライク'];
+const other = side => side==='S'?'B':'S';
+// テルの型：形が2通り／出たら分かる／動作の速さ
+const TELL_TYPES = [['state','2つの状態','どちらの状態だったかを記録'],['tempo','時間を測る','動作の時間をストップウォッチで']];
+const LEGACY_TYPES = {pair:'形が違う（旧）',presence:'出たら分かる（旧）'};
+const TEMPO_POINTS = ['返球を受けた','サインを見始めた','セット完了','始動（足を上げ始める）','足が一番高い所','前足の着地','リリース'];
+const TP_START='始動（足を上げ始める）', TP_END='前足の着地';
+const pointName = s => String(s||'').replace(/（.*?）/,'');
+const TEMPO_MIN_EACH = 3; // 境目を決めるのに必要な、直球・変化球それぞれの球数
+
+// ── 観察項目カタログ ──
+// 投球動作を局面ごとに分け、目で見て2つの状態に分けられる点・時間を測れる点を候補として並べたもの。
+// 「この項目がテルになる」という意味ではない。どれが球種と結びつくかは、計測の記録で確かめる。
+const PHASES = [
+  {key:'prep',  name:'準備・サイン交換', timing:'サイン交換・準備'},
+  {key:'set',   name:'セット・構え',     timing:'セット・構え'},
+  {key:'lift',  name:'始動・足上げ',     timing:'始動・足上げ'},
+  {key:'back',  name:'テイクバック',     timing:'テイクバック'},
+  {key:'rel',   name:'トップからリリース', timing:'リリース直前'},
+  {key:'tempo', name:'テンポ・間合い',   timing:'始動・足上げ'},
+];
+const ST=(ph,category,part,la,lb,hint='')=>({ph,category,part,type:'state',la,lb,hint});
+const TM=(ph,category,part,tStart,tEnd,hint='')=>({ph,category,part,type:'tempo',tStart,tEnd,hint});
+const CATALOG = [
+  // 準備・サイン交換
+  ST('prep','準備動作','サインへの首振り','振った','振らない','捕手のサインに首を振ったかどうか'),
+  ST('prep','準備動作','プレートを踏む位置','一塁側','三塁側','投手板のどこを踏んで構えたか'),
+  ST('prep','握り・手首','グラブの中で握りを探る','探る','探らない','サインを見た後、グラブの中で手が動くか'),
+  ST('prep','準備動作','ロジン・帽子などを触る','触る','触らない','投球前の決まった動作の有無'),
+  ST('prep','頭・目線','サインを見る姿勢','深くかがむ','浅い','サインをのぞき込む前かがみの深さ'),
+  TM('prep','頭・目線','サインを見る時間','サインを見始めた','セット完了','サインを見始めてから構え終わるまで'),
+  // セット・構え
+  ST('set','グラブ','グラブの高さ','胸の前','ベルト付近'),
+  ST('set','グラブ','グラブの角度','立てる','寝かせる','グラブの指先が上を向くか、横を向くか'),
+  ST('set','グラブ','グラブのふくらみ','ふくらむ','閉じている','握りによってグラブの形が変わるか'),
+  ST('set','グラブ','グラブから指を出す','出す','出さない','人差し指などをグラブの外に出しているか'),
+  ST('set','グラブ','グラブと体の距離','体に付ける','体から離す'),
+  ST('set','握り・手首','グラブの中の手首の角度','立っている','寝ている','グラブの中に入れた手の手首の向き'),
+  ST('set','握り・手首','握り替えの動き','ある','ない','構えてから手が動いて握り直すか'),
+  ST('set','握り・手首','前腕・手首の筋の浮き','浮く','浮かない','握りの強さや指の開きで前腕の見え方が変わるか'),
+  ST('set','肘','肘の張り','張る','締める'),
+  ST('set','肩甲骨・肩','肩の高さ・傾き','水平','傾く'),
+  ST('set','体の向き','スタンスの幅','広い','狭い'),
+  ST('set','頭・目線','アゴ・顔の角度','引く','引かない'),
+  ST('set','頭・目線','目線','捕手を見る','下・手元を見る'),
+  ST('set','頭・目線','口元・呼吸','口が開く・息を吐く','閉じている'),
+  TM('set','テンポ・リズム','セットの静止時間','セット完了','始動（足を上げ始める）','構えて止まってから動き出すまで'),
+  // 始動・足上げ
+  ST('lift','脚・足上げ','足を上げる高さ','高い','低い'),
+  ST('lift','脚・足上げ','足上げの勢い','速い','ゆっくり','目で見た印象。時間を測る場合は「足上げの時間」'),
+  ST('lift','脚・足上げ','上げた足のひざの向き','内側に入る','まっすぐ'),
+  ST('lift','腰・骨盤','足上げ時の上体の傾き','後ろに反る','まっすぐ'),
+  ST('lift','グラブ','足上げ時のグラブの位置','高い','低い'),
+  ST('lift','テンポ・リズム','足上げの一瞬の静止','止まる','止まらない','足が一番高い所で間があるか'),
+  TM('lift','脚・足上げ','足上げの時間','始動（足を上げ始める）','足が一番高い所'),
+  // テイクバック
+  ST('back','握り・手首','グラブから手を出すタイミング','早い','遅い'),
+  ST('back','握り・手首','握りの見え方','ボールが多く見える','ほとんど見えない','打者側・三塁側などから握りやボールの白さが見えるか'),
+  ST('back','握り・手首','テイクバックの手首の向き','立てる','寝かせる'),
+  ST('back','腕の振り','腕の引き方','大きい','小さい'),
+  ST('back','腕の振り','腕が背中側に入る','入る','入らない'),
+  ST('back','肘','テイクバックの肘の高さ','肩より上','肩より下'),
+  ST('back','グラブ','グラブ側の腕','伸ばす','曲げる'),
+  ST('back','肩甲骨・肩','グラブ側の肩甲骨の寄せ','深い','浅い'),
+  // トップからリリース
+  ST('rel','腕の振り','腕の振りの強さ','強い','緩い','目で見た印象'),
+  ST('rel','腕の振り','腕の角度','上から','横から'),
+  ST('rel','ステップ','踏み出す足の位置','内側に踏む','外側に踏む'),
+  ST('rel','ステップ','踏み出しの幅','広い','狭い'),
+  ST('rel','腰・骨盤','体の開き','早い','遅い'),
+  ST('rel','頭・目線','リリース時の頭の傾き','傾く','まっすぐ'),
+  TM('rel','テンポ・リズム','着地からリリースの時間','前足の着地','リリース','打者が投球中に使うには遅い局面。配球の傾向をつかむ用途向け'),
+  // テンポ・間合い
+  TM('tempo','テンポ・リズム','始動から着地の時間','始動（足を上げ始める）','前足の着地','「モーションが速い・遅い」を数字で確かめる'),
+  TM('tempo','テンポ・リズム','始動からリリースの時間','始動（足を上げ始める）','リリース'),
+  TM('tempo','テンポ・リズム','投球間隔','返球を受けた','始動（足を上げ始める）','捕手からの返球を受けてから次に動き出すまで'),
+  ST('tempo','テンポ・リズム','クイック','クイック','通常の足上げ','走者がいる時のクイックの有無'),
+].map((x,i)=>({...x,cid:'c'+i}));
+const phaseOf = key => PHASES.find(p=>p.key===key);
+
+const STATUS = {
+  INTACT:      {label:'正常', c:'ok',    icon:'○'},
+  WEAKENED:    {label:'弱化', c:'warn',  icon:'△'},
+  MODIFIED:    {label:'変化', c:'alert', icon:'▲'},
+  DISAPPEARED: {label:'消失', c:'crit',  icon:'×'},
+  UNKNOWN:     {label:'不明', c:'dim',   icon:'？'},
+};
+const LEVEL = {
+  NODATA:   {label:'記録待ち', c:'dim',   icon:'…'},
+  CLEAR:    {label:'正常',     c:'ok',    icon:'○'},
+  CAUTION:  {label:'注意',     c:'warn',  icon:'△'},
+  ALERT:    {label:'警戒',     c:'alert', icon:'！'},
+  CRITICAL: {label:'緊急',     c:'crit',  icon:'！！'},
+};
+const LEVEL_ORDER = ['NODATA','CLEAR','CAUTION','ALERT','CRITICAL'];
+const lvRank = l => LEVEL_ORDER.indexOf(l);
+
+const DEFAULT_SET = {
+  mode:'offline', apiKey:'', model:'claude-opus-5-5', theme:'dark',
+  minN:8,      // 有効判定に必要な最低球数
+  win:8,       // 「直近」とみなす球数
+  drop:50,     // 直近の的中率がこれ以下なら警戒（%）
+  wake:true, haptic:true,
+  ctx:true,    // カウントと走者も記録する
+};
+const AI_MODELS = [
+  ['claude-opus-5-5','Claude Opus 5.5（標準・高精度）'],
+  ['claude-sonnet-5-5','Claude Sonnet 5.5（速い・安い）'],
+];
+
+// ══════════════════════════════════════════════
+// アイコン（絵文字は端末によって□に化けるため、線画のSVGで描く）
+// ══════════════════════════════════════════════
+const ICONS={
+  back:'<path d="M15 5l-7 7 7 7"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon:'<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  ball:'<circle cx="12" cy="12" r="9"/><path d="M7 5.5c2 2 2 11 0 13M17 5.5c-2 2-2 11 0 13"/>',
+  pin:'<path d="M12 21s-6-5.5-6-11a6 6 0 0 1 12 0c0 5.5-6 11-6 11z"/><circle cx="12" cy="10" r="2"/>',
+  images:'<rect x="3" y="5" width="8" height="14" rx="1"/><rect x="13" y="5" width="8" height="14" rx="1"/>',
+  list:'<path d="M9 6h11M9 12h11M9 18h11"/><circle cx="4.5" cy="6" r="1"/><circle cx="4.5" cy="12" r="1"/><circle cx="4.5" cy="18" r="1"/>',
+  camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+  film:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 4v16M17 4v16M3 9h4M3 15h4M17 9h4M17 15h4"/>',
+  spark:'<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+};
+const ic=(n,size=20)=>`<svg class="ic" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
+
+// ══════════════════════════════════════════════
+// ユーティリティ
+// ══════════════════════════════════════════════
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const pct = x => Math.round((x||0)*100) + '%';
+const short = (s,n=16) => { s = String(s||''); return s.length>n ? s.slice(0,n)+'…' : s; };
+const fmtTime = ts => new Date(ts).toLocaleTimeString('ja-JP',{hour:'2-digit',minute:'2-digit'});
+const fmtDate = ts => new Date(ts).toLocaleDateString('ja-JP');
+const clamp = (v,a,b) => Math.max(a,Math.min(b,v));
+
+// 二項分布の上側確率 P(X >= k)。「この的中数は偶然でも起こりうるか」を見るために使う
+const LF=[0];
+function lf(n){ for(let i=LF.length;i<=n;i++) LF[i]=LF[i-1]+Math.log(i); return LF[n]; }
+function binomTail(k,n,p){
+  if(k<=0) return 1;
+  if(p>=1) return 1;
+  let s=0;
+  for(let i=k;i<=n;i++) s+=Math.exp(lf(n)-lf(i)-lf(n-i)+i*Math.log(p)+(n-i)*Math.log(1-p));
+  return Math.min(1,s);
+}
+
+// 画面内の確認ダイアログ
+let DLG=null;
+function askConfirm(msg,yesLabel,onYes,danger=true){
+  DLG={onYes};
+  document.getElementById('dialog').innerHTML=`<div class="modal-bg" style="z-index:250;align-items:center"><div class="modal dlg" role="alertdialog" aria-modal="true">
+    <div class="dlg-msg">${esc(msg)}</div>
+    <div class="grid2"><button class="btn" onclick="closeDlg()">やめる</button><button class="btn ${danger?'btn-danger':'btn-main'}" id="dlg-yes" onclick="dlgYes()">${esc(yesLabel)}</button></div>
+  </div></div>`;
+  document.getElementById('dlg-yes').focus();
+}
+function dlgYes(){ const f=DLG?.onYes; closeDlg(); if(f) f(); }
+function closeDlg(){ DLG=null; document.getElementById('dialog').innerHTML=''; }
+// 文字を表示してコピーさせるダイアログ（ファイル保存ができない共有ページ用）
+function showText(title,text){
+  document.getElementById('dialog').innerHTML=`<div class="modal-bg" style="z-index:250;align-items:center"><div class="modal dlg" role="dialog" aria-modal="true">
+    <div class="m-head"><b>${esc(title)}</b><button class="x" onclick="closeDlg()" aria-label="閉じる">×</button></div>
+    <div class="small mb">このページではファイルを保存できないため、文字で表示しています。コピーして表計算ソフトやメモに貼り付けてください。</div>
+    <textarea id="dlg-text" readonly>${esc(text)}</textarea>
+    <button class="btn btn-main full" onclick="copyFrom('dlg-text')">コピー</button>
+  </div></div>`;
+}
+async function copyFrom(id){
+  const el=document.getElementById(id);
+  try{ await navigator.clipboard.writeText(el.value??el.textContent); toast('コピーしました','ok'); }
+  catch{ if(el.select) el.select(); else { const r=document.createRange(); r.selectNodeContents(el); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); } toast('文字を選択しました。長押しでコピーしてください','warn',3000); }
+}
+
+let toastTimer;
+function toast(msg, kind='info', ms=2200){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast show t-'+kind;
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>{el.className='toast';},ms);
+}
+function haptic(pattern=25){ if(SET.haptic && navigator.vibrate) try{navigator.vibrate(pattern);}catch{} }
+
+// ══════════════════════════════════════════════
+// 設定
+// ══════════════════════════════════════════════
+let SET = {...DEFAULT_SET};
+function loadSettings(){
+  try{ SET = {...DEFAULT_SET, ...(JSON.parse(localStorage.getItem(LS_SET))||{})}; }catch{ SET={...DEFAULT_SET}; }
+  // 旧バージョンの設定を引き継ぐ（APIキーがあっても勝手にAIモードへは切り替えない）
+  try{
+    if(!SET.apiKey){ const k=localStorage.getItem('tell_alert_apikey'); if(k) SET.apiKey=k; }
+    if(!localStorage.getItem(LS_SET)){ const m=localStorage.getItem('tell_alert_mode'); if(m==='ai'||m==='offline') SET.mode=m; }
+  }catch{}
+  if(!AI_MODELS.some(m=>m[0]===SET.model)) SET.model=DEFAULT_SET.model;
+}
+function saveSettings(){ try{ localStorage.setItem(LS_SET, JSON.stringify(SET)); }catch{ toast('設定を保存できませんでした','crit'); } }
+function applyTheme(){
+  document.documentElement.dataset.theme = SET.theme;
+  const light = SET.theme==='light' || (SET.theme==='auto' && matchMedia('(prefers-color-scheme: light)').matches);
+  document.querySelector('meta[name=theme-color]')?.setAttribute('content', light?'#ffffff':'#050b14');
+}
+
+// ══════════════════════════════════════════════
+// データ保存
+//   文字データ → localStorage（小さい）
+//   画像       → IndexedDB（容量が大きい。旧版は画像もlocalStorageに入れていたため、数枚で容量オーバーしていた）
+// ══════════════════════════════════════════════
+const Store = {
+  data:{pitchers:[]},
+  load(){
+    try{ this.data = JSON.parse(localStorage.getItem(LS_DATA)) || {pitchers:[]}; }catch{ this.data={pitchers:[]}; }
+    if(!Array.isArray(this.data.pitchers)) this.data.pitchers=[];
+    this.data.pitchers = this.data.pitchers.map(normalizePitcher);
+  },
+  save(){
+    try{ localStorage.setItem(LS_DATA, JSON.stringify(this.data)); return true; }
+    catch(e){ toast('保存に失敗しました。設定からバックアップを書き出してください','crit',6000); return false; }
+  },
+};
+function normalizePitcher(p){
+  return { sample:!!p.sample, sampleVer:p.sampleVer||1,
+    id:p.id||uid(), name:p.name||'名称未設定', team:p.team||'', hand:p.hand||'右投げ', memo:p.memo||'',
+    createdAt:p.createdAt||Date.now(), thumbId:p.thumbId||null,
+    tells:(p.tells||[]).map(t=>({
+      id:t.id||uid(), category:CATEGORIES.includes(t.category)?t.category:'その他', part:t.part||'',
+      timing:TIMINGS.includes(t.timing)?t.timing:(t.timing==='リリース直前'?'リリース直前':'トップ'),
+      straight:t.straight||'', breaking:t.breaking||'', baseline:t.baseline||'', cue:t.cue||'',
+      importance:IMPORTANCE.includes(t.importance)?t.importance:'中', visibility:Number(t.visibility)||3,
+      type:['state','pair','presence','tempo'].includes(t.type)?t.type:'pair', action:t.action||'', side:t.side==='S'?'S':'B',
+      la:t.la||'', lb:t.lb||'', map:['aS','aB','auto'].includes(t.map)?t.map:'auto', hint:t.hint||'',
+      tStart:TEMPO_POINTS.includes(t.tStart)?t.tStart:TP_START, tEnd:TEMPO_POINTS.includes(t.tEnd)?t.tEnd:TP_END, dir:['Bfast','Bslow','auto'].includes(t.dir)?t.dir:'Bfast',
+      imgS:t.imgS||null, imgB:t.imgB||null, active:t.active!==false, source:t.source||'manual', createdAt:t.createdAt||Date.now(),
+    })),
+    pitches:Array.isArray(p.pitches)?p.pitches:[],
+    scans:Array.isArray(p.scans)?p.scans:[],
+    vp:Array.isArray(p.vp)?p.vp:[],
+  };
+}
+const curP = () => Store.data.pitchers.find(p=>p.id===S.pid) || null;
+
+const IMG = {}; // 画像キャッシュ id → dataURL
+const IDB = {
+  db:null, ok:false,
+  async open(){
+    try{
+      this.db = await new Promise((res,rej)=>{
+        const r=indexedDB.open('tell_alert_media',1);
+        r.onupgradeneeded=()=>r.result.createObjectStore('img');
+        r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+      });
+      this.ok=true;
+    }catch{ this.ok=false; }
+  },
+  store(mode){ return this.db.transaction('img',mode).objectStore('img'); },
+  put(id,v){
+    IMG[id]=v;
+    if(!this.ok) return Promise.resolve();
+    return new Promise((res,rej)=>{ const r=this.store('readwrite').put(v,id); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); })
+      .catch(()=>toast('画像の保存に失敗しました（容量不足の可能性）','crit',5000));
+  },
+  del(id){ if(!id) return; delete IMG[id]; if(this.ok) try{ this.store('readwrite').delete(id); }catch{} },
+  loadAll(){
+    if(!this.ok) return Promise.resolve();
+    return new Promise(res=>{
+      const r=this.store('readonly').openCursor();
+      r.onsuccess=()=>{ const c=r.result; if(c){ IMG[c.key]=c.value; c.continue(); } else res(); };
+      r.onerror=()=>res();
+    });
+  },
+};
+async function storeImg(dataUrl){ if(!dataUrl) return null; const id='img_'+uid(); await IDB.put(id,dataUrl); return id; }
+const imgSrc = v => !v ? null : (String(v).startsWith('data:') ? v : (IMG[v]||null));
+// 新しい画像（dataURL）なら保存してIDを返す。既存IDならそのまま。消されたら古い画像を削除
+async function commitImg(newVal, oldId){
+  if(newVal && String(newVal).startsWith('data:')){ if(oldId) IDB.del(oldId); return await storeImg(newVal); }
+  if(!newVal && oldId){ IDB.del(oldId); return null; }
+  return newVal||null;
+}
+function pitcherImgIds(p){
+  const ids=[p.thumbId];
+  p.tells.forEach(t=>ids.push(t.imgS,t.imgB));
+  p.scans.forEach(s=>ids.push(s.imgId));
+  (p.vp||[]).forEach(x=>Object.values(x.f||{}).forEach(i=>ids.push(i)));
+  return ids.filter(Boolean);
+}
+
+// ══════════════════════════════════════════════
+// 画像・動画の取り込み
+// ══════════════════════════════════════════════
+function loadImage(src){ return new Promise((res,rej)=>{ const im=new Image(); im.onload=()=>res(im); im.onerror=()=>rej(new Error('画像を読み込めませんでした')); im.src=src; }); }
+// スマホの写真は数MBあるので、長辺1024pxのJPEGに縮小してから保存・送信する
+function drawToJpeg(src,w,h,max=1024,q=0.8){
+  const sc=Math.min(1,max/Math.max(w,h));
+  const c=document.createElement('canvas'); c.width=Math.round(w*sc); c.height=Math.round(h*sc);
+  c.getContext('2d').drawImage(src,0,0,c.width,c.height);
+  return c.toDataURL('image/jpeg',q);
+}
+async function fileToJpeg(file){
+  const url=URL.createObjectURL(file);
+  try{ const im=await loadImage(url); return drawToJpeg(im,im.naturalWidth,im.naturalHeight); }
+  finally{ URL.revokeObjectURL(url); }
+}
+function pickButtons(target){
+  return `<div class="pick-row">
+    <label class="btn sm"><input class="vh" type="file" accept="image/*,video/*" capture="environment" data-target="${target}" onchange="onPick(event)">${ic('camera')}撮影する</label>
+    <label class="btn sm"><input class="vh" type="file" accept="image/*,video/*" data-target="${target}" onchange="onPick(event)">${ic('film')}写真・動画から</label>
+  </div>`;
+}
+function previewBox(v, clearFn){
+  const src=imgSrc(v); if(!src) return '';
+  return `<div class="preview"><img src="${src}" alt=""><button class="x" onclick="${clearFn}" aria-label="画像を外す">×</button></div>`;
+}
+async function onPick(ev){
+  const input=ev.target, f=input.files&&input.files[0], target=input.dataset.target;
+  input.value='';
+  if(!f) return;
+  const isVideo=(f.type||'').startsWith('video/') || /\.(mov|mp4|m4v|webm|3gp)$/i.test(f.name);
+  if(target==='vid'){ if(isVideo) openVideoPanel(f); else toast('動画を選んでください','warn'); return; }
+  if(isVideo){ openFrameModal(f,target); return; }
+  try{ deliver(target, await fileToJpeg(f)); }catch(e){ toast(e.message,'crit'); }
+}
+function deliver(target,d){
+  if(target==='reg') S.form.img=d;
+  else if(target==='tellS') S.form.imgS=d;
+  else if(target==='tellB') S.form.imgB=d;
+  else if(target==='scan') S.scan.img=d;
+  else if(target==='aiS') S.ai.imgS=d;
+  else if(target==='aiB') S.ai.imgB=d;
+  render(); toast('画像を取り込みました','ok');
+}
+
+// 動画からコマを切り出す（静止画1枚だとテルの出る瞬間を逃しやすいので、動画で撮ってコマ送りで選ぶ）
+let FR=null;
+function openFrameModal(file,target){
+  closeFrame();
+  const url=URL.createObjectURL(file);
+  FR={url,target};
+  document.getElementById('overlay').innerHTML=`
+  <div class="modal-bg"><div class="modal frame-modal">
+    <div class="m-head"><b>コマを選ぶ</b><button class="x" onclick="closeFrame()" aria-label="閉じる">×</button></div>
+    <div class="note">スライダーとコマ送りで、テルが一番はっきり見える瞬間に合わせてください。</div>
+    <video id="fv" playsinline muted preload="auto" src="${url}"></video>
+    <input id="fslider" type="range" min="0" max="0" step="0.001" value="0" aria-label="再生位置">
+    <div class="ftime" id="ftime">読み込み中…</div>
+    <div class="grid3 mb">
+      <button class="btn sm" onclick="fStep(-1)">← 1コマ</button>
+      <button class="btn sm" id="fplay" onclick="fPlay()">再生 1/4速</button>
+      <button class="btn sm" onclick="fStep(1)">1コマ →</button>
+    </div>
+    <button class="btn btn-main full" onclick="fUse()">このコマを使う</button>
+  </div></div>`;
+  const v=document.getElementById('fv'), s=document.getElementById('fslider');
+  const upd=()=>{ s.value=v.currentTime; document.getElementById('ftime').textContent=`${v.currentTime.toFixed(2)}秒 / ${(v.duration||0).toFixed(2)}秒`; };
+  v.addEventListener('loadedmetadata',()=>{ s.max=v.duration||0; v.currentTime=Math.min(0.05,v.duration||0); upd(); });
+  v.addEventListener('timeupdate',upd); v.addEventListener('seeked',upd);
+  v.addEventListener('pause',()=>{ const b=document.getElementById('fplay'); if(b) b.textContent='再生 1/4速'; });
+  v.addEventListener('error',()=>toast('この動画形式は読み込めませんでした','crit',4000));
+  s.addEventListener('input',()=>{ v.pause(); v.currentTime=parseFloat(s.value)||0; });
+}
+function fStep(d){ const v=document.getElementById('fv'); if(!v) return; v.pause(); v.currentTime=clamp(v.currentTime+d/30,0,v.duration||0); }
+function fPlay(){
+  const v=document.getElementById('fv'), b=document.getElementById('fplay'); if(!v) return;
+  if(v.paused){ v.playbackRate=0.25; v.play().catch(()=>{}); b.textContent='停止'; } else v.pause();
+}
+function fUse(){
+  const v=document.getElementById('fv');
+  if(!v||!v.videoWidth){ toast('まだ動画を読み込み中です','warn'); return; }
+  const d=drawToJpeg(v,v.videoWidth,v.videoHeight), target=FR.target;
+  closeFrame(); deliver(target,d);
+}
+function closeFrame(){ if(FR){ URL.revokeObjectURL(FR.url); FR=null; } document.getElementById('overlay').innerHTML=''; }
+
+// ══════════════════════════════════════════════
+// 分析ロジック（オフラインで動く。アプリの心臓部）
+// ══════════════════════════════════════════════
+// 各テルの「サインの見え方」を言葉にする
+// 「2つの状態」型：どちらの状態が直球に多いかを記録から決める
+// 状態ごとに2球以上、直球・変化球それぞれ2球以上の記録があるときだけ決める（少なすぎる記録で決めつけない）
+function stateCounts(pitches,t){ const c={aS:0,aB:0,bS:0,bB:0}; for(const x of pitches){ const o=x.obs?.[t.id]; if(o==='a'||o==='b') c[o+x.actual]++; } return c; }
+function learnState(c){
+  const na=c.aS+c.aB, nb=c.bS+c.bB;
+  if(na<2||nb<2||c.aS+c.bS<2||c.aB+c.bB<2) return null;
+  const pa=c.aS/na, pb=c.bS/nb; if(pa===pb) return null;
+  return pa>pb?'aS':'aB';
+}
+function stateMap(p,t){ return t.map==='auto'?learnState(stateCounts(p.pitches,t)):t.map; }
+function stateSide(o,m){ if(o==='?') return '?'; if((o!=='a'&&o!=='b')||!m) return null; return (o==='a')===(m==='aS')?'S':'B'; }
+// 各テルの「サインの見え方」を言葉にする
+function signText(t,side,p){
+  if(t.type==='state'){
+    const m=p?stateMap(p,t):(t.map==='auto'?null:t.map);
+    if(!m) return `「${t.la}」か「${t.lb}」（記録から判断中）`;
+    return `「${(side==='S')===(m==='aS')?t.la:t.lb}」`;
+  }
+  if(t.type==='presence') return side===t.side?`「${t.action}」が出る`:`「${t.action}」が出ない`;
+  if(t.type==='tempo'){
+    const bf=tempoBFast(t,p?tempoInfo(p,t):null);
+    if(bf==null) return `${pointName(t.tStart)}→${pointName(t.tEnd)}の時間（記録から判断中）`;
+    const fast=bf===(side==='B'); return `${pointName(t.tStart)}→${pointName(t.tEnd)}が${fast?'速い':'遅い'}`;
+  }
+  return side==='S'?t.straight:t.breaking;
+}
+// テンポ型：直球・変化球それぞれの平均から境目を決める
+const mean = a => a.reduce((x,y)=>x+y,0)/a.length;
+const sd = a => a.length>1?Math.sqrt(a.reduce((x,y)=>x+(y-mean(a))**2,0)/(a.length-1)):0;
+function tempoThr(sS,sB){ return (sS.length>=TEMPO_MIN_EACH && sB.length>=TEMPO_MIN_EACH) ? (mean(sS)+mean(sB))/2 : null; }
+// 変化球の時に速いか（Bfast/Bslow は指定どおり、auto は平均の比較で決める）
+function tempoBFast(t,info){ if(t.dir==='Bfast') return true; if(t.dir==='Bslow') return false; if(!info||info.thr==null) return null; return info.mB<info.mS; }
+function tempoSide(t,sec,thr,bFast){ const fast=sec<thr; return bFast?(fast?'B':'S'):(fast?'S':'B'); }
+function tempoInfo(p,t){
+  const sS=[],sB=[];
+  p.pitches.forEach(x=>{ const v=x.tempo?.[t.id]; if(typeof v==='number') (x.actual==='S'?sS:sB).push(v); });
+  const thr=tempoThr(sS,sB);
+  return {sS,sB,thr,mS:sS.length?mean(sS):null,mB:sB.length?mean(sB):null,dS:sd(sS),dB:sd(sB)};
+}
+// 1球ごとのサイン（'S' / 'B' / '?' / null=未確認）
+// テンポ型は、その球より「前」の記録だけで決めた境目で判定する（後から当てはめて的中率を水増ししないため）
+function obsSeries(p,t){
+  if(t.type==='state'){
+    // どちらが直球のサインかを記録から決める場合も、その球より前の記録だけで決める
+    const out=[], c={aS:0,aB:0,bS:0,bB:0};
+    for(const x of p.pitches){
+      const o=x.obs?.[t.id];
+      if(o==='?'){ out.push('?'); continue; }
+      if(o!=='a'&&o!=='b'){ out.push(null); continue; }
+      out.push(stateSide(o, t.map==='auto'?learnState(c):t.map));
+      c[o+x.actual]++;
+    }
+    return out;
+  }
+  if(t.type!=='tempo') return p.pitches.map(x=>x.obs?.[t.id]||null);
+  const out=[], sS=[], sB=[];
+  for(const x of p.pitches){
+    const v=x.tempo?.[t.id];
+    if(typeof v!=='number'){ out.push(x.obs?.[t.id]==='?'?'?':null); continue; }
+    const thr=tempoThr(sS,sB);
+    out.push(thr==null?null:tempoSide(t,v,thr,tempoBFast(t,{thr,mS:mean(sS),mB:mean(sB)})));
+    (x.actual==='S'?sS:sB).push(v);
+  }
+  return out;
+}
+// テル1つ分の成績
+function tellStats(p,t){
+  const W=SET.win, minN=SET.minN, ser=obsSeries(p,t);
+  const asked=[]; p.pitches.forEach((x,i)=>{ if(ser[i]) asked.push({o:ser[i],actual:x.actual,set:x.set}); });
+  const seen=asked.filter(r=>r.o==='S'||r.o==='B');
+  const hit=r=>r.o===r.actual;
+  const nAll=seen.length, kAll=seen.filter(hit).length;
+  // 主な指標：出たら分かる型は「出た時にどれだけ当たるか」、それ以外は全体の的中率
+  // 比較の基準：出たら分かる型はその球種の割合、それ以外は「いつも多い方を張った場合」（最低50%）
+  let n,k,p0,n0=0,k0=0;
+  if(t.type==='presence'){
+    const shown=seen.filter(r=>r.o===t.side), hidden=seen.filter(r=>r.o!==t.side);
+    n=shown.length; k=shown.filter(hit).length; n0=hidden.length; k0=hidden.filter(hit).length;
+    p0=nAll?seen.filter(r=>r.actual===t.side).length/nAll:0.5;
+  }else{
+    n=nAll; k=kAll; const nS=seen.filter(r=>r.actual==='S').length;
+    p0=nAll?Math.max(nS/nAll,1-nS/nAll,0.5):0.5;
+  }
+  const acc=n?k/n:0, pval=n?binomTail(k,n,p0):1;
+  const needN=t.type==='presence'?Math.max(4,Math.ceil(minN/2)):minN;
+  // 候補を多く同時に調べるほど、偶然当たって見えるものが出やすい。登録中の項目数で割って基準を厳しくする
+  const nCand=Math.max(1,p.tells.filter(x=>x.active).length), alpha=0.05/nCand;
+  let ev;
+  if(n<needN) ev='few'; else if(pval<alpha) ev='strong'; else if(pval<0.2) ev='promising'; else ev='weak';
+
+  const rec=seen.slice(-W), rk=rec.filter(hit).length, racc=rec.length?rk/rec.length:0;
+  const early=seen.slice(0,-W), ek=early.filter(hit).length, eacc=early.length?ek/early.length:0;
+  const recAsked=asked.slice(-W), earlyAsked=asked.slice(0,-W);
+  const hidRate=a=>a.length?a.filter(r=>r.o==='?').length/a.length:0;
+  const cov=asked.length?nAll/asked.length:0;
+  const split=['W','S'].map(m=>{ const r=seen.filter(x=>x.set===m); return {m,n:r.length,k:r.filter(hit).length}; });
+  // 変化が起きる前の時点で「有効」だったか（主力テルの消失は緊急扱いにするため）
+  const eS=early.filter(x=>x.actual==='S').length;
+  const earlyStrong=early.length>=minN && binomTail(ek,early.length,Math.max(eS/early.length,1-eS/early.length,0.5))<alpha;
+  // 変化検知：それまで当たっていたテルが直近で当たらなくなった／見えなくなった
+  let alert=null;
+  if(early.length>=minN && eacc>=0.7 && rec.length>=W && racc<=SET.drop/100){
+    alert={level:'ALERT', msg:`直近${rec.length}球の的中が${rk}/${rec.length}に低下（それまで${pct(eacc)}）。修正された可能性があります`};
+  }else if(earlyAsked.length>=minN && hidRate(earlyAsked)<0.3 && recAsked.length>=W && hidRate(recAsked)>=0.5){
+    alert={level:'CAUTION', msg:`直近で「見えず」が${pct(hidRate(recAsked))}に増加。隠し始めたか、撮影位置が変わった可能性`};
+  }else if(early.length>=minN && eacc>=0.7 && rec.length>=W && racc<eacc-0.2){
+    alert={level:'CAUTION', msg:`直近${rec.length}球の的中が${rk}/${rec.length}とやや低下（それまで${pct(eacc)}）`};
+  }
+  return {asked:asked.length,n,k,acc,p0,pval,ev,alpha,nCand,needN,nAll,kAll,n0,k0,earlyStrong,rec:rec.length,rk,racc,cov,split,alert,
+    tempo:t.type==='tempo'?tempoInfo(p,t):null};
+}
+const EV_RANK={strong:0,promising:1,few:2,weak:3};
+function evBadge(st){
+  if(st.ev==='few')       return `<span class="badge c-dim">データ不足 ${st.n}/${st.needN}球</span>`;
+  if(st.ev==='weak')      return `<span class="badge c-dim">未確認 ${pct(st.acc)}</span>`;
+  if(st.ev==='promising') return `<span class="badge c-warn">有望 ${pct(st.acc)}</span>`;
+  return `<span class="badge c-ok">有効 ${pct(st.acc)}</span>`;
+}
+function sortedTells(p){
+  const imp={'高':0,'中':1,'低':2};
+  return p.tells.map(t=>({t,st:tellStats(p,t)}))
+    .sort((a,b)=> (b.t.active-a.t.active) || (EV_RANK[a.st.ev]-EV_RANK[b.st.ev]) || (b.st.acc-a.st.acc) || (imp[a.t.importance]-imp[b.t.importance]) || (TIMINGS.indexOf(a.t.timing)-TIMINGS.indexOf(b.t.timing)))
+    .map(x=>x.t);
+}
+
+// 投手全体の状態
+function overall(p){
+  const items=p.tells.filter(t=>t.active).map(t=>({tell:t,st:tellStats(p,t)}));
+  let level=p.pitches.length?'CLEAR':'NODATA';
+  const msgs=[];
+  items.forEach(x=>{
+    if(!x.st.alert) return;
+    const lv=(x.st.alert.level==='ALERT'&&x.st.earlyStrong)?'CRITICAL':x.st.alert.level; // 主力テルの消失は緊急
+    if(lvRank(lv)>lvRank(level)) level=lv;
+    msgs.push({lv,text:`${x.tell.part}：${x.st.alert.msg}`});
+  });
+  // 最後の画像比較が、最後の投球記録より新しければ反映
+  const sc=p.scans[p.scans.length-1], lastPitch=p.pitches[p.pitches.length-1];
+  if(sc && sc.source!=='legacy' && (!lastPitch || sc.ts>=lastPitch.ts) && lvRank(sc.overall)>=lvRank('CAUTION')){
+    if(lvRank(sc.overall)>lvRank(level)) level=sc.overall;
+    msgs.push({lv:sc.overall,text:`画像比較（${sc.inning?sc.inning+'回 ':''}${fmtTime(sc.ts)}）：${sc.reason||'テルの変化を確認'}`});
+  }
+  const ranked=items.filter(x=>x.st.n>0).sort((a,b)=>(EV_RANK[a.st.ev]-EV_RANK[b.st.ev])||(b.st.acc-a.st.acc));
+  return {level,msgs,best:ranked[0]||null,items};
+}
+
+// 今の1球で見えたサイン
+function curObs(p,t){
+  const o=S.cur.obs[t.id];
+  if(t.type==='state') return o?stateSide(o,stateMap(p,t)):null;
+  if(t.type!=='tempo') return o||null;
+  if(o==='?') return '?';
+  const sec=S.cur.tempo[t.id]?.sec; if(sec==null) return null;
+  const info=tempoInfo(p,t); if(info.thr==null) return null;
+  const bf=tempoBFast(t,info); return bf==null?null:tempoSide(t,sec,info.thr,bf);
+}
+function obsLabel(t,o,sec){
+  if(t.type==='state') return o==='a'?t.la:o==='b'?t.lb:'見えず';
+  if(o==='?') return t.type==='tempo'?'測れず':'見えず';
+  if(t.type==='tempo') return sec!=null?sec.toFixed(2)+'秒':(o==='S'?'直':'変');
+  if(t.type==='presence') return o===t.side?'出た':'出ない';
+  return o==='S'?'直':'変';
+}
+// 予測：記録からベイズ推定（単純ベイズ）。記録が無いテルは「テル通りなら」の参考表示にとどめる
+function predict(p){
+  const H=p.pitches, nS=H.filter(x=>x.actual==='S').length;
+  let prior=(nS+1)/(H.length+2), ctxNote='';
+  if(SET.ctx){
+    // 同じカウントのまとまり・同じ走者状況の記録があれば、全体の割合に寄せながら（記録4球分の重み）使う
+    const g=countGroup(S.cur.count), same=H.filter(x=>countGroup(x.count)===g&&(x.run||'0')===S.cur.run);
+    if(same.length){ const k=4; prior=(same.filter(x=>x.actual==='S').length+k*prior)/(same.length+k); ctxNote=`${g}・${S.cur.run==='1'?'走者あり':'走者なし'}の傾向（${same.length}球）を含む`; }
+  }
+  let lo=Math.log(prior/(1-prior));
+  const used=[];
+  for(const t of p.tells.filter(x=>x.active)){
+    const o=curObs(p,t); if(o!=='S'&&o!=='B') continue;
+    const ser=obsSeries(p,t);
+    let a=0,b=0,tS=0,tB=0;
+    H.forEach((x,i)=>{ const so=ser[i]; if(so!=='S'&&so!=='B') return; if(x.actual==='S'){tS++; if(so===o)a++;} else {tB++; if(so===o)b++;} });
+    lo+=Math.log(((a+1)/(tS+2))/((b+1)/(tB+2)));
+    used.push({tell:t,o,n:tS+tB,label:t.type==='state'?obsLabel(t,S.cur.obs[t.id]):obsLabel(t,o,S.cur.tempo[t.id]?.sec)});
+  }
+  const probS=1/(1+Math.exp(-lo));
+  const votes=used.reduce((s,u)=>s+(u.o==='S'?1:-1),0);
+  const unverified=used.length>0 && used.every(u=>u.n===0);
+  return {prior,ctxNote,probS,used,votes,unverified,minN:used.length?Math.min(...used.map(u=>u.n)):0};
+}
+
+function scanLevel(p,status){
+  let lv='NODATA';
+  for(const t of p.tells){
+    const s=status[t.id]; if(!s) continue;
+    let l='CLEAR';
+    if(s==='WEAKENED') l='CAUTION';
+    else if(s==='MODIFIED'||s==='DISAPPEARED') l=t.importance==='高'?'CRITICAL':'ALERT';
+    if(lvRank(l)>lvRank(lv)) lv=l;
+  }
+  return lv;
+}
+
+// ══════════════════════════════════════════════
+// AI（任意機能）
+// ══════════════════════════════════════════════
+const imgBlock = d => ({type:'image',source:{type:'base64',media_type:'image/jpeg',data:String(d).split(',')[1]}});
+async function callClaude(content, schema){
+  if(!navigator.onLine) throw new Error('オフラインです。電波のある場所で実行してください');
+  const ctrl=new AbortController(); const timer=setTimeout(()=>ctrl.abort(),120000);
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST', signal:ctrl.signal,
+      headers:{
+        'content-type':'application/json',
+        'x-api-key':SET.apiKey,
+        'anthropic-version':'2026-10-21',
+        'anthropic-beta':'server-side-fallback-2026-07-01',
+        'anthropic-dangerous-direct-browser-access':'true',
+      },
+      body:JSON.stringify({
+        model:SET.model, max_tokens:16000,
+        fallbacks:'default',
+        output_config:{ effort:'medium', format:{type:'json_schema',schema} },
+        messages:[{role:'user',content}],
+      }),
+    });
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok){
+      if(res.status===401) throw new Error('APIキーが正しくありません');
+      if(res.status===429) throw new Error('混み合っています。少し待って再実行してください');
+      throw new Error(data?.error?.message||('通信エラー（'+res.status+'）'));
+    }
+    if(data.stop_reason==='refusal') throw new Error('AIがこの画像の分析を控えました');
+    if(data.stop_reason==='max_tokens') throw new Error('AIの回答が途中で切れました。もう一度実行してください');
+    const text=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+    try{ return JSON.parse(text); }
+    catch{ const m=text.match(/\{[\s\S]*\}/); if(m) return JSON.parse(m[0]); throw new Error('AIの回答を読み取れませんでした'); }
+  }catch(e){
+    if(e.name==='AbortError') throw new Error('時間切れです。電波状況を確認してください');
+    throw e;
+  }finally{ clearTimeout(timer); }
+}
+const DIFF_SCHEMA={type:'object',additionalProperties:false,required:['summary','candidates','caution','shooting_tip'],properties:{
+  summary:{type:'string'},
+  candidates:{type:'array',items:{type:'object',additionalProperties:false,required:['category','part','timing','straight','breaking','cue','confidence','reason'],properties:{
+    category:{type:'string',enum:CATEGORIES}, part:{type:'string'}, timing:{type:'string',enum:TIMINGS},
+    straight:{type:'string'}, breaking:{type:'string'}, cue:{type:'string'},
+    confidence:{type:'string',enum:['高','中','低']}, reason:{type:'string'} }}},
+  caution:{type:'string'}, shooting_tip:{type:'string'} }};
+const SCAN_SCHEMA={type:'object',additionalProperties:false,required:['reason','image_quality','checks','new_findings'],properties:{
+  reason:{type:'string'}, image_quality:{type:'string',enum:['良い','普通','悪い']},
+  checks:{type:'array',items:{type:'object',additionalProperties:false,required:['tell_id','status','looks_like','note'],properties:{
+    tell_id:{type:'string'}, status:{type:'string',enum:Object.keys(STATUS)},
+    looks_like:{type:'string',enum:['直球側','変化球側','判断不可']}, note:{type:'string'} }}},
+  new_findings:{type:'array',items:{type:'object',additionalProperties:false,required:['part','desc'],properties:{part:{type:'string'},desc:{type:'string'}}}} }};
+
+function promptDiff(p){
+  return `あなたは野球の投球動作を観察する分析担当です。
+同じ投手の2枚の画像を比べます。1枚目は直球系を投げた時、2枚目は変化球系を投げた時の、なるべく同じ局面のコマです。
+投手：${p.name}（${p.hand}）　メモ：${p.memo||'なし'}
+
+2枚の違いのうち、打者や味方ベンチがリリースより前に目で確認できそうなもの（テル候補）を挙げてください。
+・画像から実際に確認できる違いだけを書くこと。見えないことや判断できないことは書かない。
+・撮影角度、コマのタイミングのずれ、画質による見かけ上の違いの可能性があるときは、reasonにそう書き、confidenceを「低」にする。
+・動作の速さ・テンポは静止画では分からないので挙げない。
+・確認できる違いがなければcandidatesは空配列にする。最大5件。
+・straight／breakingには、それぞれの球種のときの見え方を短く書く。cueは打者向けの短い指示（15文字程度）。
+・cautionには、この2枚だけで言えることの限界を1〜2文で書く。
+・shooting_tipには、次に撮影するときの改善点を1文で書く。`;
+}
+function promptScan(p,tells){
+  return `あなたは野球の投球動作を観察する分析担当です。
+投手：${p.name}（${p.hand}）
+登録済みのテル（球種によって形が変わる癖）が、試合中の最新のコマでもまだ確認できるかを調べます。
+最後の画像が「今回のコマ」、それより前の画像は登録時の参考画像です。
+
+テル一覧：
+${JSON.stringify(tells.map(t=>({tell_id:t.id,part:t.part,timing:t.timing,straight_sign:signText(t,'S',p),breaking_sign:signText(t,'B',p)})),null,1)}
+
+1枚のコマでは何を投げたかは分からないため、今回のコマが「直球時の形」か「変化球時の形」のどちらかに当てはまるかを見てください。
+status：INTACT（どちらかの形がはっきり確認できる）、WEAKENED（形の差が小さくなっている）、MODIFIED（どちらにも当てはまらない別の動きになっている）、DISAPPEARED（その部位の特徴が見られない・隠されている）、UNKNOWN（角度・局面・画質のため判断できない）。
+確信が持てないときは必ずUNKNOWNにし、推測で判定しないこと。
+looks_likeには今回のコマがどちらの形に近いかを書く。tell_idは一覧の値をそのまま使う。
+reasonは全体の判定根拠を1文で。new_findingsには登録外で目立つ違いがあれば書く（なければ空配列）。`;
+}
+
+// ══════════════════════════════════════════════
+// 画面の状態
+// ══════════════════════════════════════════════
+const freshScan = () => ({img:null,inning:'',memo:'',status:{},ai:null,loading:false,error:null});
+const freshAi = () => ({imgS:null,imgB:null,loading:false,result:null,error:null,adopted:{}});
+const S = {
+  screen:'list', pid:null, tab:'live', modal:null,
+  form:{}, scan:freshScan(), ai:freshAi(),
+  cur:{obs:{},tempo:{},inning:'1',set:'W',count:'0-0',run:'0'},
+  open:{}, logLimit:40, va:freshVa(), vaD:null, flash:false, loading:false, error:null,
+};
+function setPath(path,v){ const ks=path.split('.'); let o=S; for(let i=0;i<ks.length-1;i++) o=o[ks[i]]; o[ks[ks.length-1]]=v; }
+
+// ══════════════════════════════════════════════
+// 描画
+// ══════════════════════════════════════════════
+function render(){
+  const app=document.getElementById('app');
+  app.innerHTML = vHeader() + `<main class="wrap">${S.screen==='list'?vList():vPitcher()}</main>` + (S.screen==='pitcher'?vTabs():'') + (S.modal?vModal():'');
+  S.flash=false;
+  app.querySelectorAll('[data-bind]').forEach(el=>{
+    const evt=(el.tagName==='SELECT'||el.type==='checkbox')?'change':'input';
+    el.addEventListener(evt,()=>setPath(el.dataset.bind, el.type==='number'?Number(el.value):el.value));
+  });
+  syncWake();
+  if(S.screen==='pitcher'&&S.tab==='video') vaAfterRender(); else { clearInterval(vaTimer); vaTimer=null; }
+}
+
+function vHeader(){
+  const p=S.screen==='pitcher'?curP():null;
+  return `<header class="hdr">
+    ${p?`<button class="icon-btn" onclick="goList()" aria-label="投手一覧へ戻る">${ic('back',24)}</button>`:`<div class="logo" aria-hidden="true">${ic('ball',22)}</div>`}
+    <div class="hdr-t">
+      <div class="brand">TELL ALERT</div>
+      <div class="hdr-sub">${p?`${esc(p.name)}・${esc(p.hand)}${p.team?'・'+esc(p.team):''}`:'投手の癖を記録して、本物かどうか確かめる'}</div>
+    </div>
+    <span class="chip ${SET.mode==='ai'?'chip-ai':'chip-off'}">${SET.mode==='ai'?'AI併用':'オフライン'}</span>
+    <button class="icon-btn" onclick="toggleTheme()" aria-label="明るさ切替">${ic(isLight()?'moon':'sun',22)}</button>
+    <button class="icon-btn" onclick="openSettings()" aria-label="設定">${ic('gear',22)}</button>
+  </header>`;
+}
+const isLight = () => SET.theme==='light' || (SET.theme==='auto' && matchMedia('(prefers-color-scheme: light)').matches);
+
+function thumb(id){ const s=imgSrc(id); return s?`<img class="thumb" src="${s}" alt="">`:`<div class="thumb" aria-hidden="true">${ic('ball',26)}</div>`; }
+
+// ── 投手一覧 ──
+function vList(){
+  const ps=Store.data.pitchers;
+  let h=`<div class="row-between"><h2 class="sec">登録投手（${ps.length}人）</h2>${ps.length?`<button class="btn btn-main sm" onclick="openReg()">＋ 投手を登録</button>`:''}</div>`;
+  if(!ps.length){
+    h+=`<div class="empty">
+      <div style="color:var(--accent)">${ic('ball',44)}</div>
+      <b>まだ投手が登録されていません</b>
+      <ol class="steps">
+        <li>投手を登録する（名前と投球腕だけでOK）</li>
+        <li>「テル」タブで、気づいた癖を書き込む<br><span class="small">例：グラブの高さ、セットでの手首の角度</span></li>
+        <li>「計測」タブで、1球ごとに「見えたサイン」と「実際の球種」をタップ</li>
+        <li>的中率が上がったテルだけを、打者に伝える</li>
+      </ol>
+      <div class="grid2"><button class="btn btn-main" onclick="openReg()">＋ 最初の投手を登録</button><button class="btn" onclick="loadSample()">サンプルで試す</button></div>
+    </div>`;
+    return h;
+  }
+  ps.forEach(p=>{
+    const ov=overall(p), L=LEVEL[ov.level];
+    h+=`<button class="card pcard lv-${L.c}" onclick="openPitcher('${p.id}')">
+      ${thumb(p.thumbId)}
+      <div class="grow">
+        <div class="pname">${esc(p.name)}<span class="hand">${esc(p.hand)}</span></div>
+        <div class="meta">${p.team?esc(p.team)+'・':''}テル${p.tells.length}件・記録${p.pitches.length}球</div>
+        ${ov.best?`<div class="meta">最有力：${esc(ov.best.tell.part)} ${ov.best.st.k}/${ov.best.st.n}（${pct(ov.best.st.acc)}）</div>`:''}
+      </div>
+      <span class="badge c-${L.c}">${L.icon} ${L.label}</span>
+    </button>`;
+  });
+  return h;
+}
+
+// ── 投手画面 ──
+function vTabs(){
+  const tabs=[['live','ball','計測'],['tells','pin','テル'],['video','film','映像'],['compare','images','比較'],['log','list','記録']];
+  return `<nav class="tabs">${tabs.map(([k,i,l])=>`<button class="tab ${S.tab===k?'on':''}" onclick="setTab('${k}')"><span class="ti">${ic(i,22)}</span>${l}</button>`).join('')}</nav>`;
+}
+function vPitcher(){
+  const p=curP(); if(!p) return '';
+  const ov=overall(p);
+  return (p.sample?`<div class="sample-note">これは使い方を試すための<b>サンプルデータ</b>です（実在の投手ではありません）。${esc(p.memo)}</div>`:'') + vBanner(ov) + ({live:vLive,tells:vTells,video:vVideo,compare:vCompare,log:vLog}[S.tab]||vLive)(p,ov);
+}
+function vBanner(ov){
+  if(lvRank(ov.level)<lvRank('CAUTION')) return '';
+  const L=LEVEL[ov.level];
+  return `<div class="banner c-${L.c} ${S.flash?'pulse':''}" role="alert">
+    <div class="bt">${L.icon} ${L.label}：テルが変わった可能性</div>
+    ${ov.msgs.map(m=>`<div class="bm">・${esc(m.text)}</div>`).join('')}
+    <div class="bm small">打者には「このテルは一旦信用しない」と伝え、他のテルや配球傾向で対応しましょう。</div>
+  </div>`;
+}
+
+// ── 計測タブ（試合中に一番使う画面） ──
+function vLive(p){
+  const tells=sortedTells(p).filter(t=>t.active);
+  const pred=predict(p);
+  const last=p.pitches.slice(-5).reverse();
+  return `
+  <div class="card ctx">
+    <select class="sel" data-bind="cur.inning" aria-label="イニング">${INNINGS.map(n=>`<option value="${n}" ${S.cur.inning===n?'selected':''}>${n}回</option>`).join('')}</select>
+    <div class="seg">${[['W','ワインド'],['S','セット']].map(([k,l])=>`<button class="${S.cur.set===k?'on':''}" onclick="setCurSet('${k}')">${l}</button>`).join('')}</div>
+    <span class="count">#${p.pitches.length+1}</span>
+    ${SET.ctx?`<div class="cnt">
+      <select class="sel" aria-label="カウント" onchange="S.cur.count=this.value;render()">${COUNTS.map(c=>`<option value="${c}" ${S.cur.count===c?'selected':''}>${c.replace('-','ボール')}ストライク</option>`).join('')}</select>
+      <div class="seg" style="flex:1;min-width:150px">${[['0','走者なし'],['1','走者あり']].map(([k,l])=>`<button class="${S.cur.run===k?'on':''}" onclick="S.cur.run='${k}';render()">${l}</button>`).join('')}</div>
+      <button class="btn xs" onclick="S.cur.count='0-0';render()">次の打者</button>
+    </div>`:''}
+  </div>
+
+  <h3 class="step"><span>1</span>投球前：見えたサインをタップ</h3>
+  ${tells.length?tells.map(t=>vObsRow(p,t)).join(''):`<div class="empty sm">テルがまだ登録されていません。「テル」タブから追加してください。<br>テルが無くても結果だけ記録しておくと、この投手の球種の割合が分かります。</div>`}
+  ${vPrediction(p,pred)}
+
+  <h3 class="step"><span>2</span>投球後：実際の球種をタップ（これで1球記録）</h3>
+  <div class="res-h s">直球系</div>
+  <div class="res-grid">${PITCHES.S.map(k=>`<button class="res s" onclick="recordPitch('S','${k}')">${k}</button>`).join('')}</div>
+  <div class="res-h b">変化球系</div>
+  <div class="res-grid">${PITCHES.B.map(k=>`<button class="res b" onclick="recordPitch('B','${k}')">${k}</button>`).join('')}</div>
+
+  <div class="grid2 mt">
+    <button class="btn sm" onclick="clearObs()">サインを選び直す</button>
+    <button class="btn sm" onclick="undoPitch()" ${p.pitches.length?'':'disabled'}>直前の1球を取り消す</button>
+  </div>
+  ${last.length?`<div class="card mt recent"><div class="small" style="font-weight:800;margin-bottom:4px">直近の記録</div>${last.map(x=>`<div>${pitchLine(p,x)}</div>`).join('')}</div>`:''}`;
+}
+function vObsRow(p,t){
+  const st=tellStats(p,t), o=S.cur.obs[t.id];
+  const head=`<div class="obs-h"><b>${esc(t.part)}</b><span class="tm">${esc(timingText(t))}</span>${evBadge(st)}</div>${t.cue?`<div class="cue">打者へ：${esc(t.cue)}</div>`:''}`;
+  if(t.type==='tempo') return `<div class="card">${head}${vTempo(p,t,st)}</div>`;
+  if(t.type==='state'){
+    const m=stateMap(p,t), sd=x=>m?((x==='a')===(m==='aS')?'S':'B'):null;
+    const btn=x=>{ const side=sd(x), cls=side?side.toLowerCase():(x==='a'?'p':'n');
+      return `<button class="ob ${cls} ${o===x?'on':''}" onclick="setObs('${t.id}','${x}')"><b>${esc(short(x==='a'?t.la:t.lb,12))}</b><small>${side?`→ ${side==='S'?'直球':'変化球'}`:'→ 記録から判断'}</small></button>`; };
+    return `<div class="card">${head}<div class="obs-btns">${btn('a')}${btn('b')}<button class="ob q ${o==='?'?'on':''}" onclick="setObs('${t.id}','?')"><b>見えず</b></button></div></div>`;
+  }
+  if(t.type==='presence') return `<div class="card">${head}
+    <div class="obs-btns">
+      <button class="ob p ${o===t.side?'on':''}" onclick="setObs('${t.id}','${t.side}')"><b>出た</b><small>${esc(short(t.action,14))} → ${t.side==='S'?'直球':'変化球'}</small></button>
+      <button class="ob n ${o===other(t.side)?'on':''}" onclick="setObs('${t.id}','${other(t.side)}')"><b>出ない</b><small>いつも通り</small></button>
+      <button class="ob q ${o==='?'?'on':''}" onclick="setObs('${t.id}','?')"><b>見えず</b></button>
+    </div></div>`;
+  return `<div class="card">${head}
+    <div class="obs-btns">
+      <button class="ob s ${o==='S'?'on':''}" onclick="setObs('${t.id}','S')"><b>${esc(short(t.straight,10))||'直球の形'}</b><small>→ 直球サイン</small></button>
+      <button class="ob b ${o==='B'?'on':''}" onclick="setObs('${t.id}','B')"><b>${esc(short(t.breaking,10))||'変化球の形'}</b><small>→ 変化球サイン</small></button>
+      <button class="ob q ${o==='?'?'on':''}" onclick="setObs('${t.id}','?')"><b>見えず</b></button>
+    </div></div>`;
+}
+// 動作の速さ：ストップウォッチ（押した瞬間に反応するよう pointerdown を使う）
+// 参考画像の見出し（2つの状態型は、画像1＝状態A、画像2＝状態B）
+const refCap=(t,which)=>t.type==='state'?`参考：${which==='S'?t.la:t.lb}`:`参考：${which==='S'?'直球':'変化球'}の時`;
+const timingText = t => t.type==='tempo'?`${pointName(t.tStart)}→${pointName(t.tEnd)}`:t.timing;
+function vTempo(p,t,st){
+  const c=S.cur.tempo[t.id]||{}, ti=st.tempo, o=S.cur.obs[t.id];
+  let btn;
+  if(c.start!=null) btn=`<span>■ ${esc(t.tEnd)}でタップ</span><span class="big" id="tw-${t.id}">0.00</span>`;
+  else if(c.sec!=null){
+    const bf=tempoBFast(t,ti), side=ti.thr!=null&&bf!=null?tempoSide(t,c.sec,ti.thr,bf):null;
+    btn=`<span class="big">${c.sec.toFixed(2)}秒</span><small>${side?`→ <span class="c-${side}">${SIDE_NAME[side]}寄り</span>`:'境目はまだ決まっていません'}・タップで測り直し</small>`;
+  }else btn=`<span>● ${esc(t.tStart)}でタップ</span><small>もう一度「${esc(t.tEnd)}」でタップ</small>`;
+  const info=ti.thr!=null
+    ? `直球 平均${ti.mS.toFixed(2)}秒・変化球 平均${ti.mB.toFixed(2)}秒・境目${ti.thr.toFixed(2)}秒`
+    : `境目を決めるため、直球と変化球を${TEMPO_MIN_EACH}球ずつ測ってください（今 直球${ti.sS.length}・変化球${ti.sB.length}）`;
+  return `<div class="tempo-row">
+      <button class="tw ${c.start!=null?'run':''}" onpointerdown="tapTempo(event,'${t.id}')" aria-label="ストップウォッチ">${btn}</button>
+      <button class="ob q ${o==='?'?'on':''}" onclick="setObs('${t.id}','?')"><b>測れず</b></button>
+    </div>
+    <div class="small mt">${info}</div>`;
+}
+function vPrediction(p,pred){
+  if(!pred.used.length){
+    if(!p.pitches.length) return `<div class="pred"><div class="pred-l">予測</div><div class="small">サインをタップすると、ここに予測が出ます</div></div>`;
+    return `<div class="pred"><div class="pred-l">サイン未選択：${pred.ctxNote||`この投手の球種の割合（${p.pitches.length}球）`}</div>
+      <div class="pred-big" style="font-size:22px"><span class="c-S">直球系 ${pct(pred.prior)}</span>　<span class="c-B">変化球系 ${pct(1-pred.prior)}</span></div></div>`;
+  }
+  if(pred.unverified){
+    if(pred.votes===0) return `<div class="pred"><div class="pred-l">予測（未検証）</div><div class="pred-big" style="font-size:22px">サインが食い違っています</div></div>`;
+    const side=pred.votes>0?'S':'B';
+    return `<div class="pred ${side}"><div class="pred-l">予測（未検証：このテルの記録がまだありません）</div>
+      <div class="pred-big">テル通りなら ${SIDE_NAME[side]}</div><div class="pred-warn">記録を重ねると、当たる確率が表示されます</div></div>`;
+  }
+  const side=pred.probS>=0.5?'S':'B', pr=side==='S'?pred.probS:1-pred.probS;
+  return `<div class="pred ${side}">
+    <div class="pred-l">予測（過去の記録から計算）</div>
+    <div class="pred-big">${SIDE_NAME[side]} <span>${Math.round(pr*100)}%</span></div>
+    <div class="pred-why">${pred.used.map(u=>`${esc(u.tell.part)}＝${esc(u.label)}（記録${u.n}球）`).join('・')}</div>
+    ${pred.ctxNote?`<div class="pred-why">${esc(pred.ctxNote)}</div>`:''}
+    ${pred.minN<SET.minN?`<div class="pred-warn">記録が${SET.minN}球未満のテルがあるため、参考程度に</div>`:''}
+  </div>`;
+}
+function pitchLine(p,x){
+  const obs=p.tells.map(t=>{
+    const sec=x.tempo?.[t.id], o=x.obs?.[t.id];
+    if(typeof sec==='number') return `${short(t.part,8)}:${sec.toFixed(2)}秒`;
+    return o?`${short(t.part,8)}:${obsLabel(t,o)}`:null;
+  }).filter(Boolean).join(' ');
+  const res=x.pred? (x.pred===x.actual?'<span class="c-ok">○的中</span>':'<span class="c-crit">×外れ</span>') : '';
+  return `#${x.no||''} ${esc(x.inning||'')}回 ${x.set==='S'?'セット':'ワインド'}${x.count?` ${esc(x.count)}${x.run==='1'?' 走者あり':''}`:''}　${esc(obs)||'サインなし'} → <b class="c-${x.actual}">${esc(x.kind)}</b> ${res}`;
+}
+
+// ── テルタブ ──
+function vTells(p){
+  const ts=sortedTells(p), nAct=p.tells.filter(t=>t.active).length;
+  let h=`<div class="row-between"><h2 class="sec">観察項目（${p.tells.length}件）</h2>
+    <div class="row"><button class="btn sm" onclick="openBulk()">リストから選ぶ</button><button class="btn btn-main sm" onclick="openTellEdit()">＋ 1件追加</button></div></div>
+  <div class="note">的中率は「計測」タブの記録から自動で計算し、当たっている順に並べます。<br>
+  <span class="c-ok">有効</span>：いつも多い方の球種を張るより当たっていて、偶然とは考えにくい。<br>
+  <span class="c-warn">有望</span>：当たっているが、まだ偶然の可能性も残る。<br>
+  <span class="c-dim">データ不足・未確認</span>：判断できる記録がまだない、または当たり方が偶然と区別できない。<br>
+  候補を多く調べるほど、偶然当たって見える項目が出やすくなります。そのため「有効」の基準は、計測中の項目数に応じて厳しくしています（今は${nAct}件なので、偶然の確率が${(5/Math.max(1,nAct)).toFixed(nAct>5?1:0)}%未満）。<br>
+  見分けに使えないと分かった項目は「休止」すると、計測画面がすっきりします。</div>`;
+  if(SET.mode==='ai') h+=vAiDiff(p);
+  if(!ts.length) h+=`<div class="empty sm">まだ観察項目がありません。「リストから選ぶ」で、気になる項目をまとめて追加できます。<br>どちらが直球のサインかは、記録が貯まるとアプリが判断します。</div>`;
+  ts.forEach(t=>{ h+=vTellCard(p,t); });
+  return h;
+}
+function vTellCard(p,t){
+  const st=tellStats(p,t), open=S.open[t.id];
+  const al=st.alert?`<div class="alert-msg c-${LEVEL[st.alert.level].c}">${LEVEL[st.alert.level].icon} ${esc(st.alert.msg)}</div>`:'';
+  const sp=st.split.filter(s=>s.n>0).map(s=>`${s.m==='W'?'ワインド':'セット'} ${s.k}/${s.n}`).join('・');
+  return `<div class="card tcard ${t.active?'':'inactive'}">
+    <button class="tc-head" onclick="toggleOpen('${t.id}')" aria-expanded="${!!open}">
+      <div class="tc-bar" style="background:${CAT_COLOR[t.category]||'#888'}"></div>
+      <div class="grow">
+        <div class="obs-h"><b>${esc(t.part)}</b><span class="tm">${esc(t.category)}・${esc(timingText(t))}・重要度${esc(t.importance)}</span></div>
+        ${t.type==='state'?`<div class="small">${esc(t.la)}／${esc(t.lb)}　${(()=>{const m=stateMap(p,t); return m?`<span class="c-S">「${esc(m==='aS'?t.la:t.lb)}」が直球</span>${t.map==='auto'?'（記録から判断）':''}`:'どちらが直球かは記録から判断中';})()}</div>`:''}
+        <div class="row" style="flex-wrap:wrap;gap:6px">${evBadge(st)}${t.source==='ai'?'<span class="badge c-S">AI候補</span>':''}${t.active?'':'<span class="badge c-dim">休止中</span>'}</div>
+        <div class="stat-line">
+          <span>${t.type==='presence'?'出た時の的中':'的中'} <b>${st.k}/${st.n}</b></span>
+          ${t.type==='presence'&&st.n0?`<span>出ない時 <b>${st.k0}/${st.n0}</b></span>`:''}
+          ${st.rec?`<span>直近 <b>${st.rk}/${st.rec}</b></span>`:''}
+          ${st.asked?`<span>見えた率 <b>${pct(st.cov)}</b></span>`:''}
+          ${sp?`<span>${sp}</span>`:''}
+        </div>
+        ${al}
+      </div>
+      <span class="dim">${open?'▲':'▼'}</span>
+    </button>
+    ${open?`<div class="tc-body">
+      <div class="grid2 mt">
+        <div class="sb s"><div class="k">直球の時</div>${esc(signText(t,'S',p)||'－')}${imgSrc(t.imgS)?`<img class="refimg" src="${imgSrc(t.imgS)}" alt="${esc(refCap(t,'S'))}">`:''}</div>
+        <div class="sb b"><div class="k">変化球の時</div>${esc(signText(t,'B',p)||'－')}${imgSrc(t.imgB)?`<img class="refimg" src="${imgSrc(t.imgB)}" alt="${esc(refCap(t,'B'))}">`:''}</div>
+      </div>
+      ${t.type==='state'&&(imgSrc(t.imgS)||imgSrc(t.imgB))?`<div class="small">画像：左が「${esc(t.la)}」、右が「${esc(t.lb)}」の参考です。</div>`:''}
+      <div>
+      </div>
+      ${st.tempo?vTempoDetail(st.tempo):''}
+      ${t.hint?`<div class="small mt">見るところ：${esc(t.hint)}</div>`:''}
+      ${t.cue?`<div class="note mt">打者への指示：${esc(t.cue)}</div>`:''}
+      ${t.baseline?`<div class="note">メモ：${esc(t.baseline)}</div>`:''}
+      ${st.n?`<div class="small mb">基準（${t.type==='presence'?`普段の${t.side==='S'?'直球':'変化球'}の割合`:'多い方を張った場合'}）${pct(st.p0)}に対して ${pct(st.acc)}。偶然この成績になる確率 約${st.pval<0.001?'0.1%未満':st.pval<0.01?(st.pval*100).toFixed(1)+'%':pct(st.pval)}（「有効」の基準は${(st.alpha*100).toFixed(st.alpha<0.01?1:0)}%未満）</div>`:''}
+      <div class="grid3">
+        <button class="btn xs" onclick="openTellEdit('${t.id}')">編集</button>
+        <button class="btn xs" onclick="toggleTellActive('${t.id}')">${t.active?'休止する':'再開する'}</button>
+        <button class="btn xs btn-danger" onclick="delTell('${t.id}')">削除</button>
+      </div>
+    </div>`:''}
+  </div>`;
+}
+function vTempoDetail(ti){
+  if(!ti.sS.length&&!ti.sB.length) return '';
+  const row=(lab,c,m,d,n)=>n?`<div><span class="c-${c}">${lab}</span> 平均 <b>${m.toFixed(2)}秒</b>（ばらつき ±${d.toFixed(2)}秒・${n}球）</div>`:'';
+  const gap=ti.mS!=null&&ti.mB!=null?Math.abs(ti.mS-ti.mB):null;
+  return `<div class="note mt" style="margin-bottom:0">${row('直球','S',ti.mS,ti.dS,ti.sS.length)}${row('変化球','B',ti.mB,ti.dB,ti.sB.length)}
+    ${gap!=null?`<div>差 <b>${gap.toFixed(2)}秒</b>${ti.thr!=null?`・境目 <b>${ti.thr.toFixed(2)}秒</b>`:''}${gap<Math.max(ti.dS,ti.dB)?'<br><span class="c-warn">差がばらつきより小さいので、見分けにくい状態です</span>':''}</div>`:''}</div>`;
+}
+function vAiDiff(p){
+  const A=S.ai;
+  let h=`<div class="card" style="border-color:var(--S)">
+    <div class="sec c-S mb">${ic('spark',18)} AIでテル候補を探す</div>
+    <div class="note">直球を投げた時と変化球を投げた時の、同じ局面のコマを1枚ずつ選んでください。AIが2枚の違いを候補として挙げます。候補は「未検証」として登録されるので、必ず計測で確かめてください。</div>
+    <div class="grid2">
+      <div><div class="small c-S" style="font-weight:800">直球の時</div>${A.imgS?previewBox(A.imgS,"S.ai.imgS=null;render()"):pickButtonsCompact('aiS')}</div>
+      <div><div class="small c-B" style="font-weight:800">変化球の時</div>${A.imgB?previewBox(A.imgB,"S.ai.imgB=null;render()"):pickButtonsCompact('aiB')}</div>
+    </div>
+    ${A.error?`<div class="alert-msg c-crit">エラー：${esc(A.error)}</div>`:''}
+    <button class="btn btn-ai full mt" onclick="runAiDiff()" ${A.loading||!A.imgS||!A.imgB?'disabled':''}>${A.loading?'<span class="spin"></span> 分析中…':'違いを分析する'}</button>`;
+  if(A.result){
+    const r=A.result;
+    h+=`<div class="note mt">${esc(r.summary)}</div>`;
+    if(!r.candidates.length) h+=`<div class="small">はっきりした違いは見つかりませんでした。</div>`;
+    r.candidates.forEach((c,i)=>{
+      h+=`<div class="cand">
+        <div class="obs-h"><b>${esc(c.part)}</b><span class="tm">${esc(c.category)}・${esc(c.timing)}</span><span class="badge ${c.confidence==='高'?'c-ok':c.confidence==='中'?'c-warn':'c-dim'}">確からしさ ${esc(c.confidence)}</span></div>
+        <div class="small"><span class="c-S">直球：</span>${esc(c.straight)}</div>
+        <div class="small"><span class="c-B">変化球：</span>${esc(c.breaking)}</div>
+        <div class="small dim">根拠：${esc(c.reason)}</div>
+        <button class="btn xs mt" onclick="adoptCandidate(${i})" ${A.adopted[i]?'disabled':''}>${A.adopted[i]?'登録済み':'＋ テルとして登録'}</button>
+      </div>`;
+    });
+    h+=`<div class="small mt">注意：${esc(r.caution)}</div><div class="small">撮影のヒント：${esc(r.shooting_tip)}</div>`;
+  }
+  return h+`</div>`;
+}
+function pickButtonsCompact(target){
+  return `<label class="btn xs full" style="margin-top:4px"><input class="vh" type="file" accept="image/*,video/*" capture="environment" data-target="${target}" onchange="onPick(event)">${ic('camera',16)}撮影</label>
+  <label class="btn xs full" style="margin-top:4px"><input class="vh" type="file" accept="image/*,video/*" data-target="${target}" onchange="onPick(event)">${ic('film',16)}選ぶ</label>`;
+}
+
+// ── 比較タブ（旧スキャン機能） ──
+function vCompare(p){
+  const C=S.scan, tells=sortedTells(p).filter(t=>t.active&&t.type!=='tempo');
+  let h=`<div class="note">試合の途中でフォームを撮り、登録時の参考画像と並べて目で比べます。投手がテルを修正していないかの確認用です。<br>球数が少ない序盤や、計測ができない打席の補助として使ってください。</div>
+  <div class="card">
+    <div class="sec mb">今回のコマ</div>
+    ${C.img?previewBox(C.img,"S.scan.img=null;render()"):pickButtons('scan')}
+    <div class="grid2 mt">
+      <div class="field" style="margin:0"><label>イニング</label><select data-bind="scan.inning"><option value="">－</option>${INNINGS.map(n=>`<option value="${n}" ${C.inning===n?'selected':''}>${n}回</option>`).join('')}</select></div>
+      <div class="field" style="margin:0"><label>メモ</label><input type="text" data-bind="scan.memo" value="${esc(C.memo)}" placeholder="例：腕の振りが速くなった"></div>
+    </div>
+  </div>`;
+  if(!tells.length){ h+=`<div class="empty sm">比べるテルがありません。先に「テル」タブで登録してください。</div>`; return h+vScanHistory(p); }
+  if(SET.mode==='ai') h+=`${C.error?`<div class="alert-msg c-crit mb">エラー：${esc(C.error)}</div>`:''}
+    <button class="btn btn-ai full mb" onclick="runAiScan()" ${C.loading||!C.img?'disabled':''}>${C.loading?'<span class="spin"></span> AIが確認中…':'AIに下書き判定させる'}</button>`;
+  if(C.ai) h+=`<div class="card" style="border-color:var(--S)"><div class="small c-S" style="font-weight:800">AIの見立て（画質：${esc(C.ai.image_quality)}）</div><div class="note" style="margin:4px 0 0">${esc(C.ai.reason)}</div>
+    ${(C.ai.new_findings||[]).map(f=>`<div class="small">◆ ${esc(f.part)}：${esc(f.desc)}</div>`).join('')}</div>`;
+  tells.forEach(t=>{
+    const s=C.status[t.id], aiC=C.ai?.checks?.find(c=>c.tell_id===t.id);
+    h+=`<div class="card">
+      <div class="obs-h"><b>${esc(t.part)}</b><span class="tm">${esc(t.timing)}</span></div>
+      ${(imgSrc(t.imgS)||imgSrc(t.imgB)||C.img)?`<div class="cmp mt">
+        ${C.img?`<figure><img src="${C.img}" alt="今回"><figcaption>今回</figcaption></figure>`:''}
+        ${imgSrc(t.imgS)?`<figure><img src="${imgSrc(t.imgS)}" alt="${esc(refCap(t,'S'))}"><figcaption>${esc(refCap(t,'S'))}</figcaption></figure>`:''}
+        ${imgSrc(t.imgB)?`<figure><img src="${imgSrc(t.imgB)}" alt="${esc(refCap(t,'B'))}"><figcaption>${esc(refCap(t,'B'))}</figcaption></figure>`:''}
+      </div>`:''}
+      <div class="small mt"><span class="c-S">直球：</span>${esc(signText(t,'S',p)||'－')}　<span class="c-B">変化球：</span>${esc(signText(t,'B',p)||'－')}</div>
+      ${aiC?`<div class="small c-S mt">AI：${STATUS[aiC.status]?.label||''}・${esc(aiC.looks_like)}：${esc(aiC.note)}</div>`:''}
+      <div class="st-btns">${Object.entries(STATUS).map(([k,v])=>`<button class="${s===k?'on '+v.c:''}" onclick="setScanStatus('${t.id}','${k}')">${v.icon}<br>${v.label}</button>`).join('')}</div>
+    </div>`;
+  });
+  const lv=scanLevel(p,C.status);
+  h+=`<button class="btn btn-main full" onclick="saveScan()" ${Object.keys(C.status).length?'':'disabled'}>この比較を保存（判定：${LEVEL[lv].label}）</button>`;
+  return h+vScanHistory(p);
+}
+function vScanHistory(p){
+  if(!p.scans.length) return '';
+  return `<h3 class="step" style="margin-top:20px">比較の履歴（${p.scans.length}回）</h3>`+p.scans.slice().reverse().slice(0,15).map(s=>{
+    const L=LEVEL[s.overall]||LEVEL.CLEAR;
+    return `<div class="card row">
+      ${imgSrc(s.imgId)?`<img class="thumb" src="${imgSrc(s.imgId)}" alt="">`:''}
+      <div class="grow"><span class="badge c-${L.c}">${L.icon} ${L.label}</span> <span class="small">${s.inning?esc(s.inning)+'回・':''}${fmtDate(s.ts)} ${fmtTime(s.ts)}</span>
+        <div class="small">${(s.checks||[]).filter(c=>c.status!=='INTACT').map(c=>`${esc(c.part)}:${STATUS[c.status]?.label||esc(c.status)}`).join('・')||'全テル正常'}</div>
+        ${s.memo?`<div class="small dim">${esc(s.memo)}</div>`:''}</div>
+      <button class="btn xs" onclick="delScan('${s.id}')" aria-label="削除">×</button>
+    </div>`;
+  }).join('');
+}
+
+// ── 記録タブ ──
+function vLog(p){
+  const H=p.pitches, nS=H.filter(x=>x.actual==='S').length;
+  const withPred=H.filter(x=>x.pred), hits=withPred.filter(x=>x.pred===x.actual).length;
+  const list=H.slice().reverse().slice(0,S.logLimit);
+  return `<div class="kpi">
+      <div><b>${H.length}</b><span>記録した球数</span></div>
+      <div><b>${H.length?pct(nS/H.length):'－'}</b><span>直球系の割合</span></div>
+      <div><b>${withPred.length?pct(hits/withPred.length):'－'}</b><span>予測の的中（${hits}/${withPred.length}）</span></div>
+    </div>
+    <div class="card">
+      <div class="sec mb">打者・ベンチへの共有メモ</div>
+      <pre class="share" id="share-text">${esc(shareText(p))}</pre>
+      <div class="grid2"><button class="btn sm" onclick="copyShare()">コピー</button><button class="btn sm" onclick="exportCsv()">CSVで書き出す</button></div>
+    </div>
+    ${vTendency(p)}
+    <div class="row-between"><h2 class="sec">1球ごとの記録</h2><button class="btn xs" onclick="openReg(true)">投手情報を編集</button></div>
+    ${H.length?'':`<div class="empty sm">まだ記録がありません。「計測」タブで1球ずつ記録しましょう。</div>`}
+    <div class="card">${list.map(x=>`<div class="log-row"><span class="n">#${x.no||''}</span><span class="grow">${pitchLine(p,x)}</span><button class="x" onclick="delPitch('${x.id}')" aria-label="この記録を削除">×</button></div>`).join('')}
+    ${H.length>S.logLimit?`<button class="btn sm full mt" onclick="S.logLimit+=40;render()">もっと見る（残り${H.length-S.logLimit}球）</button>`:''}</div>`;
+}
+// 配球の傾向（状況ごとの直球の割合）
+function vTendency(p){
+  const H=p.pitches; if(!H.length) return '';
+  const row=(label,xs)=>{ if(!xs.length) return ''; const r=xs.filter(x=>x.actual==='S').length/xs.length;
+    return `<tr><td>${label}</td><td>${xs.length}</td><td style="width:40%"><div class="bar"><i style="width:${Math.round(r*100)}%"></i></div></td><td><span class="c-S">${pct(r)}</span>／<span class="c-B">${pct(1-r)}</span></td></tr>`; };
+  const prev=H.map((x,i)=>({x,pv:H[i-1]&&H[i-1].inning===x.inning?H[i-1].actual:null}));
+  const hasCtx=H.some(x=>x.count);
+  return `<div class="card"><div class="sec mb">配球の傾向</div>
+    <table class="tend"><tr><th>状況</th><th>球数</th><th colspan="2">直球系／変化球系</th></tr>
+    ${hasCtx?COUNT_GROUPS.map(g=>row(g,H.filter(x=>countGroup(x.count)===g))).join('')+row('走者なし',H.filter(x=>x.count&&x.run!=='1'))+row('走者あり',H.filter(x=>x.run==='1')):''}
+    ${row('ワインド',H.filter(x=>x.set!=='S'))}${row('セット',H.filter(x=>x.set==='S'))}
+    ${row('前の球が直球系',prev.filter(y=>y.pv==='S').map(y=>y.x))}${row('前の球が変化球系',prev.filter(y=>y.pv==='B').map(y=>y.x))}
+    </table>
+    <div class="help">球数が少ない状況の割合は、偶然に左右されやすいので参考程度にしてください。${hasCtx?'':'カウントと走者は、設定で記録をオンにすると集計します。'}</div></div>`;
+}
+function shareText(p){
+  const ov=overall(p), H=p.pitches, nS=H.filter(x=>x.actual==='S').length;
+  const lines=[`【${p.name}（${p.hand}）】記録${H.length}球${H.length?`・直球系${pct(nS/H.length)}`:''}`];
+  const good=ov.items.filter(x=>x.st.ev==='strong'||x.st.ev==='promising').sort((a,b)=>EV_RANK[a.st.ev]-EV_RANK[b.st.ev]);
+  good.forEach(x=>{
+    const t=x.tell, mark=x.st.ev==='strong'?'◎':'○';
+    let body;
+    if(t.type==='state') body=`${signText(t,'S',p)}なら直球／${signText(t,'B',p)}なら変化球　的中${x.st.k}/${x.st.n}`;
+    else if(t.type==='presence') body=`「${t.action}」が出たら${t.side==='S'?'直球':'変化球'}　出た時${x.st.k}/${x.st.n}`;
+    else if(t.type==='tempo'){ const ti=x.st.tempo; body=`${tempoBFast(t,ti)===false?'遅い':'速い'}と変化球　直球${ti.mS!=null?ti.mS.toFixed(2):'－'}秒／変化球${ti.mB!=null?ti.mB.toFixed(2):'－'}秒　的中${x.st.k}/${x.st.n}`; }
+    else body=`直球＝${t.straight||'－'}／変化球＝${t.breaking||'－'}　的中${x.st.k}/${x.st.n}`;
+    lines.push(`${mark} ${t.part}（${timingText(t)}）：${body}${t.cue?`\n　打者へ：${t.cue}`:''}`);
+  });
+  if(!good.length) lines.push('まだ信頼できるテルはありません（記録を続けてください）');
+  ov.msgs.forEach(m=>lines.push(`注意：${m.text}`));
+  return lines.join('\n');
+}
+
+// ══════════════════════════════════════════════
+// モーダル
+// ══════════════════════════════════════════════
+function vModal(){
+  const body={settings:vSettings,reg:vReg,tell:vTellEdit,bulk:vBulk}[S.modal];
+  if(!body) return '';
+  return `<div class="modal-bg" onclick="if(event.target===this&&S.modal==='settings')closeModal()"><div class="modal" role="dialog" aria-modal="true">${body()}</div></div>`;
+}
+function mHead(title){ return `<div class="m-head"><b>${title}</b><button class="x" onclick="closeModal()" aria-label="閉じる">×</button></div>`; }
+
+function vSettings(){
+  const F=S.form;
+  return `${mHead('設定')}
+  <div class="field"><label>動作モード</label>
+    <div class="seg">
+      <button class="${F.mode==='offline'?'on':''}" onclick="S.form.mode='offline';render()">オフライン<br><small>通信不要</small></button>
+      <button class="${F.mode==='ai'?'on':''}" onclick="S.form.mode='ai';render()" ${EMBED?'disabled':''}>AI併用<br><small>${EMBED?'このページでは不可':'要通信・APIキー'}</small></button>
+    </div>
+    <div class="help">${F.mode==='offline'
+      ?'記録・的中率・予測・変化検知はすべて端末内で動きます。電波のない球場でも使えます。'
+      :'オフラインの機能に加えて、画像からテル候補を探す・画像比較の下書きをAIに頼めます。AI部分だけ通信と料金がかかります。'}</div>
+  </div>
+  ${F.mode==='ai'?`
+  <div class="field"><label>Anthropic APIキー${SET.apiKey?'（保存済み）':''}</label>
+    <input type="password" data-bind="form.apiKey" value="${esc(F.apiKey)}" placeholder="sk-ant-..." autocomplete="off">
+    <div class="help">キーはこの端末の中だけに保存されます。端末を他人に貸す場合は注意してください。</div></div>
+  <div class="field"><label>AIモデル</label><select data-bind="form.model">${AI_MODELS.map(([v,l])=>`<option value="${v}" ${F.model===v?'selected':''}>${l}</option>`).join('')}</select></div>`:''}
+  <div class="field"><label>画面の明るさ</label>
+    <div class="seg">${[['dark','ダーク'],['light','屋外（明るい）'],['auto','端末に合わせる']].map(([k,l])=>`<button class="${F.theme===k?'on':''}" onclick="S.form.theme='${k}';render()">${l}</button>`).join('')}</div></div>
+  <div class="field"><label>判定の基準</label>
+    <div class="grid3">
+      <div><div class="small">有効判定の最低球数</div><input class="sel" type="number" min="4" max="40" data-bind="form.minN" value="${F.minN}"></div>
+      <div><div class="small">「直近」の球数</div><input class="sel" type="number" min="4" max="20" data-bind="form.win" value="${F.win}"></div>
+      <div><div class="small">警戒ライン（%）</div><input class="sel" type="number" min="20" max="80" data-bind="form.drop" value="${F.drop}"></div>
+    </div>
+    <div class="help">直近の球数を少なくすると変化に早く気づけますが、偶然の外れでも警告が出やすくなります。</div></div>
+  <div class="field"><label>試合中の補助</label>
+    <div class="seg">
+      <button class="${F.wake?'on':''}" onclick="S.form.wake=!S.form.wake;render()">計測中は画面を消さない</button>
+      <button class="${F.haptic?'on':''}" onclick="S.form.haptic=!S.form.haptic;render()">振動で知らせる</button>
+    </div>
+    <div class="seg mt"><button class="${F.ctx?'on':''}" onclick="S.form.ctx=!S.form.ctx;render()">カウントと走者も記録する</button></div>
+    <div class="help">カウントや走者の有無で球種の傾向が変わる投手がいるため、記録すると予測に反映します。記録の手間を減らしたい場合は切ってください。</div></div>
+  <button class="btn btn-main full mb" onclick="saveSettingsForm()">設定を保存</button>
+  <div class="field"><label>データの保存・移行</label>
+    <div class="grid2">
+      <button class="btn sm" onclick="exportAll()">バックアップを書き出す</button>
+      <label class="btn sm"><input class="vh" type="file" accept="application/json,.json" onchange="importAll(event)">バックアップを読み込む</label>
+    </div>
+    <div class="help" id="usage">チームの別の端末に渡すときも、書き出したファイルを読み込めば同じデータになります。</div></div>
+  <div class="small dim">TELL ALERT v${APP_VERSION}</div>`;
+}
+
+function vReg(){
+  const F=S.form, edit=!!F.id;
+  return `${mHead(edit?'投手情報を編集':'投手を登録')}
+  <div class="field"><label>投手名（必須）</label><input type="text" data-bind="form.name" value="${esc(F.name)}" placeholder="例：○○高校 背番号1"></div>
+  <div class="grid2">
+    <div class="field"><label>投球腕</label><select data-bind="form.hand">${HANDS.map(h=>`<option ${F.hand===h?'selected':''}>${h}</option>`).join('')}</select></div>
+    <div class="field"><label>チーム</label><input type="text" data-bind="form.team" value="${esc(F.team)}" placeholder="任意"></div>
+  </div>
+  <div class="field"><label>メモ</label><textarea data-bind="form.memo" placeholder="例：変化球はスライダー中心。セットでグラブが動く">${esc(F.memo)}</textarea></div>
+  <div class="field"><label>写真（任意・一覧の目印）</label>${F.img?previewBox(F.img,"S.form.img=null;render()"):pickButtons('reg')}</div>
+  <button class="btn btn-main full mb" onclick="saveReg()">${edit?'保存する':'＋ 登録する'}</button>
+  ${edit?`<button class="btn btn-danger full" onclick="deletePitcher('${F.id}')">この投手のデータを削除</button>`:''}`;
+}
+
+function vTellEdit(){
+  const F=S.form, ty=F.type||'state', legacy=!!LEGACY_TYPES[ty];
+  const list=CATALOG.filter(x=>!F._ph||x.ph===F._ph);
+  const late=(ty==='tempo'&&F.tEnd==='リリース')||(ty!=='tempo'&&F.timing==='リリース直前');
+  let typeFields;
+  if(ty==='state') typeFields=`
+  <div class="grid2">
+    <div class="field"><label>状態A</label><input type="text" data-bind="form.la" value="${esc(F.la)}" placeholder="例：立てる"></div>
+    <div class="field"><label>状態B</label><input type="text" data-bind="form.lb" value="${esc(F.lb)}" placeholder="例：寝かせる"></div>
+  </div>
+  <div class="field"><label>どちらが直球のサインか</label>
+    <div class="seg">
+      <button class="${F.map==='auto'?'on':''}" onclick="S.form.map='auto';render()">記録から判断</button>
+      <button class="${F.map==='aS'?'on':''}" onclick="S.form.map='aS';render()">Aなら直球</button>
+      <button class="${F.map==='aB'?'on':''}" onclick="S.form.map='aB';render()">Bなら直球</button>
+    </div>
+    <div class="help">分からなければ「記録から判断」のままで構いません。直球と変化球の記録が貯まると、どちらの状態が直球に多いかを自動で決めます。決めるときはその球より前の記録だけを使うので、的中率が良く見えすぎることはありません。</div></div>
+  <div class="field"><label>参考画像（任意）</label><div class="grid2">
+    <div><div class="small" style="font-weight:800">状態A</div>${F.imgS?previewBox(F.imgS,"S.form.imgS=null;render()"):pickButtonsCompact('tellS')}</div>
+    <div><div class="small" style="font-weight:800">状態B</div>${F.imgB?previewBox(F.imgB,"S.form.imgB=null;render()"):pickButtonsCompact('tellB')}</div>
+  </div></div>`;
+  else if(ty==='tempo') typeFields=`
+  <div class="grid2">
+    <div class="field"><label>測り始め</label><select data-bind="form.tStart">${TEMPO_POINTS.map(c=>`<option ${F.tStart===c?'selected':''}>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>測り終わり</label><select data-bind="form.tEnd">${TEMPO_POINTS.map(c=>`<option ${F.tEnd===c?'selected':''}>${c}</option>`).join('')}</select></div>
+  </div>
+  <div class="field"><label>変化球の時は</label>
+    <div class="seg"><button class="${F.dir==='auto'?'on':''}" onclick="S.form.dir='auto';render()">記録から判断</button><button class="${F.dir==='Bfast'?'on':''}" onclick="S.form.dir='Bfast';render()">速くなる</button><button class="${F.dir==='Bslow'?'on':''}" onclick="S.form.dir='Bslow';render()">遅くなる</button></div>
+    <div class="help">計測画面のストップウォッチで1球ずつ測ります。直球と変化球が${TEMPO_MIN_EACH}球ずつ貯まると、平均の真ん中を境目にして判定します。</div></div>`;
+  else if(ty==='presence') typeFields=`
+  <div class="field"><label>どんな癖か</label><input type="text" data-bind="form.action" value="${esc(F.action)}"></div>
+  <div class="field"><label>この癖が出たら</label>
+    <div class="seg"><button class="${F.side==='S'?'on':''}" onclick="S.form.side='S';render()">直球</button><button class="${F.side==='B'?'on':''}" onclick="S.form.side='B';render()">変化球</button></div></div>`;
+  else typeFields=`
+  <div class="field"><label class="c-S">直球の時の見え方</label><textarea data-bind="form.straight">${esc(F.straight)}</textarea></div>
+  <div class="field"><label class="c-B">変化球の時の見え方</label><textarea data-bind="form.breaking">${esc(F.breaking)}</textarea></div>`;
+  return `${mHead(F.id?'観察項目を編集':'観察項目を追加')}
+  ${F.id?'':`<div class="card" style="background:var(--bg)">
+    <div class="small" style="font-weight:800;margin-bottom:6px">リストから選ぶ</div>
+    <div class="grid2">
+      <select class="sel" aria-label="局面" onchange="S.form._ph=this.value;render()"><option value="">すべての局面</option>${PHASES.map(ph=>`<option value="${ph.key}" ${F._ph===ph.key?'selected':''}>${ph.name}</option>`).join('')}</select>
+      <select class="sel" aria-label="観察項目" onchange="applyCatalog(this.value)"><option value="">項目を選ぶ</option>${
+        CATEGORIES.map(cat=>{ const xs=list.filter(x=>x.category===cat); return xs.length?`<optgroup label="${cat}">${xs.map(x=>`<option value="${x.cid}" ${F._cid===x.cid?'selected':''}>${esc(x.part)}</option>`).join('')}</optgroup>`:''; }).join('')}</select>
+    </div>
+    <div class="help">選ぶと下の欄が埋まります。状態の言葉は、見たままの表現に直して構いません。</div>
+  </div>`}
+  <div class="field"><label>記録のしかた</label>
+    <div class="seg">${TELL_TYPES.map(([k,l,d])=>`<button class="${ty===k?'on':''}" onclick="S.form.type='${k}';render()">${l}<br><small>${d}</small></button>`).join('')}${legacy?`<button class="on">${LEGACY_TYPES[ty]}</button>`:''}</div></div>
+  <div class="field"><label>項目名（必須）</label><input type="text" data-bind="form.part" value="${esc(F.part)}" placeholder="例：グラブの角度"></div>
+  ${F.hint?`<div class="help mb" style="margin-top:-6px">見るところ：${esc(F.hint)}</div>`:''}
+  ${ty==='tempo'?`<div class="field"><label>部位の分類</label><select data-bind="form.category">${CATEGORIES.map(c=>`<option ${F.category===c?'selected':''}>${c}</option>`).join('')}</select></div>`:`
+  <div class="grid2">
+    <div class="field"><label>部位の分類</label><select data-bind="form.category">${CATEGORIES.map(c=>`<option ${F.category===c?'selected':''}>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>出るタイミング</label><select data-bind="form.timing" onchange="S.form.timing=this.value;render()">${TIMINGS.map(c=>`<option ${F.timing===c?'selected':''}>${c}</option>`).join('')}</select></div>
+  </div>`}
+  ${late?`<div class="help mb c-warn">この局面は投球の終わり近くなので、打者が投球中に見て反応するには遅い可能性があります。配球の傾向をつかむ用途に向きます。</div>`:''}
+  ${typeFields}
+  <div class="field"><label>打者への指示（短く）</label><input type="text" data-bind="form.cue" value="${esc(F.cue)}" maxlength="30" placeholder="例：グラブが寝たら変化球"></div>
+  <div class="grid2">
+    <div class="field"><label>重要度</label><select data-bind="form.importance">${IMPORTANCE.map(c=>`<option ${F.importance===c?'selected':''}>${c}</option>`).join('')}</select></div>
+    <div class="field"><label>見やすさ</label><select data-bind="form.visibility">${[1,2,3,4,5].map(v=>`<option value="${v}" ${Number(F.visibility)===v?'selected':''}>${v}：${['','見えにくい','やや見にくい','普通','見やすい','とても見やすい'][v]}</option>`).join('')}</select></div>
+  </div>
+  <div class="field"><label>メモ</label><input type="text" data-bind="form.baseline" value="${esc(F.baseline)}" placeholder="例：三塁側ベンチからよく見える"></div>
+  <button class="btn btn-main full" onclick="saveTell()">${F.id?'保存する':'＋ 追加する'}</button>`;
+}
+
+// まとめて追加（スカウティングの最初に、候補を広く記録して絞り込む）
+function vBulk(){
+  const F=S.form, p=curP(), have=new Set((p?.tells||[]).map(t=>t.part));
+  const n=Object.values(F.sel||{}).filter(Boolean).length;
+  return `${mHead('リストから観察項目を選ぶ')}
+  <div class="note">気になる項目に印を付けて、まとめて追加します。どちらが直球のサインかは決めなくて構いません。記録が貯まると自動で判断し、球種と関係のない項目は「未確認」のまま下に並びます。<br>
+  1人で同時に見られる数には限りがあるので、多く選んだときは局面ごとに担当を分けるか、使えない項目を早めに休止するのがおすすめです。</div>
+  <select class="sel mb" aria-label="局面" onchange="S.form._ph=this.value;render()"><option value="">すべての局面</option>${PHASES.map(ph=>`<option value="${ph.key}" ${F._ph===ph.key?'selected':''}>${ph.name}</option>`).join('')}</select>
+  ${PHASES.filter(ph=>!F._ph||ph.key===F._ph).map(ph=>`<div class="res-h">${ph.name}</div>`+CATALOG.filter(x=>x.ph===ph.key).map(x=>{
+    const done=have.has(x.part);
+    return `<label class="chk ${done?'dim':''}"><input type="checkbox" ${done?'disabled checked':''} ${F.sel?.[x.cid]?'checked':''} onchange="S.form.sel['${x.cid}']=this.checked;updBulk()">
+      <span class="grow"><b>${esc(x.part)}</b><small>${x.type==='tempo'?`時間を測る：${esc(pointName(x.tStart))}→${esc(pointName(x.tEnd))}`:`${esc(x.la)}／${esc(x.lb)}`}${done?'（追加済み）':''}</small></span></label>`;
+  }).join('')).join('')}
+  <button class="btn btn-main full mt" id="bulk-add" onclick="addBulk()" ${n?'':'disabled'}>${n?`選んだ${n}項目を追加`:'項目を選んでください'}</button>`;
+}
+// ══════════════════════════════════════════════
+// 操作
+// ══════════════════════════════════════════════
+function openSettings(){ S.form={...SET}; S.modal='settings'; render(); showUsage(); }
+function closeModal(){ S.modal=null; S.form={}; render(); }
+function toggleTheme(){ SET.theme=isLight()?'dark':'light'; saveSettings(); applyTheme(); render(); }
+function saveSettingsForm(){
+  const F=S.form;
+  if(F.mode==='ai' && !String(F.apiKey||'').trim()){ toast('AI併用にはAPIキーが必要です','warn'); return; }
+  SET={...SET, mode:F.mode, apiKey:String(F.apiKey||'').trim(), model:F.model, theme:F.theme,
+    minN:clamp(Math.round(Number(F.minN))||8,4,40), win:clamp(Math.round(Number(F.win))||8,4,20), drop:clamp(Math.round(Number(F.drop))||50,20,80),
+    wake:!!F.wake, haptic:!!F.haptic, ctx:!!F.ctx};
+  saveSettings(); applyTheme(); S.modal=null; S.form={}; render(); toast('設定を保存しました','ok');
+}
+async function showUsage(){
+  try{
+    if(!navigator.storage?.estimate) return;
+    const e=await navigator.storage.estimate(); const el=document.getElementById('usage');
+    if(el) el.textContent+=`（使用量 約${(e.usage/1048576).toFixed(1)}MB）`;
+  }catch{}
+}
+
+function openReg(edit=false){
+  const p=edit?curP():null;
+  S.form=p?{id:p.id,name:p.name,team:p.team,hand:p.hand,memo:p.memo,img:p.thumbId}:{name:'',team:'',hand:'右投げ',memo:'',img:null};
+  S.modal='reg'; render();
+}
+async function saveReg(){
+  const F=S.form, name=String(F.name||'').trim();
+  if(!name){ toast('投手名を入力してください','warn'); return; }
+  if(F.id){
+    const p=Store.data.pitchers.find(x=>x.id===F.id); if(!p) return;
+    p.name=name; p.team=F.team||''; p.hand=F.hand; p.memo=F.memo||'';
+    p.thumbId=await commitImg(F.img,p.thumbId);
+  }else{
+    const p=normalizePitcher({name,team:F.team,hand:F.hand,memo:F.memo});
+    p.thumbId=await commitImg(F.img,null);
+    Store.data.pitchers.unshift(p);
+    S.pid=p.id; S.screen='pitcher'; S.tab='tells'; resetWork();
+  }
+  Store.save(); S.modal=null; S.form={}; render();
+  toast(F.id?'保存しました':'登録しました。次は観察項目を追加しましょう','ok',3000);
+}
+function deletePitcher(id){
+  const p=Store.data.pitchers.find(x=>x.id===id); if(!p) return;
+  askConfirm(`${p.name} のデータ（記録${p.pitches.length}球を含む）を削除します。元に戻せません。`,'削除する',()=>{
+    pitcherImgIds(p).forEach(i=>IDB.del(i));
+    Store.data.pitchers=Store.data.pitchers.filter(x=>x.id!==id); Store.save();
+    S.modal=null; goList(); toast('削除しました');
+  });
+}
+function resetWork(){ stopTick(); S.va=freshVa(); S.vaD=null; S.cur={obs:{},tempo:{},inning:'1',set:'W',count:'0-0',run:'0'}; S.scan=freshScan(); S.ai=freshAi(); S.open={}; S.logLimit=40; }
+function openPitcher(id){
+  S.pid=id; S.screen='pitcher'; resetWork();
+  const p=curP(); const last=p?.pitches[p.pitches.length-1];
+  if(last){ S.cur.inning=last.inning||'1'; S.cur.set=last.set||'W'; }
+  S.tab=p&&p.tells.length?'live':'tells';
+  render(); window.scrollTo(0,0);
+}
+function goList(){ S.screen='list'; S.pid=null; render(); window.scrollTo(0,0); }
+function setTab(k){ S.tab=k; render(); window.scrollTo(0,0); }
+function toggleOpen(id){ S.open[id]=!S.open[id]; render(); }
+
+// 計測
+function setObs(tid,o){
+  if(S.cur.obs[tid]===o) delete S.cur.obs[tid]; else { S.cur.obs[tid]=o; if(o==='?') delete S.cur.tempo[tid]; }
+  haptic(10); render();
+}
+// ストップウォッチ：1回目のタップで開始、2回目で停止。止めた後にもう一度押すと測り直し
+function tapTempo(ev,tid){
+  ev.preventDefault();
+  const now=performance.now(), c=S.cur.tempo[tid];
+  if(c&&c.start!=null){ S.cur.tempo[tid]={start:null,sec:Math.round((now-c.start))/1000}; haptic(15); }
+  else { S.cur.tempo[tid]={start:now,sec:null}; delete S.cur.obs[tid]; haptic(10); }
+  render(); startTick();
+}
+let tickId=null;
+function startTick(){
+  if(tickId) return;
+  const loop=()=>{
+    let running=false;
+    for(const [tid,c] of Object.entries(S.cur.tempo||{})){
+      if(c.start==null) continue; running=true;
+      const el=document.getElementById('tw-'+tid); if(el) el.textContent=((performance.now()-c.start)/1000).toFixed(2);
+    }
+    tickId=running?requestAnimationFrame(loop):null;
+  };
+  tickId=requestAnimationFrame(loop);
+}
+function stopTick(){ if(tickId) cancelAnimationFrame(tickId); tickId=null; }
+function setCurSet(k){ S.cur.set=k; render(); }
+function clearObs(){ S.cur.obs={}; S.cur.tempo={}; render(); }
+function recordPitch(side,kind){
+  const p=curP(); if(!p) return;
+  const before=overall(p).level;
+  const running=Object.values(S.cur.tempo).some(c=>c.start!=null);
+  if(running){ toast('ストップウォッチが動いたままです。止めてから結果を押してください','warn',3000); return; }
+  const pred=predict(p);
+  let predSide=null, predProb=null;
+  if(pred.used.length){
+    if(pred.unverified) predSide=pred.votes>0?'S':pred.votes<0?'B':null;
+    else { predSide=pred.probS>=0.5?'S':'B'; predProb=Math.round(Math.max(pred.probS,1-pred.probS)*100); }
+  }
+  const no=(p.pitches[p.pitches.length-1]?.no||p.pitches.length)+1;
+  const tempo={}; for(const [tid,c] of Object.entries(S.cur.tempo)) if(c.sec!=null) tempo[tid]=c.sec;
+  p.pitches.push({id:uid(),no,ts:Date.now(),inning:S.cur.inning,set:S.cur.set,obs:{...S.cur.obs},tempo,pred:predSide,predProb,actual:side,kind,
+    ...(SET.ctx?{count:S.cur.count,run:S.cur.run}:{})});
+  Store.save();
+  S.cur.obs={}; S.cur.tempo={};
+  const after=overall(p).level;
+  if(lvRank(after)>lvRank(before) && lvRank(after)>=lvRank('CAUTION')){
+    S.flash=true; haptic([200,100,200,100,300]);
+    toast(`${LEVEL[after].icon} ${LEVEL[after].label}：テルが変わった可能性があります`,'crit',4000);
+  }else{
+    haptic(25);
+    toast(predSide?(predSide===side?`#${no} 記録 ○予測的中`:`#${no} 記録 ×予測外れ`):`#${no} 記録しました`, predSide?(predSide===side?'ok':'warn'):'info',1500);
+  }
+  const jump=S.flash;
+  render();
+  if(jump) window.scrollTo(0,0);
+}
+function undoPitch(){
+  const p=curP(); if(!p||!p.pitches.length) return;
+  const x=p.pitches.pop(); Store.save();
+  S.cur.obs={...x.obs}; S.cur.tempo={}; for(const [tid,v] of Object.entries(x.tempo||{})) S.cur.tempo[tid]={start:null,sec:v};
+  render(); toast(`#${x.no||''} を取り消しました（サインは復元）`);
+}
+function delPitch(id){
+  const p=curP(); if(!p) return;
+  const x=p.pitches.find(y=>y.id===id); if(!x) return;
+  askConfirm(`#${x.no||''}（${x.kind}）の記録を削除します。`,'削除する',()=>{ p.pitches=p.pitches.filter(y=>y.id!==id); Store.save(); render(); toast('削除しました'); });
+}
+
+// テル
+function applyCatalog(cid){
+  const x=CATALOG.find(c=>c.cid===cid); if(!x) return;
+  S.form={...S.form,_cid:cid,type:x.type,category:x.category,part:x.part,hint:x.hint||'',timing:phaseOf(x.ph).timing,
+    la:x.la||'',lb:x.lb||'',map:'auto',tStart:x.tStart||TP_START,tEnd:x.tEnd||TP_END,dir:'auto'};
+  render();
+}
+function catalogTell(x){
+  return normalizePitcher({tells:[{type:x.type,category:x.category,part:x.part,hint:x.hint,timing:phaseOf(x.ph).timing,
+    la:x.la,lb:x.lb,map:'auto',tStart:x.tStart,tEnd:x.tEnd,dir:'auto',importance:'中',visibility:3}]}).tells[0];
+}
+function openBulk(){ S.form={_ph:S.form?._ph||'',sel:{}}; S.modal='bulk'; render(); }
+function updBulk(){
+  const n=Object.values(S.form.sel||{}).filter(Boolean).length, b=document.getElementById('bulk-add');
+  if(b){ b.disabled=!n; b.textContent=n?`選んだ${n}項目を追加`:'項目を選んでください'; }
+}
+function addBulk(){
+  const p=curP(); if(!p) return;
+  const xs=CATALOG.filter(x=>S.form.sel?.[x.cid]&&!p.tells.some(t=>t.part===x.part));
+  xs.forEach(x=>p.tells.push(catalogTell(x)));
+  Store.save(); S.modal=null; S.form={}; render(); toast(`${xs.length}項目を追加しました`,'ok');
+}
+function openTellEdit(id){
+  const t=id?curP()?.tells.find(x=>x.id===id):null;
+  S.form=t?{...t}:{type:'state',category:'グラブ',part:'',timing:'セット・構え',la:'',lb:'',map:'auto',hint:'',straight:'',breaking:'',action:'',side:'B',tStart:TP_START,tEnd:TP_END,dir:'auto',cue:'',importance:'中',visibility:3,baseline:'',imgS:null,imgB:null,_ph:''};
+  S.modal='tell'; render();
+}
+async function saveTell(){
+  const F=S.form, p=curP(); if(!p) return;
+  const part=String(F.part||'').trim();
+  if(!part){ toast('項目名を入力してください','warn'); return; }
+  const ty=F.type||'state';
+  if(ty==='state' && (!String(F.la||'').trim()||!String(F.lb||'').trim())){ toast('状態Aと状態Bを入力してください','warn'); return; }
+  if(ty==='pair' && !String(F.straight||'').trim() && !String(F.breaking||'').trim()){ toast('直球か変化球、どちらかの見え方を書いてください','warn'); return; }
+  if(ty==='presence' && !String(F.action||'').trim()){ toast('どんな癖かを書いてください','warn'); return; }
+  if(ty==='tempo' && TEMPO_POINTS.indexOf(F.tStart)>=TEMPO_POINTS.indexOf(F.tEnd)){ toast('測り終わりは、測り始めより後の動作にしてください','warn'); return; }
+  const old=F.id?p.tells.find(x=>x.id===F.id):null;
+  const t={...(old||{id:uid(),active:true,source:'manual',createdAt:Date.now()}),
+    part, category:F.category, timing:F.timing, straight:String(F.straight||'').trim(), breaking:String(F.breaking||'').trim(),
+    cue:String(F.cue||'').trim(), importance:F.importance, visibility:Number(F.visibility)||3, baseline:String(F.baseline||'').trim(),
+    type:ty, action:String(F.action||'').trim(), side:F.side==='S'?'S':'B', tStart:F.tStart, tEnd:F.tEnd, dir:['Bfast','Bslow','auto'].includes(F.dir)?F.dir:'auto',
+    la:String(F.la||'').trim(), lb:String(F.lb||'').trim(), map:['aS','aB','auto'].includes(F.map)?F.map:'auto', hint:F.hint||''};
+  if(ty==='tempo'){ if(old?.imgS) IDB.del(old.imgS); if(old?.imgB) IDB.del(old.imgB); F.imgS=null; F.imgB=null; }
+  t.imgS=await commitImg(F.imgS,old?.imgS); t.imgB=await commitImg(F.imgB,old?.imgB);
+  if(old) p.tells[p.tells.indexOf(old)]=t; else p.tells.push(t);
+  Store.save(); S.modal=null; S.form={}; render(); toast(old?'保存しました':'観察項目を追加しました','ok');
+}
+function delTell(id){
+  const p=curP(); const t=p?.tells.find(x=>x.id===id); if(!t) return;
+  askConfirm(`テル「${t.part}」を削除します。このテルの的中記録も見えなくなります。`,'削除する',()=>{
+    IDB.del(t.imgS); IDB.del(t.imgB);
+    p.tells=p.tells.filter(x=>x.id!==id); Store.save(); render(); toast('削除しました');
+  });
+}
+function toggleTellActive(id){ const t=curP()?.tells.find(x=>x.id===id); if(!t) return; t.active=!t.active; Store.save(); render(); }
+
+// AI：テル候補
+async function runAiDiff(){
+  const p=curP(); if(!p) return;
+  if(!SET.apiKey){ toast('設定でAPIキーを入力してください','warn'); return; }
+  S.ai.loading=true; S.ai.error=null; S.ai.result=null; S.ai.adopted={}; render();
+  try{
+    S.ai.result=await callClaude([
+      {type:'text',text:'1枚目：直球系を投げた時のコマ'}, imgBlock(S.ai.imgS),
+      {type:'text',text:'2枚目：変化球系を投げた時のコマ'}, imgBlock(S.ai.imgB),
+      {type:'text',text:promptDiff(p)}], DIFF_SCHEMA);
+    if(!Array.isArray(S.ai.result.candidates)) S.ai.result.candidates=[];
+  }catch(e){ S.ai.error=e.message; }
+  S.ai.loading=false; render();
+}
+async function adoptCandidate(i){
+  const p=curP(), c=S.ai.result?.candidates?.[i]; if(!p||!c) return;
+  const t=normalizePitcher({tells:[{...c, type:'state', la:c.straight, lb:c.breaking, map:'aS', id:uid(), source:'ai', importance:c.confidence==='高'?'高':'中', baseline:`AI候補（確からしさ${c.confidence}）：${c.reason}`}]}).tells[0];
+  t.imgS=await storeImg(S.ai.imgS); t.imgB=await storeImg(S.ai.imgB);
+  p.tells.push(t); Store.save(); S.ai.adopted[i]=true; render(); toast('未検証のテルとして登録しました。計測で確かめましょう','ok',3000);
+}
+
+// 比較
+function setScanStatus(tid,k){ if(S.scan.status[tid]===k) delete S.scan.status[tid]; else S.scan.status[tid]=k; render(); }
+async function runAiScan(){
+  const p=curP(); if(!p||!S.scan.img) return;
+  if(!SET.apiKey){ toast('設定でAPIキーを入力してください','warn'); return; }
+  const tells=sortedTells(p).filter(t=>t.active&&t.type!=='tempo').slice(0,6);
+  const content=[]; let n=0;
+  for(const t of tells){
+    if(n>=8) break;
+    if(imgSrc(t.imgS)){ content.push({type:'text',text:`参考：テル${t.id}「${t.part}」直球の時`},imgBlock(imgSrc(t.imgS))); n++; }
+    if(imgSrc(t.imgB)&&n<8){ content.push({type:'text',text:`参考：テル${t.id}「${t.part}」変化球の時`},imgBlock(imgSrc(t.imgB))); n++; }
+  }
+  if(!n && imgSrc(p.thumbId)){ content.push({type:'text',text:'参考：登録時の投手の画像'},imgBlock(imgSrc(p.thumbId))); }
+  content.push({type:'text',text:'今回のコマ'},imgBlock(S.scan.img),{type:'text',text:promptScan(p,tells)});
+  S.scan.loading=true; S.scan.error=null; render();
+  try{
+    const r=await callClaude(content,SCAN_SCHEMA);
+    S.scan.ai=r;
+    (r.checks||[]).forEach(c=>{ if(STATUS[c.status]&&tells.some(t=>t.id===c.tell_id)) S.scan.status[c.tell_id]=c.status; });
+    toast('AIの下書きを反映しました。目で確認して直してください','ok',3000);
+  }catch(e){ S.scan.error=e.message; }
+  S.scan.loading=false; render();
+}
+async function saveScan(){
+  const p=curP(); if(!p) return;
+  const C=S.scan, lv=scanLevel(p,C.status);
+  const checks=Object.entries(C.status).map(([tid,st])=>({tellId:tid,part:p.tells.find(t=>t.id===tid)?.part||'',status:st,note:C.ai?.checks?.find(c=>c.tell_id===tid)?.note||''}));
+  const changed=checks.filter(c=>c.status!=='INTACT'&&c.status!=='UNKNOWN');
+  const before=overall(p).level;
+  p.scans.push({id:uid(),ts:Date.now(),inning:C.inning,memo:C.memo,imgId:await storeImg(C.img),overall:lv,
+    reason:changed.length?changed.map(c=>`${c.part}が${STATUS[c.status].label}`).join('、'):(C.ai?.reason||'登録時のテルを確認'),checks,source:C.ai?'ai+manual':'manual'});
+  Store.save(); S.scan=freshScan();
+  if(lvRank(lv)>=lvRank('ALERT')&&lvRank(lv)>lvRank(before)){ S.flash=true; haptic([200,100,300]); }
+  render(); window.scrollTo(0,0); toast(`比較を保存しました（${LEVEL[lv].label}）`,lvRank(lv)>=lvRank('ALERT')?'crit':'ok');
+}
+function delScan(id){
+  const p=curP(); const s=p?.scans.find(x=>x.id===id); if(!s) return;
+  askConfirm('この比較記録を削除します。','削除する',()=>{ IDB.del(s.imgId); p.scans=p.scans.filter(x=>x.id!==id); Store.save(); render(); toast('削除しました'); });
+}
+
+// 共有・書き出し
+async function copyShare(){
+  const text=shareText(curP());
+  try{ await navigator.clipboard.writeText(text); toast('コピーしました。LINEなどに貼り付けできます','ok'); }
+  catch{
+    const r=document.createRange(), el=document.getElementById('share-text'); r.selectNodeContents(el);
+    const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r); toast('文字を選択しました。長押しでコピーしてください','warn',3000);
+  }
+}
+async function saveFile(blob,name){
+  const file=new File([blob],name,{type:blob.type});
+  try{ if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name}); return; } }
+  catch(e){ if(e.name==='AbortError') return; }
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1000);
+}
+const dateTag = () => new Date().toISOString().slice(0,10);
+function exportCsv(){
+  const p=curP(); if(!p) return;
+  const q=v=>`"${String(v??'').replace(/"/g,'""')}"`;
+  const head=['番号','日時','回','カウント','走者','ワインド/セット',...p.tells.map(t=>t.part),'予測','予測確率','結果(系統)','球種','的中'];
+  const rows=p.pitches.map(x=>[x.no,new Date(x.ts).toLocaleString('ja-JP'),x.inning,x.count||'',x.count?(x.run==='1'?'あり':'なし'):'',x.set==='S'?'セット':'ワインド',
+    ...p.tells.map(t=>{ const v=x.tempo?.[t.id]; if(typeof v==='number') return v.toFixed(2); const o=x.obs?.[t.id]; return o?obsLabel(t,o):''; }),
+    x.pred?SIDE_NAME[x.pred]:'',x.predProb??'',SIDE_NAME[x.actual],x.kind,x.pred?(x.pred===x.actual?'○':'×'):'']);
+  const body=[head,...rows].map(r=>r.map(q).join(',')).join('\r\n');
+  if(EMBED){ showText(`${p.name} の記録（CSV）`,body); return; }
+  const csv='\uFEFF'+body;
+  saveFile(new Blob([csv],{type:'text/csv'}),`tell-${p.name}-${dateTag()}.csv`);
+}
+function exportAll(){
+  if(EMBED){ askConfirm('この共有ページではファイルを保存できません。バックアップは、URLで公開したアプリ本体から行ってください。','閉じる',()=>{},false); return; }
+  const images={};
+  Store.data.pitchers.forEach(p=>pitcherImgIds(p).forEach(i=>{ if(IMG[i]) images[i]=IMG[i]; }));
+  const json=JSON.stringify({app:'tell-alert',version:2,exportedAt:new Date().toISOString(),pitchers:Store.data.pitchers,images});
+  saveFile(new Blob([json],{type:'application/json'}),`tell-alert-backup-${dateTag()}.json`);
+}
+async function importAll(ev){
+  const f=ev.target.files&&ev.target.files[0]; ev.target.value=''; if(!f) return;
+  try{
+    const d=JSON.parse(await f.text());
+    if(d.app!=='tell-alert'||!Array.isArray(d.pitchers)) throw new Error('TELL ALERTのバックアップではありません');
+    askConfirm(`${d.pitchers.length}人分のデータを読み込みます。同じ投手がいる場合は、読み込む側の内容で上書きします。`,'読み込む',async()=>{
+      for(const [id,v] of Object.entries(d.images||{})){ if(String(v).startsWith('data:image/')) await IDB.put(id,v); }
+      d.pitchers.map(normalizePitcher).forEach(np=>{
+        const i=Store.data.pitchers.findIndex(x=>x.id===np.id);
+        if(i>=0) Store.data.pitchers[i]=np; else Store.data.pitchers.push(np);
+      });
+      Store.save(); S.modal=null; S.form={}; goList(); toast('読み込みました','ok');
+    },false);
+  }catch(e){ toast('読み込めませんでした：'+e.message,'crit',4000); }
+}
+
+// ══════════════════════════════════════════════
+// 映像分析
+//   同じ位置から撮った1本の動画で、投球ごとに同じ局面のコマを切り出して比べる。
+//   ・コマを重ねて、ずれを目で確かめる（重ね表示・ちらつき比較・差分）
+//   ・画面をマス目に分け、直球と変化球を見分けられる場所を自動で探す
+//   ・局面の印から、動作の時間をコマ単位で測る
+//   動画そのものは保存しない（大きすぎるため）。切り出したコマ（縮小JPEG）と時刻だけを保存する。
+// ══════════════════════════════════════════════
+const VA_W=160;            // 解析に使う横幅（画素）。小さいほど速いが細部は落ちる
+const VA_CELL=16;          // 自動探索のマス目の一辺（解析画像上の画素）
+const VA_SHIFT=6;          // 手ぶれ補正で探すずれの範囲（解析画像上の画素）
+const VA_DISP=480;         // 保存・表示用のコマの横幅
+const VA_MIN_EACH=3;       // 解析に必要な、直球・変化球それぞれの球数
+const FPS_OPTS=[30,60,120,240], SLOW_OPTS=[1,2,4,8];
+const PHASE_OF_POINT={'返球を受けた':'サイン交換・準備','サインを見始めた':'サイン交換・準備','セット完了':'セット・構え',
+  '始動（足を上げ始める）':'始動・足上げ','足が一番高い所':'始動・足上げ','前足の着地':'トップ','リリース':'リリース直前'};
+const V={url:null,name:'',fps:30,slow:1,cur:{t:{},f:{},set:'W'},ghost:{mode:'none',phase:'',alpha:0.45},ghostImg:null};
+
+// ── 動画パネル（描画のたびに作り直さないよう、#app の外に置く） ──
+function openVideoPanel(file){
+  closeVideoPanel(true);
+  V.url=URL.createObjectURL(file); V.name=file.name||'動画';
+  V.cur={t:{},f:{},set:V.cur?.set||'W'};
+  const el=document.createElement('div'); el.id='vpanel'; el.className='vpanel'; el.setAttribute('lang','ja');
+  el.innerHTML=`
+  <div class="vp-head"><button class="icon-btn" onclick="closeVideoPanel()" aria-label="映像分析に戻る">${ic('back',24)}</button>
+    <div class="grow"><b>投球を切り出す</b><div class="small" id="vp-count"></div></div></div>
+  <div class="vp-body">
+    <div class="vp-stage"><video id="vv" playsinline muted preload="auto" src="${V.url}"></video><canvas id="vghost" aria-hidden="true"></canvas></div>
+    <input id="vslider" type="range" min="0" max="0" step="0.001" value="0" aria-label="再生位置">
+    <div class="ftime" id="vtime">読み込み中…</div>
+    <div class="vp-ctrl">
+      <button class="btn sm" onclick="vpStep(-10)">←10</button><button class="btn sm" onclick="vpStep(-1)">←1</button>
+      <button class="btn sm" id="vplay" onclick="vpPlay()">再生 1/4</button>
+      <button class="btn sm" onclick="vpStep(1)">1→</button><button class="btn sm" onclick="vpStep(10)">10→</button>
+    </div>
+    <details class="vp-set"><summary>コマ数・重ね表示の設定</summary>
+      <div class="grid2 mt">
+        <div class="field"><label>動画のコマ数（1秒あたり）</label><select class="sel" onchange="V.fps=Number(this.value);vpTime()">${FPS_OPTS.map(f=>`<option ${V.fps===f?'selected':''}>${f}</option>`).join('')}</select></div>
+        <div class="field"><label>スロー撮影の倍率</label><select class="sel" onchange="V.slow=Number(this.value);vpTime()">${SLOW_OPTS.map(f=>`<option value="${f}" ${V.slow===f?'selected':''}>${f===1?'等速':f+'倍スロー'}</option>`).join('')}</select></div>
+      </div>
+      <div class="help">スロー撮影の動画が実際より遅く再生される場合は、その倍率を選ぶと、時間を実際の秒数に直して計算します。機種によって保存のされ方が違うので、分からなければ等速のままにしてください。</div>
+      <div class="field mt"><label>重ね表示（前の投球のコマを薄く重ねる）</label>
+        <div class="grid2">
+          <select class="sel" id="vg-mode" onchange="V.ghost.mode=this.value;vpGhost()">
+            <option value="none">重ねない</option><option value="prev">直前に保存した投球</option><option value="S">直球の平均</option><option value="B">変化球の平均</option></select>
+          <select class="sel" id="vg-phase" onchange="V.ghost.phase=this.value;vpGhost()"></select>
+        </div>
+        <input type="range" min="0.1" max="0.9" step="0.05" value="${V.ghost.alpha}" oninput="V.ghost.alpha=Number(this.value);vpDrawGhost()" aria-label="重ねる濃さ">
+      </div>
+    </details>
+    <div class="step"><span>1</span>局面のコマで印を付ける（1つ以上）</div>
+    <div class="vp-marks" id="vp-marks"></div>
+    <div class="vp-row"><div class="seg" id="vp-set"></div><button class="btn sm" onclick="vpClearMarks()">印を消す</button></div>
+    <div class="step"><span>2</span>球種を押して保存</div>
+    <div class="res-h s">直球系</div><div class="res-grid">${PITCHES.S.map(k=>`<button class="res s" onclick="vpSave('S','${k}')">${k}</button>`).join('')}</div>
+    <div class="res-h b">変化球系</div><div class="res-grid">${PITCHES.B.map(k=>`<button class="res b" onclick="vpSave('B','${k}')">${k}</button>`).join('')}</div>
+    <div class="help mt">同じ位置・同じズームで撮った動画を使ってください。カメラが動いたりズームが変わったりすると、癖ではない違いが出てしまいます。</div>
+  </div>`;
+  document.body.appendChild(el);
+  document.body.classList.add('vp-open');
+  const v=document.getElementById('vv'), s=document.getElementById('vslider');
+  v.addEventListener('loadedmetadata',()=>{ s.max=v.duration||0; v.currentTime=Math.min(0.05,v.duration||0); vpTime(); vpGhost(); });
+  ['timeupdate','seeked'].forEach(e=>v.addEventListener(e,vpTime));
+  v.addEventListener('pause',()=>{ const b=document.getElementById('vplay'); if(b) b.textContent='再生 1/4'; });
+  v.addEventListener('error',()=>toast('この動画形式は読み込めませんでした','crit',4000));
+  s.addEventListener('input',()=>{ v.pause(); v.currentTime=parseFloat(s.value)||0; });
+  vpUpdate();
+}
+function closeVideoPanel(silent){
+  const el=document.getElementById('vpanel'); if(el) el.remove();
+  document.body.classList.remove('vp-open');
+  if(V.url){ URL.revokeObjectURL(V.url); V.url=null; }
+  if(!silent) render();
+}
+const vpFrame = t => Math.round(t*V.fps);
+function vpTime(){
+  const v=document.getElementById('vv'), s=document.getElementById('vslider'), el=document.getElementById('vtime'); if(!v||!el) return;
+  s.value=v.currentTime;
+  el.textContent=`${vpFrame(v.currentTime)}コマ目（${v.currentTime.toFixed(3)}秒）・1コマ＝実際の${(1000/(V.fps*V.slow)).toFixed(1)}ミリ秒`;
+}
+function vpStep(d){ const v=document.getElementById('vv'); if(!v) return; v.pause(); v.currentTime=clamp(v.currentTime+d/V.fps,0,v.duration||0); }
+function vpPlay(){ const v=document.getElementById('vv'), b=document.getElementById('vplay'); if(!v) return;
+  if(v.paused){ v.playbackRate=0.25; v.play().catch(()=>{}); b.textContent='停止'; } else v.pause(); }
+function vpUpdate(){
+  const p=curP(); if(!p) return;
+  const c=document.getElementById('vp-count');
+  if(c){ const nS=p.vp.filter(x=>x.actual==='S').length; c.textContent=`保存済み ${p.vp.length}球（直球${nS}・変化球${p.vp.length-nS}）・${V.name}`; }
+  const m=document.getElementById('vp-marks');
+  if(m) m.innerHTML=TEMPO_POINTS.map((pt,i)=>{ const t=V.cur.t[pt];
+    return `<button class="mk ${t!=null?'on':''}" onclick="vpMark(${i})"><b>${esc(pointName(pt))}</b><small>${t!=null?vpFrame(t)+'コマ目':'印なし'}</small></button>`; }).join('');
+  const st=document.getElementById('vp-set');
+  if(st) st.innerHTML=[['W','ワインド'],['S','セット']].map(([k,l])=>`<button class="${V.cur.set===k?'on':''}" onclick="V.cur.set='${k}';vpUpdate()">${l}</button>`).join('');
+  const gp=document.getElementById('vg-phase');
+  if(gp){ const have=TEMPO_POINTS.filter(pt=>p.vp.some(x=>x.f?.[pt]));
+    if(!V.ghost.phase||!have.includes(V.ghost.phase)) V.ghost.phase=have[0]||'';
+    gp.innerHTML=have.length?have.map(pt=>`<option value="${esc(pt)}" ${V.ghost.phase===pt?'selected':''}>${esc(pointName(pt))}</option>`).join(''):'<option value="">（まだ保存したコマがありません）</option>'; }
+}
+function vpMark(i){
+  const v=document.getElementById('vv'); if(!v||!v.videoWidth){ toast('まだ動画を読み込み中です','warn'); return; }
+  const pt=TEMPO_POINTS[i];
+  V.cur.t[pt]=v.currentTime; V.cur.f[pt]=drawToJpeg(v,v.videoWidth,v.videoHeight,VA_DISP,0.78);
+  haptic(10); vpUpdate();
+  if(V.ghost.mode!=='none'&&V.ghost.phase!==pt){ V.ghost.phase=pt; vpGhost(); }
+}
+function vpClearMarks(){ V.cur.t={}; V.cur.f={}; vpUpdate(); }
+async function vpSave(side,kind){
+  const p=curP(); if(!p) return;
+  const pts=Object.keys(V.cur.t); if(!pts.length){ toast('先に局面の印を1つ以上付けてください','warn'); return; }
+  const f={}; for(const pt of pts) f[pt]=await storeImg(V.cur.f[pt]);
+  p.vp.push({id:uid(),ts:Date.now(),src:V.name,fps:V.fps,slow:V.slow,set:V.cur.set,actual:side,kind,t:{...V.cur.t},f});
+  Store.save(); V.cur={t:{},f:{},set:V.cur.set};
+  haptic(25); toast(`${p.vp.length}球目を保存しました（${kind}）`,'ok',1500); vpUpdate(); vpGhost();
+}
+// 重ね表示
+async function vpGhost(){
+  const p=curP(), mode=V.ghost.mode, ph=V.ghost.phase; V.ghostImg=null;
+  if(p&&mode!=='none'&&ph){
+    const xs=p.vp.filter(x=>x.f?.[ph]&&IMG[x.f[ph]]);
+    let srcs=[];
+    if(mode==='prev'){ const last=xs[xs.length-1]; if(last) srcs=[IMG[last.f[ph]]]; }
+    else srcs=xs.filter(x=>x.actual===mode).map(x=>IMG[x.f[ph]]);
+    if(srcs.length) V.ghostImg=await averageImage(srcs);
+  }
+  vpDrawGhost();
+}
+function vpDrawGhost(){
+  const c=document.getElementById('vghost'), v=document.getElementById('vv'); if(!c||!v) return;
+  c.width=VA_DISP; c.height=Math.round(VA_DISP*((v.videoHeight||9)/(v.videoWidth||16)));
+  const g=c.getContext('2d'); g.clearRect(0,0,c.width,c.height);
+  if(V.ghostImg){ g.globalAlpha=V.ghost.alpha; g.drawImage(V.ghostImg,0,0,c.width,c.height); g.globalAlpha=1; }
+}
+// 複数のコマの平均（色付き）を作る
+async function averageImage(srcs,crop){
+  const ims=await Promise.all(srcs.map(loadImage));
+  const w=crop?crop.w:ims[0].naturalWidth, h=crop?crop.h:ims[0].naturalHeight;
+  const c=document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d',{willReadFrequently:true});
+  const acc=new Float32Array(w*h*4);
+  ims.forEach((im,i)=>{
+    g.clearRect(0,0,w,h);
+    if(crop){ const s=crop.shift?.[i]||{dx:0,dy:0}; g.drawImage(im,crop.x+s.dx,crop.y+s.dy,w,h,0,0,w,h); }
+    else g.drawImage(im,0,0,w,h);
+    const d=g.getImageData(0,0,w,h).data; for(let k=0;k<d.length;k++) acc[k]+=d[k];
+  });
+  const out=g.createImageData(w,h); for(let k=0;k<acc.length;k++) out.data[k]=acc[k]/ims.length;
+  g.putImageData(out,0,0); return c;
+}
+
+// ── 解析の計算 ──
+const VA_CACHE={};
+async function grayOf(src,w,h){
+  const im=await loadImage(src);
+  const c=document.createElement('canvas'); c.width=w; c.height=h;
+  const g=c.getContext('2d',{willReadFrequently:true}); g.drawImage(im,0,0,w,h);
+  const d=g.getImageData(0,0,w,h).data, out=new Float32Array(w*h);
+  for(let i=0;i<w*h;i++) out[i]=0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2];
+  return out;
+}
+// 手ぶれ補正：基準のコマに一番よく重なる上下左右のずれを探す
+function bestShift(ref,img,w,h,R){
+  let best={dx:0,dy:0,e:Infinity};
+  for(let dy=-R;dy<=R;dy++) for(let dx=-R;dx<=R;dx++){
+    let e=0,n=0;
+    for(let y=R;y<h-R;y+=2) for(let x=R;x<w-R;x+=2){ e+=Math.abs(ref[y*w+x]-img[(y+dy)*w+(x+dx)]); n++; }
+    e/=n; if(e<best.e) best={dx,dy,e};
+  }
+  return best;
+}
+function shifted(img,w,h,dx,dy){
+  const out=new Float32Array(w*h);
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ const sx=clamp(x+dx,0,w-1), sy=clamp(y+dy,0,h-1); out[y*w+x]=img[sy*w+sx]; }
+  return out;
+}
+function normalized(a){ const m=mean(a); let v=0; for(const x of a) v+=(x-m)**2; const s=Math.sqrt(v/a.length)||1; return a.map(x=>(x-m)/s); }
+// 1球ずつ抜いて、残りの直球の平均・変化球の平均のどちらに近いかで当てる（後出しの当てはめを防ぐ）
+function looNearest(feats,lab){
+  const n=feats.length, d=feats[0].length, sS=new Float32Array(d), sB=new Float32Array(d); let nS=0,nB=0;
+  feats.forEach((f,i)=>{ const s=lab[i]==='S'?sS:sB; for(let k=0;k<d;k++) s[k]+=f[k]; lab[i]==='S'?nS++:nB++; });
+  let hit=0;
+  feats.forEach((f,i)=>{
+    const isS=lab[i]==='S', cs=isS?nS-1:nS, cb=isS?nB:nB-1; if(cs<1||cb<1) return;
+    let dS=0,dB=0;
+    for(let k=0;k<d;k++){ const ms=(sS[k]-(isS?f[k]:0))/cs, mb=(sB[k]-(isS?0:f[k]))/cb; dS+=(f[k]-ms)**2; dB+=(f[k]-mb)**2; }
+    if((dS<dB?'S':'B')===lab[i]) hit++;
+  });
+  return hit;
+}
+function regionFeats(norm,w,r){ return norm.map(a=>{ const f=new Float32Array(r.w*r.h); let k=0; for(let y=r.y;y<r.y+r.h;y++) for(let x=r.x;x<r.x+r.w;x++) f[k++]=a[y*w+x]; return f; }); }
+function judge(k,n,lab,alpha){
+  const nS=lab.filter(x=>x==='S').length, p0=Math.max(nS/n,1-nS/n,0.5), pval=binomTail(k,n,p0);
+  return {k,n,acc:k/n,p0,pval,ev:pval<alpha?'strong':pval<0.05?'promising':'weak'};
+}
+async function vaData(p,phase){
+  const items=p.vp.filter(x=>x.f?.[phase]&&IMG[x.f[phase]]);
+  const key=phase+'|'+items.map(x=>x.id+x.actual).join(',');
+  if(VA_CACHE[key]) return VA_CACHE[key];
+  const lab=items.map(x=>x.actual), nS=lab.filter(x=>x==='S').length, nB=lab.length-nS;
+  if(nS<VA_MIN_EACH||nB<VA_MIN_EACH) return {items,nS,nB,short:true};
+  const im0=await loadImage(IMG[items[0].f[phase]]);
+  const w=VA_W, h=Math.max(VA_CELL*2,Math.round(VA_W*im0.naturalHeight/im0.naturalWidth));
+  const raw=[]; for(const x of items) raw.push(await grayOf(IMG[x.f[phase]],w,h));
+  const shifts=raw.map(g=>bestShift(raw[0],g,w,h,VA_SHIFT));
+  const aligned=raw.map((g,i)=>shifted(g,w,h,shifts[i].dx,shifts[i].dy));
+  const norm=aligned.map(normalized);
+  // 画素ごとの差（ばらつきに比べて差が大きい場所ほど赤く表示）
+  const N=w*h, mS=new Float32Array(N), mB=new Float32Array(N), vS=new Float32Array(N), vB=new Float32Array(N), mAll=new Float32Array(N), rS=new Float32Array(N), rB=new Float32Array(N);
+  norm.forEach((a,i)=>{ const isS=lab[i]==='S'; for(let k=0;k<N;k++){ (isS?mS:mB)[k]+=a[k]/(isS?nS:nB); mAll[k]+=aligned[i][k]/lab.length; (isS?rS:rB)[k]+=aligned[i][k]/(isS?nS:nB); } });
+  norm.forEach((a,i)=>{ const isS=lab[i]==='S'; for(let k=0;k<N;k++){ const d=a[k]-(isS?mS:mB)[k]; (isS?vS:vB)[k]+=d*d/Math.max(1,(isS?nS:nB)-1); } });
+  const tmap=new Float32Array(N); let tmax=0;
+  for(let k=0;k<N;k++){ tmap[k]=Math.abs(mS[k]-mB[k])/Math.sqrt(vS[k]/nS+vB[k]/nB+0.02); if(tmap[k]>tmax) tmax=tmap[k]; }
+  // マス目ごとに、直球と変化球を見分けられるかを調べる
+  const cells=[], gx=Math.floor(w/VA_CELL), gy=Math.floor(h/VA_CELL);
+  for(let cy=0;cy<gy;cy++) for(let cx=0;cx<gx;cx++){
+    const r={x:cx*VA_CELL,y:cy*VA_CELL,w:VA_CELL,h:VA_CELL};
+    cells.push({...r,...judge(looNearest(regionFeats(norm,w,r),lab),lab.length,lab,0.05/(gx*gy))});
+  }
+  const res={items,lab,nS,nB,w,h,shifts,norm,tmap,tmax,mAll,rS,rB,cells,alpha:0.05/(gx*gy)};
+  VA_CACHE[key]=res; return res;
+}
+// 動作の時間：局面の印のすべての組み合わせで、直球と変化球を見分けられるか
+function vaTiming(p){
+  const rows=[];
+  for(let a=0;a<TEMPO_POINTS.length;a++) for(let b=a+1;b<TEMPO_POINTS.length;b++){
+    const A=TEMPO_POINTS[a], B=TEMPO_POINTS[b];
+    const xs=p.vp.filter(x=>x.t?.[A]!=null&&x.t?.[B]!=null&&x.t[B]>x.t[A]).map(x=>({v:(x.t[B]-x.t[A])/(x.slow||1),s:x.actual,step:1/((x.fps||30)*(x.slow||1))}));
+    const sS=xs.filter(x=>x.s==='S').map(x=>x.v), sB=xs.filter(x=>x.s==='B').map(x=>x.v);
+    if(sS.length<VA_MIN_EACH||sB.length<VA_MIN_EACH) continue;
+    let hit=0;
+    xs.forEach((x,i)=>{ const oS=xs.filter((y,j)=>j!==i&&y.s==='S').map(y=>y.v), oB=xs.filter((y,j)=>j!==i&&y.s==='B').map(y=>y.v);
+      if(!oS.length||!oB.length) return; const mS=mean(oS), mB=mean(oB), thr=(mS+mB)/2;
+      const pred=(x.v<thr)===(mB<mS)?'B':'S'; if(pred===x.s) hit++; });
+    rows.push({A,B,mS:mean(sS),mB:mean(sB),dS:sd(sS),dB:sd(sB),step:Math.max(...xs.map(x=>x.step)),...judge(hit,xs.length,xs.map(x=>x.s),1)});
+  }
+  const alpha=0.05/Math.max(1,rows.length);
+  rows.forEach(r=>{ r.ev=r.pval<alpha?'strong':r.pval<0.05?'promising':'weak'; });
+  return rows.sort((x,y)=>x.pval-y.pval);
+}
+
+// ── 映像タブ ──
+function freshVa(){ return {phase:'',view:'heat',roi:null,xf:0.5}; }
+function vVideo(p){
+  const vp=p.vp, nS=vp.filter(x=>x.actual==='S').length;
+  const phases=TEMPO_POINTS.filter(pt=>vp.some(x=>x.f?.[pt]));
+  if(!S.va.phase||!phases.includes(S.va.phase)) S.va.phase=phases.sort((a,b)=>vp.filter(x=>x.f?.[b]).length-vp.filter(x=>x.f?.[a]).length)[0]||'';
+  let h=`<div class="card">
+    <div class="sec mb">映像から投球を比べる</div>
+    <div class="note">同じ位置から撮った試合やブルペンの動画を読み込み、投球ごとに同じ局面のコマを切り出します。直球と変化球のコマを重ねて、わずかなずれを探します。</div>
+    ${pickButtons('vid')}
+    <div class="small mt">保存済み ${vp.length}球（直球${nS}・変化球${vp.length-nS}）。続きは同じ動画をもう一度開いて追加できます。</div>
+  </div>`;
+  if(!vp.length) return h+`<div class="empty sm">
+    <b>使い方</b>
+    <ol class="steps">
+      <li>動画を開き、1球目の「セット完了」などのコマで印を付ける</li>
+      <li>実際の球種を押して保存する。これを投球の数だけ繰り返す</li>
+      <li>直球と変化球が${VA_MIN_EACH}球ずつ貯まると、違いのある場所と時間を自動で探します</li>
+    </ol>
+    局面の印は、比べたい局面だけでも構いません。時間を測るには、2つ以上の局面に印を付けてください。</div>`;
+  h+=`<div class="card">
+    <div class="row-between" style="margin:0 0 8px"><div class="sec">形の違いを探す</div>
+      <select class="sel" style="width:auto" aria-label="比べる局面" onchange="S.va.phase=this.value;S.va.roi=null;render()">${phases.map(pt=>`<option value="${esc(pt)}" ${S.va.phase===pt?'selected':''}>${esc(pointName(pt))}（${vp.filter(x=>x.f?.[pt]).length}球）</option>`).join('')}</select></div>
+    <div class="seg mb">${[['heat','違いの場所'],['flip','ちらつき比較'],['blend','重ねる'],['S','直球の平均'],['B','変化球の平均']].map(([k,l])=>`<button class="${S.va.view===k?'on':''}" onclick="S.va.view='${k}';render()">${l}</button>`).join('')}</div>
+    <div class="va-stage"><canvas id="va-canvas"></canvas><div class="va-flip" id="va-flip"></div></div>
+    ${S.va.view==='blend'?`<input type="range" min="0" max="1" step="0.01" value="${S.va.xf}" oninput="S.va.xf=Number(this.value);vaDraw()" aria-label="直球と変化球の割合"><div class="row-between small" style="margin:0"><span class="c-S">直球の平均</span><span class="c-B">変化球の平均</span></div>`:''}
+    <div class="help">画像の上を指でなぞると、その範囲だけで直球と変化球を見分けられるかを調べます。</div>
+    <div id="va-result" class="mt"><div class="small">計算中…</div></div>
+  </div>`;
+  const rows=vaTiming(p);
+  h+=`<div class="card"><div class="sec mb">動作の時間（コマ単位）</div>`;
+  if(!rows.length) h+=`<div class="small">2つ以上の局面に印を付けた投球が、直球・変化球${VA_MIN_EACH}球ずつ貯まると表示します。</div>`;
+  else h+=`<div class="note">局面の印のすべての組み合わせで、直球と変化球の時間を比べ、見分けられる順に並べています。調べる組み合わせが多いほど、「有効」の基準を厳しくしています。</div>`+rows.slice(0,8).map(r=>`
+    <div class="va-row">
+      <div class="grow"><b>${esc(pointName(r.A))}→${esc(pointName(r.B))}</b>
+        <div class="small"><span class="c-S">直球 ${r.mS.toFixed(3)}秒</span>（±${r.dS.toFixed(3)}）・<span class="c-B">変化球 ${r.mB.toFixed(3)}秒</span>（±${r.dB.toFixed(3)}）・差 ${(Math.abs(r.mS-r.mB)*1000).toFixed(0)}ミリ秒（1コマ＝${(r.step*1000).toFixed(1)}ミリ秒）</div>
+        <div class="small">1球ずつ抜いて当てると ${r.k}/${r.n}（基準${pct(r.p0)}）</div></div>
+      <div class="va-side">${vaBadge(r)}<button class="btn xs" onclick="vaTempoTell('${esc(r.A)}','${esc(r.B)}')">項目に登録</button></div>
+    </div>`).join('');
+  h+=`</div>`;
+  if(S.va.phase){
+    const xs=vp.filter(x=>x.f?.[S.va.phase]);
+    h+=`<div class="card"><div class="sec mb">${esc(pointName(S.va.phase))}のコマ一覧</div>
+      ${['S','B'].map(sd=>`<div class="res-h ${sd.toLowerCase()}">${SIDE_NAME[sd]}（${xs.filter(x=>x.actual===sd).length}球）</div>
+      <div class="va-thumbs">${xs.filter(x=>x.actual===sd).map(x=>`<figure><img src="${imgSrc(x.f[S.va.phase])}" alt="${esc(x.kind)}"><figcaption>${esc(x.kind)}<button class="x" onclick="delVp('${x.id}')" aria-label="この投球を削除">×</button></figcaption></figure>`).join('')}</div>`).join('')}
+    </div>`;
+  }
+  return h;
+}
+function vaBadge(r){ return r.ev==='strong'?`<span class="badge c-ok">有効 ${pct(r.acc)}</span>`:r.ev==='promising'?`<span class="badge c-warn">有望 ${pct(r.acc)}</span>`:`<span class="badge c-dim">未確認 ${pct(r.acc)}</span>`; }
+let vaTimer=null;
+async function vaAfterRender(){
+  clearInterval(vaTimer); vaTimer=null;
+  const p=curP(), box=document.getElementById('va-result'); if(!p||!box||!S.va.phase) return;
+  const phase=S.va.phase, d=await vaData(p,phase);
+  if(S.tab!=='video'||S.va.phase!==phase||!document.getElementById('va-result')) return;
+  if(d.short){ document.getElementById('va-result').innerHTML=`<div class="small">この局面は直球${d.nS}球・変化球${d.nB}球です。それぞれ${VA_MIN_EACH}球以上になると、違いを探せます。</div>`; vaDraw(d); return; }
+  S.vaD=d; vaDraw(d); vaBindRoi(d); vaShowResult(d);
+  if(S.va.view==='flip'){ let on=false; vaTimer=setInterval(()=>{ on=!on; vaDraw(d,on?'B':'S'); },550); }
+}
+function vaDraw(d=S.vaD,force){
+  const c=document.getElementById('va-canvas'); if(!c||!d) return;
+  if(d.short){ const x=d.items[d.items.length-1]; if(!x) return; loadImage(IMG[x.f[S.va.phase]]).then(im=>{ c.width=im.naturalWidth; c.height=im.naturalHeight; c.getContext('2d').drawImage(im,0,0); }); return; }
+  const {w,h}=d, g=c.getContext('2d'); c.width=w; c.height=h;
+  const img=g.createImageData(w,h), view=force||S.va.view, flip=document.getElementById('va-flip');
+  if(flip) flip.textContent=view==='flip'?'':(force?SIDE_NAME[force]+'の平均':'');
+  for(let k=0;k<w*h;k++){
+    let v=view==='S'?d.rS[k]:view==='B'?d.rB[k]:view==='blend'?d.rS[k]*(1-S.va.xf)+d.rB[k]*S.va.xf:d.mAll[k];
+    let r=v,gg=v,b=v;
+    if(view==='heat'){ const a=Math.pow(Math.min(1,d.tmap[k]/(d.tmax||1)),1.6)*0.85; r=v*(1-a)+255*a; gg=v*(1-a)+40*a; b=v*(1-a)+40*a; }
+    img.data[k*4]=r; img.data[k*4+1]=gg; img.data[k*4+2]=b; img.data[k*4+3]=255;
+  }
+  g.putImageData(img,0,0);
+  if(view==='heat'){
+    g.lineWidth=1;
+    d.cells.filter(x=>x.ev!=='weak').forEach(x=>{ g.strokeStyle=x.ev==='strong'?'#2fd27a':'#f5b52e'; g.strokeRect(x.x+0.5,x.y+0.5,x.w-1,x.h-1); });
+  }
+  if(S.va.roi){ const r=S.va.roi; g.strokeStyle='#4f95ff'; g.lineWidth=1.5; g.strokeRect(r.x+0.5,r.y+0.5,r.w-1,r.h-1); }
+}
+function vaBindRoi(d){
+  const c=document.getElementById('va-canvas'); if(!c) return;
+  let st=null;
+  const pos=e=>{ const b=c.getBoundingClientRect(); return {x:clamp(Math.round((e.clientX-b.left)/b.width*d.w),0,d.w-1),y:clamp(Math.round((e.clientY-b.top)/b.height*d.h),0,d.h-1)}; };
+  c.onpointerdown=e=>{ e.preventDefault(); c.setPointerCapture(e.pointerId); st=pos(e); };
+  c.onpointermove=e=>{ if(!st) return; const q=pos(e); S.va.roi={x:Math.min(st.x,q.x),y:Math.min(st.y,q.y),w:Math.max(2,Math.abs(q.x-st.x)),h:Math.max(2,Math.abs(q.y-st.y))}; vaDraw(d); };
+  c.onpointerup=e=>{ if(!st) return; const q=pos(e);
+    if(Math.abs(q.x-st.x)<3&&Math.abs(q.y-st.y)<3){ const cell=d.cells.find(x=>st.x>=x.x&&st.x<x.x+x.w&&st.y>=x.y&&st.y<x.y+x.h); S.va.roi=cell?{x:cell.x,y:cell.y,w:cell.w,h:cell.h}:null; }
+    st=null; vaDraw(d); vaShowResult(d); };
+}
+function vaShowResult(d){
+  const box=document.getElementById('va-result'); if(!box) return;
+  const top=d.cells.slice().sort((a,b)=>a.pval-b.pval||b.acc-a.acc).slice(0,4);
+  const nGood=d.cells.filter(x=>x.ev!=='weak').length;
+  let h=`<div class="small mb">直球${d.nS}球・変化球${d.nB}球を、手ぶれを補正して重ねました（ずれの補正 最大${Math.max(...d.shifts.map(s=>Math.max(Math.abs(s.dx),Math.abs(s.dy))))}画素）。
+    赤いほど、直球と変化球の差がばらつきより大きい場所です。枠は1球ずつ抜いて当てたときに見分けられたマス目です（<span class="c-ok">緑＝有効</span>・<span class="c-warn">黄＝有望</span>）。</div>`;
+  if(!nGood) h+=`<div class="small mb">今のところ、偶然と区別できるほどはっきり見分けられるマス目はありません。球数を増やすか、別の局面を試してください。</div>`;
+  h+=`<div class="small" style="font-weight:800">見分けやすい順</div>`+top.map((x,i)=>`<div class="va-row"><div class="grow">マス目${i+1}（左から${x.x/VA_CELL+1}・上から${x.y/VA_CELL+1}）<div class="small">1球ずつ抜いて当てると ${x.k}/${x.n}（基準${pct(x.p0)}）</div></div>
+    <div class="va-side">${vaBadge(x)}<button class="btn xs" onclick="S.va.roi={x:${x.x},y:${x.y},w:${x.w},h:${x.h}};vaDraw();vaShowResult(S.vaD)">選ぶ</button></div></div>`).join('');
+  if(S.va.roi){
+    const r=S.va.roi, j=judge(looNearest(regionFeats(d.norm,d.w,r),d.lab),d.lab.length,d.lab,d.alpha);
+    h+=`<div class="va-roi mt"><div class="row-between" style="margin:0"><b>選んだ範囲</b>${vaBadge(j)}</div>
+      <div class="small">1球ずつ抜いて当てると ${j.k}/${j.n}（基準${pct(j.p0)}・偶然この成績になる確率 約${j.pval<0.001?'0.1%未満':(j.pval*100).toFixed(1)+'%'}）</div>
+      <div class="small mb">なぞって選んだ範囲は、何度も選び直すと偶然よく見える範囲に当たりやすくなります。マス目の判定と合わせて見てください。</div>
+      ${['S','B'].map(sd=>`<div class="res-h ${sd.toLowerCase()}">${SIDE_NAME[sd]}</div><div class="va-crops">${d.items.map((x,i)=>x.actual===sd?`<canvas class="va-crop" data-i="${i}" title="${esc(x.kind)}"></canvas>`:'').join('')}</div>`).join('')}
+      <div class="help">赤く出た場所が、ボールや打者・捕手など投手の癖と関係のないものでないか、必ず目で確かめてください。</div>
+      <button class="btn btn-main full mt" onclick="vaRoiTell()">この範囲を観察項目に登録</button></div>`;
+  }
+  box.innerHTML=h;
+  if(S.va.roi) vaDrawCrops(d);
+}
+async function vaDrawCrops(d){
+  const r=S.va.roi, k=VA_DISP/d.w, pad=4;
+  for(const c of document.querySelectorAll('.va-crop')){
+    const i=Number(c.dataset.i), x=d.items[i], s=d.shifts[i], im=await loadImage(IMG[x.f[S.va.phase]]);
+    const kk=im.naturalWidth/d.w, sx=(r.x-pad+s.dx)*kk, sy=(r.y-pad+s.dy)*kk, sw=(r.w+pad*2)*kk, sh=(r.h+pad*2)*kk;
+    c.width=Math.round(sw); c.height=Math.round(sh); c.getContext('2d').drawImage(im,sx,sy,sw,sh,0,0,c.width,c.height);
+  }
+}
+async function vaRoiTell(){
+  const p=curP(), d=S.vaD, r=S.va.roi; if(!p||!d||!r) return;
+  const pad=4, mk=async side=>{
+    const idx=d.items.map((x,i)=>i).filter(i=>d.items[i].actual===side);
+    const im0=await loadImage(IMG[d.items[idx[0]].f[S.va.phase]]), kk=im0.naturalWidth/d.w;
+    const crop={x:Math.round((r.x-pad)*kk),y:Math.round((r.y-pad)*kk),w:Math.round((r.w+pad*2)*kk),h:Math.round((r.h+pad*2)*kk),shift:idx.map(i=>({dx:Math.round(d.shifts[i].dx*kk),dy:Math.round(d.shifts[i].dy*kk)}))};
+    const c=await averageImage(idx.map(i=>IMG[d.items[i].f[S.va.phase]]),crop);
+    const big=document.createElement('canvas'); big.width=Math.max(160,c.width); big.height=Math.round(big.width*c.height/c.width);
+    big.getContext('2d').drawImage(c,0,0,big.width,big.height); return big.toDataURL('image/jpeg',0.85);
+  };
+  const imgS=await mk('S'), imgB=await mk('B');
+  S.form={type:'state',category:'その他',part:`${pointName(S.va.phase)}の注目範囲`,timing:PHASE_OF_POINT[S.va.phase]||'セット・構え',
+    la:'直球の時の形',lb:'変化球の時の形',map:'aS',hint:'映像分析で、直球と変化球で見え方が違った範囲です。下の参考画像（左が直球・右が変化球の平均）を見比べ、見たままの言葉に直してください。',
+    straight:'',breaking:'',action:'',side:'B',tStart:TP_START,tEnd:TP_END,dir:'auto',cue:'',importance:'中',visibility:3,baseline:'映像分析で見つけた範囲',imgS,imgB,_ph:''};
+  S.modal='tell'; render();
+}
+function vaTempoTell(A,B){
+  const p=curP(); if(!p) return;
+  const x=normalizePitcher({tells:[{type:'tempo',category:'テンポ・リズム',part:`${pointName(A)}から${pointName(B)}の時間`,tStart:A,tEnd:B,dir:'auto',
+    hint:'映像分析で、直球と変化球で時間に差があった区間です。計測画面のストップウォッチで試合中も確かめてください。',importance:'中',visibility:3}]}).tells[0];
+  if(p.tells.some(t=>t.type==='tempo'&&t.tStart===A&&t.tEnd===B)){ toast('同じ区間の項目がすでにあります'); return; }
+  p.tells.push(x); Store.save(); render(); toast('時間の観察項目に登録しました','ok');
+}
+function delVp(id){
+  const p=curP(), x=p?.vp.find(y=>y.id===id); if(!x) return;
+  askConfirm(`映像の${x.kind}の投球を削除します。`,'削除する',()=>{ Object.values(x.f||{}).forEach(i=>IDB.del(i)); p.vp=p.vp.filter(y=>y.id!==id); Store.save(); render(); toast('削除しました'); });
+}
+
+// サンプル投手（使い方を試すための例。実在の投手ではない）
+const SAMPLE_VER=2; // サンプルの中身を変えたら上げる（古いサンプルを入れ替えるため）
+function makeSample(){
+  let seed=20261110; const rnd=()=>((seed=(seed*1103515245+12345)%2147483648)/2147483648);
+  const pick=name=>catalogTell(CATALOG.find(x=>x.part===name));
+  const p=normalizePitcher({name:'サンプル投手（例）',team:'例のデータ',hand:'右投げ',
+    memo:'リストから4項目を選び、どちらが直球かは「記録から判断」で38球記録した例です。足を上げる高さは球種と関係がない想定、30球目以降はアゴを毎球引くようになった（クセを隠し始めた）想定です。'});
+  p.sample=true; p.sampleVer=SAMPLE_VER;
+  const glove=pick('グラブの角度'), chin=pick('アゴ・顔の角度'), legs=pick('足を上げる高さ'), tempo=pick('始動から着地の時間');
+  p.tells=[glove,chin,legs,tempo];
+  const t0=Date.now()-38*60000;
+  for(let i=0;i<38;i++){
+    const B=rnd()<0.38, actual=B?'B':'S';
+    const kind=B?['スライダー','スライダー','フォーク','カーブ'][Math.floor(rnd()*4)]:(rnd()<0.8?'ストレート':'ツーシーム');
+    const obs={}, tm={};
+    obs[glove.id]=rnd()<0.12?'?':((B?rnd()<0.12:rnd()<0.9)?'a':'b');                    // 直球の時はグラブを立てることが多い
+    obs[chin.id]= i<30 ? ((B?rnd()<0.85:rnd()<0.1)?'a':'b') : 'a';                       // 変化球の時にアゴを引く。30球目以降は毎球
+    obs[legs.id]=rnd()<0.5?'a':'b';                                                      // 球種と関係なし
+    tm[tempo.id]=Math.round(((B?0.84:0.94)+(rnd()-0.5)*0.16)*100)/100;                   // 変化球の時はやや速い
+    const keep=S.cur; S.cur={obs:{...obs},tempo:{[tempo.id]:{start:null,sec:tm[tempo.id]}},inning:'1',set:'W'};
+    const pr=predict(p); S.cur=keep;
+    let pred=null, predProb=null;
+    if(pr.used.length&&!pr.unverified){ pred=pr.probS>=0.5?'S':'B'; predProb=Math.round(Math.max(pr.probS,1-pr.probS)*100); }
+    p.pitches.push({id:uid(),no:i+1,ts:t0+i*60000,inning:String(1+Math.floor(i/5)),set:rnd()<0.5?'W':'S',obs,tempo:tm,pred,predProb,actual,kind});
+  }
+  return p;
+}
+function loadSample(){
+  if(Store.data.pitchers.some(p=>p.sample)){ toast('サンプルはすでに入っています'); return; }
+  Store.data.pitchers.unshift(makeSample()); Store.save(); render(); toast('サンプル投手を追加しました','ok');
+}
+
+// 旧バージョン（tell_alert_final）からの引き継ぎ
+async function migrateLegacy(){
+  if(Store.data.pitchers.length) return;
+  let old=null; try{ old=JSON.parse(localStorage.getItem(LS_OLD)||'null'); }catch{}
+  if(!old||!Array.isArray(old.pitchers)||!old.pitchers.length) return;
+  for(const op of old.pitchers){
+    const p=normalizePitcher({id:op.id,name:op.name,hand:op.hand==='左投げ'?'左投げ':'右投げ',createdAt:Date.now(),
+      tells:(op.tells||[]).map(t=>({...t,source:op.baseline?'ai':'manual'}))});
+    if(op.baselineImg) p.thumbId=await storeImg(op.baselineImg);
+    for(const s of (op.scans||[]).slice().reverse()){
+      p.scans.push({id:s.id||uid(),ts:Date.now(),inning:s.inning&&s.inning!=='—'?s.inning:'',memo:s.memo||'',imgId:s.img?await storeImg(s.img):null,
+        overall:LEVEL[s.result?.overall]?s.result.overall:'CLEAR',reason:s.result?.reason||'',
+        checks:(s.result?.checks||[]).map(c=>({tellId:c.id,part:c.part,status:STATUS[c.status]?c.status:'UNKNOWN',note:c.delta||''})),source:'legacy'});
+    }
+    Store.data.pitchers.push(p);
+  }
+  if(Store.save()) toast(`以前のデータ（${old.pitchers.length}人）を引き継ぎました`,'ok',3500);
+}
+
+function localStorage_has(k){ try{ return localStorage.getItem(k)!=null; }catch{ return false; } }
+
+// 計測中は画面を消さない
+let wakeLock=null;
+async function syncWake(){
+  const want=SET.wake&&S.screen==='pitcher'&&S.tab==='live'&&document.visibilityState==='visible';
+  try{
+    if(want&&!wakeLock&&'wakeLock' in navigator){ wakeLock=await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release',()=>{wakeLock=null;}); }
+    else if(!want&&wakeLock){ const w=wakeLock; wakeLock=null; await w.release(); }
+  }catch{}
+}
+document.addEventListener('visibilitychange',syncWake);
+matchMedia('(prefers-color-scheme: light)').addEventListener?.('change',()=>{ if(SET.theme==='auto'){ applyTheme(); render(); } });
+
+// ══════════════════════════════════════════════
+// 起動
+// ══════════════════════════════════════════════
+(async function init(){
+  loadSettings();
+  if(EMBED){ SET.mode='offline'; if(!localStorage_has(LS_SET)) SET.theme='auto'; }
+  applyTheme();
+  Store.load();
+  render();
+  await IDB.open();
+  if(!IDB.ok) toast('この環境では画像を保存できません（プライベートブラウズ等）','warn',4000);
+  await IDB.loadAll();
+  await migrateLegacy();
+  // 古いサンプルは新しいものに入れ替える（サンプル以外のデータには触れない）
+  const oldSample=Store.data.pitchers.findIndex(p=>p.sample&&p.sampleVer!==SAMPLE_VER);
+  if(oldSample>=0){ Store.data.pitchers[oldSample]=makeSample(); Store.save(); }
+  if(EMBED && !Store.data.pitchers.length){ Store.data.pitchers.push(makeSample()); Store.save(); }
+  render();
+  if(!EMBED && 'serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+</script>
+</body>
+</html>

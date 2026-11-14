@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>コーチ管理画面</title>
+  <meta name="description" content="クライアントの食事・体の記録を確認し、AIの下書きを使って寄り添った返信を送るコーチ用の画面">
+  <meta name="theme-color" content="#ece9fb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="コーチ">
+  <link rel="manifest" href="coach.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="coach">
+  <div class="app">
+    <div id="statusBar" class="status-bar" hidden></div>
+
+    <!-- ログイン -->
+    <section class="view" data-view="login" hidden>
+      <div class="card center-card">
+        <div class="big-icon">🧑‍🏫</div>
+        <h1 class="page-title">コーチ管理画面</h1>
+        <form id="loginForm" class="form" autocomplete="on">
+          <label class="field">パスワード<input type="password" name="password" autocomplete="current-password" required></label>
+          <button type="submit" class="btn primary block">ログイン</button>
+        </form>
+        <p class="muted small">パスワードは、管理者が Vercel に設定したものです。</p>
+      </div>
+    </section>
+
+    <!-- 一覧 -->
+    <section class="view" data-view="list" hidden>
+      <header class="page-head row">
+        <div><h1>クライアント</h1><p class="muted small" id="listDate"></p></div>
+        <button type="button" class="btn primary small-btn" id="btnAdd">＋ 追加</button>
+      </header>
+      <div id="summary" class="summary-row"></div>
+      <div id="clientCards" class="client-cards"></div>
+      <button type="button" class="link-btn center" id="btnLogout">ログアウト</button>
+    </section>
+
+    <!-- 追加 -->
+    <section class="view" data-view="add" hidden>
+      <header class="page-head row"><button type="button" class="back" data-back>‹ 戻る</button><h1>クライアントを追加</h1></header>
+      <form id="addForm" class="card form" autocomplete="off"></form>
+    </section>
+
+    <!-- 招待リンク -->
+    <section class="view" data-view="invite" hidden>
+      <header class="page-head row"><button type="button" class="back" data-back>‹ 一覧へ</button><h1>招待リンク</h1></header>
+      <div class="card">
+        <p id="inviteFor" class="card-title"></p>
+        <p class="muted small">このリンクを、クライアント本人にだけ送ってください。リンクを開くと、その方専用のアプリが使えるようになります。リンクを知っている人は記録を見られるので、グループには送らないでください。</p>
+        <textarea id="inviteText" class="output" rows="8" readonly aria-label="招待メッセージ"></textarea>
+        <div class="btn-row">
+          <button type="button" class="btn ghost" id="btnInviteCopy">コピー</button>
+          <button type="button" class="btn line" id="btnInviteLine">LINEで送る</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 詳細 -->
+    <section class="view" data-view="detail" hidden>
+      <header class="page-head row"><button type="button" class="back" data-back>‹ 一覧</button><div><h1 id="dName"></h1><p class="muted small" id="dMeta"></p><p class="small" id="dProgram"></p></div></header>
+      <div id="dWatch" class="watch"></div>
+      <nav class="seg" id="dTabs">
+        <button type="button" data-dtab="records" class="active">記録</button>
+        <button type="button" data-dtab="messages">メッセージ<i class="badge" id="dBadge" hidden></i></button>
+        <button type="button" data-dtab="settings">設定</button>
+      </nav>
+
+      <div data-dpanel="records">
+        <div id="dVerdict" class="verdict"></div>
+        <div class="card">
+          <h2 class="card-title">🔥 今日のカロリー収支</h2>
+          <div class="balance"><div id="dRing" class="ring"></div><dl class="balance-list" id="dBalance"></dl></div>
+        </div>
+        <div class="card"><h2 class="card-title">直近14日のカロリー</h2><div id="dKcal" class="chart"></div><p class="muted small" id="dKcalAvg"></p></div>
+        <div class="card"><h2 class="card-title">体重</h2><div id="dWeight" class="chart"></div><p class="muted small" id="dWeightNote"></p></div>
+        <div class="card"><h2 class="card-title">日ごとの記録（30日）</h2><div id="dDays" class="day-list"></div></div>
+      </div>
+
+      <div data-dpanel="messages" hidden>
+        <div class="card chat"><div id="dThread" class="thread"></div></div>
+        <div class="card">
+          <h2 class="card-title">✍️ メッセージを作る</h2>
+          <nav class="make-tabs" id="makeTabs">
+            <button type="button" data-make="ai" class="active">✨ AI下書き</button>
+            <button type="button" data-make="template">定型文</button>
+            <button type="button" data-make="comment">今日のコメント</button>
+            <button type="button" data-make="rapport">ラポール21日</button>
+            <button type="button" data-make="plateau">停滞期</button>
+          </nav>
+          <div id="makeBody" class="make-body"></div>
+          <label class="field sign-field">署名（文章の最後に入ります・全員共通）<input id="signInput" placeholder="例：トレーナー 佐藤"></label>
+        </div>
+        <form id="dMsgForm" class="composer">
+          <div class="composer-main">
+            <span class="compose-kind" id="composeKind" hidden></span>
+            <textarea name="text" rows="6" placeholder="メッセージ" aria-label="メッセージ"></textarea>
+            <button type="button" class="link-btn" id="btnSaveTpl">この文を定型文として保存</button>
+          </div>
+          <button type="submit" class="btn primary">送信</button>
+        </form>
+      </div>
+
+      <div data-dpanel="settings" hidden>
+        <form id="editForm" class="card form" autocomplete="off"></form>
+        <div class="card">
+          <h2 class="card-title">招待リンク</h2>
+          <p class="muted small">リンクをなくした時や、スマホを替えた時は作り直してください。作り直すと、古いリンクは使えなくなります。</p>
+          <button type="button" class="btn ghost" id="btnReinvite">招待リンクを作り直す</button>
+        </div>
+        <div class="card">
+          <h2 class="card-title">削除</h2>
+          <p class="muted small">クライアントの記録とメッセージをすべて削除します。元に戻せません。</p>
+          <button type="button" class="btn danger" id="btnDelete">このクライアントを削除</button>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="sheet" class="sheet" hidden>
+    <div class="sheet-bg" data-close></div>
+    <div class="sheet-body" role="dialog" aria-modal="true" aria-label="食事の詳細">
+      <button type="button" class="sheet-close" data-close aria-label="閉じる">✕</button>
+      <div id="sheetContent"></div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/calc.js"></script>
+  <script src="js/diet/data.js"></script>
+  <script src="js/diet/engine.js"></script>
+  <script src="js/bridge.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/coach.js"></script>
+</body>
+</html>

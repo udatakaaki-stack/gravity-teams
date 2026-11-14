@@ -1,0 +1,669 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ダイエットサポート</title>
+  <meta name="description" content="期分化・クライアント別コメント自動生成・停滞期サポートを備えたダイエット指導ツール">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-mark">🌿</span>
+      <div>
+        <h1>ダイエットサポート</h1>
+        <p>クライアントに寄り添うコメントづくりのパートナー</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a class="btn ghost" href="training/index.html">トレーニング版へ</a>
+      <button type="button" class="btn ghost" id="btnSample">サンプルを追加</button>
+      <button type="button" class="btn ghost" id="btnExport">データ書き出し</button>
+      <label class="btn ghost">データ読み込み<input type="file" id="fileImport" accept="application/json" hidden></label>
+    </div>
+  </header>
+
+  <div id="backupNote" class="backup-note" hidden></div>
+
+  <div class="layout">
+    <!-- クライアント一覧 -->
+    <aside class="sidebar">
+      <div class="sidebar-head">
+        <h2>クライアント</h2>
+        <button type="button" class="btn primary small" id="btnNewClient">＋ 新規</button>
+      </div>
+      <ul id="clientList" class="client-list"></ul>
+      <p class="hint">データはこのブラウザ内にのみ保存されます。</p>
+    </aside>
+
+    <main class="main">
+      <div id="emptyState" class="empty-state">
+        <h2>まずはクライアントを登録しましょう</h2>
+        <p>左の「＋ 新規」から、お名前・目標・期間（1〜365日）などを入力すると、期分化されたプランと日ごとのコメントが自動で作られます。</p>
+        <button type="button" class="btn primary" id="btnEmptyNew">クライアントを登録する</button>
+        <p class="hint">まずは動きを見てみたい場合は、架空のクライアントのデータで試せます。</p>
+        <button type="button" class="btn ghost" id="btnEmptySample">サンプルデータで試す</button>
+      </div>
+
+      <div id="workspace" hidden>
+        <div class="client-banner">
+          <div>
+            <h2 id="bannerName"></h2>
+            <p id="bannerMeta"></p>
+          </div>
+          <div class="banner-day">
+            <span>今日は</span>
+            <strong id="bannerDay"></strong>
+          </div>
+        </div>
+
+        <div id="alertBox" class="alert-box" hidden></div>
+
+        <nav class="tabs" role="tablist">
+          <button type="button" role="tab" data-tab="profile" class="tab">プロフィール</button>
+          <button type="button" role="tab" data-tab="counsel" class="tab">カウンセリング</button>
+          <button type="button" role="tab" data-tab="plan" class="tab">期分化プラン</button>
+          <button type="button" role="tab" data-tab="comment" class="tab">今日のコメント</button>
+          <button type="button" role="tab" data-tab="reply" class="tab">返信アシスト</button>
+          <button type="button" role="tab" data-tab="template" class="tab">定型コメント</button>
+          <button type="button" role="tab" data-tab="rapport" class="tab">ラポール21日</button>
+          <button type="button" role="tab" data-tab="weekly" class="tab">週の振り返り</button>
+          <button type="button" role="tab" data-tab="sent" class="tab">送信管理</button>
+          <button type="button" role="tab" data-tab="bulk" class="tab">一括生成</button>
+          <button type="button" role="tab" data-tab="plateau" class="tab">停滞期サポート</button>
+          <button type="button" role="tab" data-tab="meal" class="tab">食事の例</button>
+          <button type="button" role="tab" data-tab="exercise" class="tab">運動ライブラリ</button>
+          <button type="button" role="tab" data-tab="knowledge" class="tab">体のしくみと知識</button>
+        </nav>
+
+        <!-- プロフィール -->
+        <section class="panel" data-panel="profile">
+          <form id="profileForm" class="form-grid" autocomplete="off">
+            <fieldset>
+              <legend>基本情報</legend>
+              <label>お名前<input name="name" required placeholder="例：山田 花子"></label>
+              <label>敬称
+                <select name="honorific">
+                  <option value="さん">さん</option>
+                  <option value="様">様</option>
+                  <option value="ちゃん">ちゃん</option>
+                  <option value="くん">くん</option>
+                  <option value="">なし</option>
+                </select>
+              </label>
+              <label>性別
+                <select name="gender">
+                  <option value="female">女性</option>
+                  <option value="male">男性</option>
+                  <option value="other">回答しない</option>
+                </select>
+              </label>
+              <label>年齢<input name="age" type="number" min="10" max="100" inputmode="numeric"></label>
+              <label>身長（cm）<input name="height" type="number" step="0.1" min="100" max="230" inputmode="decimal"></label>
+              <label>活動量
+                <select name="activity" id="activitySelect"></select>
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>目標と期間</legend>
+              <label>開始時の体重（kg）<input name="startWeight" type="number" step="0.1" min="20" max="300" inputmode="decimal"></label>
+              <label>目標体重（kg）<input name="goalWeight" type="number" step="0.1" min="20" max="300" inputmode="decimal"></label>
+              <label>開始日<input name="startDate" type="date"></label>
+              <label>プログラム期間（1〜365日）
+                <span class="range-row">
+                  <input name="totalDays" type="range" min="1" max="365" id="daysRange">
+                  <input name="totalDaysNum" type="number" min="1" max="365" id="daysNum" inputmode="numeric">
+                </span>
+              </label>
+              <div class="preset-row">
+                <span>よく使う期間：</span>
+                <button type="button" class="chip" data-days="30">30日</button>
+                <button type="button" class="chip" data-days="60">60日</button>
+                <button type="button" class="chip" data-days="90">90日</button>
+                <button type="button" class="chip" data-days="180">180日</button>
+                <button type="button" class="chip" data-days="365">365日</button>
+              </div>
+              <label class="wide">ダイエットの目的・ゴール後にしたいこと
+                <input name="goalNote" placeholder="例：来年の結婚式でドレスを着たい、階段で息切れしない体に">
+              </label>
+            </fieldset>
+
+            <fieldset>
+              <legend>声かけのスタイル</legend>
+              <label>トーン
+                <select name="tone" id="toneSelect"></select>
+              </label>
+              <label>運動経験
+                <select name="level">
+                  <option value="1">初心者（運動はほとんどしていない）</option>
+                  <option value="2">少し経験あり（たまに運動する）</option>
+                  <option value="3">経験者（定期的に運動している）</option>
+                </select>
+              </label>
+              <div class="wide">
+                <span class="label-text">運動できる場所</span>
+                <div class="checks" id="placeChecks"></div>
+              </div>
+              <label class="wide">署名（コメントの最後に入ります）<input name="coach" placeholder="例：トレーナー 佐藤"></label>
+            </fieldset>
+
+            <fieldset>
+              <legend>気になっていること（コメントのヒントに反映されます）</legend>
+              <div class="checks wide" id="concernChecks"></div>
+              <label class="wide">メモ（コーチ用・コメントには入りません）
+                <textarea name="memo" rows="3" placeholder="例：夜勤あり。甘いものは週末だけにしたいと話していた。"></textarea>
+              </label>
+            </fieldset>
+
+            <div class="form-actions">
+              <button type="submit" class="btn primary">保存する</button>
+              <button type="button" class="btn danger" id="btnDeleteClient">このクライアントを削除</button>
+            </div>
+          </form>
+
+          <div class="cards two">
+            <div class="card">
+              <h3>体の指標（目安）</h3>
+              <div id="metricsBox"></div>
+            </div>
+            <div class="card">
+              <h3>体の記録</h3>
+              <form id="logForm" class="log-form" autocomplete="off">
+                <label>日付<input type="date" name="date" required></label>
+                <label>体重（kg）<input type="number" name="weight" step="0.1" min="20" max="300" inputmode="decimal"></label>
+                <label>ウエスト（cm）<input type="number" name="waist" step="0.1" min="30" max="200" inputmode="decimal"></label>
+                <label>睡眠（時間）<input type="number" name="sleep" step="0.5" min="0" max="24" inputmode="decimal"></label>
+                <label>歩数<input type="number" name="steps" step="1" min="0" max="100000" inputmode="numeric"></label>
+                <label>気分<select name="mood" id="logMood"></select></label>
+                <label class="wide">メモ（体調や出来事）<input name="memo" placeholder="例：寝不足。夜に甘いものを食べた"></label>
+                <button type="submit" class="btn primary small">記録する</button>
+              </form>
+              <p class="hint">入力した項目だけ記録されます。同じ日にもう一度記録すると、その項目が上書きされます。メモに体調不良などの言葉があると、画面上部に注意が表示されます。</p>
+              <div id="chartBox" class="chart-box"></div>
+              <ul id="logList" class="log-list"></ul>
+            </div>
+          </div>
+        </section>
+
+        <!-- 期分化プラン -->
+        <section class="panel" data-panel="plan">
+          <div class="card">
+            <div class="output-head">
+              <h3>プラン全体の流れ</h3>
+              <button type="button" class="btn primary small" id="btnPrintPlan">プラン表を印刷・PDF保存</button>
+            </div>
+            <div id="timeline" class="timeline"></div>
+            <div id="timelineLegend" class="timeline-legend"></div>
+          </div>
+          <div id="phaseCards" class="phase-cards"></div>
+        </section>
+
+        <!-- 今日のコメント -->
+        <section class="panel" data-panel="comment">
+          <div class="card controls">
+            <div class="control-row">
+              <label>何日目のコメント？
+                <span class="range-row">
+                  <input type="range" id="dayRange" min="1" max="90">
+                  <input type="number" id="dayNum" min="1" max="90" inputmode="numeric">
+                </span>
+              </label>
+              <button type="button" class="btn ghost small" id="btnToday">今日に戻す</button>
+            </div>
+            <div class="control-row">
+              <label>形式
+                <select id="formatSelect">
+                  <option value="line">LINE・個別メッセージ（しっかり）</option>
+                  <option value="short">ひとこと（短め）</option>
+                  <option value="sns">SNS投稿用（名前・体重は入りません）</option>
+                </select>
+              </label>
+              <label>絵文字
+                <select id="emojiSelect">
+                  <option value="0">使わない</option>
+                  <option value="1" selected>少しだけ</option>
+                  <option value="2">多め</option>
+                </select>
+              </label>
+              <label class="inline"><input type="checkbox" id="chkTip" checked> 今日のヒント</label>
+              <label class="inline"><input type="checkbox" id="chkExercise" checked> 運動の提案</label>
+              <label class="inline"><input type="checkbox" id="chkProgress" checked> 体重への声かけ</label>
+            </div>
+          </div>
+
+          <div class="card output-card">
+            <div class="output-head">
+              <div>
+                <span class="phase-badge" id="commentPhase"></span>
+                <span id="commentDate" class="muted"></span>
+              </div>
+              <button type="button" class="btn ghost small" id="btnRegenerate">別の言い回しにする</button>
+            </div>
+            <textarea id="commentOutput" class="output" rows="16" aria-label="生成されたコメント"></textarea>
+            <p class="muted small" id="commentCount"></p>
+            <div class="share-row" data-share-target="commentOutput"></div>
+            <p class="hint">送る前に、クライアントの最近の様子に合わせて一言添えると、ぐっと気持ちが伝わります。テキストはそのまま編集できます。</p>
+          </div>
+        </section>
+
+        <!-- 定型コメント -->
+        <section class="panel" data-panel="template">
+          <p class="lead">場面ごとの定型文に、お名前や日数、体重などが自動で差し込まれます。ご自身の定型文を登録して、いつもの言葉づかいで使うこともできます。</p>
+          <div class="card controls">
+            <div class="control-row">
+              <label>場面
+                <select id="tplCat"><option value="">すべての場面</option></select>
+              </label>
+              <label>キーワードで探す<input type="search" id="tplSearch" placeholder="例：飲み会、生理、写真"></label>
+              <label class="inline"><input type="checkbox" id="tplMineOnly"> 登録した定型文だけ</label>
+              <button type="button" class="btn primary" id="btnTplNew">＋ 定型文を登録</button>
+            </div>
+          </div>
+
+          <div id="tplEditor" class="card tpl-editor" hidden>
+            <h3 id="tplEditorTitle">定型文を登録</h3>
+            <form id="tplForm" class="form-grid tpl-form" autocomplete="off">
+              <input type="hidden" name="id">
+              <label>場面<select name="cat" id="tplFormCat"></select></label>
+              <label>タイトル<input name="title" required placeholder="例：朝の体重報告へのお礼"></label>
+              <label>使う相手
+                <select name="scope">
+                  <option value="all">すべてのクライアント</option>
+                  <option value="client">このクライアントだけ</option>
+                </select>
+              </label>
+              <div class="wide">
+                <span class="label-text">差し込み（押すと本文のカーソル位置に入ります）</span>
+                <div class="chips" id="tplVarChips"></div>
+              </div>
+              <label class="wide">本文<textarea name="text" id="tplFormText" rows="8" required placeholder="例：{name}、今日も記録ありがとうございます。"></textarea></label>
+              <div class="wide">
+                <span class="label-text">プレビュー</span>
+                <pre id="tplFormPreview" class="tpl-preview"></pre>
+              </div>
+              <div class="form-actions wide">
+                <div class="btn-row">
+                  <button type="submit" class="btn primary">保存する</button>
+                  <button type="button" class="btn ghost" id="btnTplCancel">やめる</button>
+                </div>
+                <button type="button" class="btn danger" id="btnTplDelete" hidden>この定型文を削除</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="tpl-layout">
+            <div id="tplList" class="tpl-list"></div>
+            <div class="card output-card tpl-output">
+              <div class="output-head">
+                <strong id="tplCurrentTitle">定型文を選んでください</strong>
+                <label class="inline small"><input type="checkbox" id="tplSign" checked> 署名を付ける</label>
+              </div>
+              <textarea id="tplOutput" class="output" rows="14" aria-label="定型コメント"></textarea>
+              <p class="muted small" id="tplCount"></p>
+              <div class="share-row" data-share-target="tplOutput"></div>
+              <p class="hint">「〇」の部分は、記録がまだない項目や日時など、送る前に書き換えが必要なところです。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ラポール21日 -->
+        <section class="panel" data-panel="rapport">
+          <p class="lead">信頼関係（ラポール）を築くための、3週間（21日間）のアファメーションメッセージです。毎日のメッセージに「今日の言葉」と、返信しやすい「今日の質問」が入っています。LINE用とメール用を切り替えられます。</p>
+          <div id="rapportWeeks" class="rapport-weeks"></div>
+
+          <div class="card controls">
+            <div class="control-row">
+              <label>何日目？（1〜21日）
+                <span class="range-row">
+                  <input type="range" id="rpDayRange" min="1" max="21" value="1">
+                  <input type="number" id="rpDayNum" min="1" max="21" value="1" inputmode="numeric">
+                </span>
+              </label>
+              <label>送り方
+                <select id="rpFormat">
+                  <option value="line">LINE</option>
+                  <option value="mail">メール</option>
+                </select>
+              </label>
+              <label>絵文字（LINEのみ）
+                <select id="rpEmoji">
+                  <option value="0">使わない</option>
+                  <option value="1" selected>少しだけ</option>
+                  <option value="2">多め</option>
+                </select>
+              </label>
+              <label>1日目を送る日<input type="date" id="rpStart"></label>
+            </div>
+            <div class="control-row">
+              <label>クライアントの今の気持ち
+                <select id="rpMood"></select>
+              </label>
+              <label class="inline"><input type="checkbox" id="rpPersonal" checked> 気持ちと進み具合に寄り添う言葉を入れる</label>
+            </div>
+            <p class="rp-status" id="rpStatus"></p>
+          </div>
+
+          <div class="cards two">
+            <div class="card output-card">
+              <div class="output-head">
+                <div>
+                  <span class="phase-badge" id="rpWeekBadge"></span>
+                  <span id="rpDate" class="muted"></span>
+                </div>
+                <button type="button" class="btn ghost small" id="btnRpRegen">別の言い回しにする</button>
+              </div>
+              <div id="rpSubjectRow" class="subject-row" hidden>
+                <label>件名<input id="rpSubject" aria-label="メールの件名"></label>
+                <button type="button" class="btn ghost small" id="btnRpCopySubject">件名をコピー</button>
+              </div>
+              <textarea id="rpOutput" class="output" rows="18" aria-label="ラポールメッセージ"></textarea>
+              <p class="muted small" id="rpCount"></p>
+              <div class="share-row" data-share-target="rpOutput"></div>
+              <button type="button" class="btn ghost small" id="btnRpMail" hidden>メールアプリで開く</button>
+            </div>
+            <div class="card">
+              <h3 id="rpTheme"></h3>
+              <div class="coach-point" id="rpCoach"></div>
+              <h4>返信が来たら</h4>
+              <ul class="rp-reply">
+                <li>まず相手の言葉をそのまま繰り返して受け止める（例：「〇〇と感じているんですね」）</li>
+                <li>アドバイスより先に、話してくれたことへの感謝を伝える</li>
+                <li>返信の目安をあらかじめ決めて守る（約束を守ることが信頼の土台です）</li>
+                <li>聞いた内容はプロフィールのメモ欄に残し、次のメッセージで生かす</li>
+              </ul>
+              <p class="hint">「3週間」は区切りとして設定しています。習慣が身につくまでの期間には個人差が大きく、平均で約2か月かかったという研究もあります。22日目以降は「今日のコメント」や「定型コメント」で続けていきましょう。</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="output-head">
+              <strong>21日分をまとめて確認</strong>
+              <div class="btn-row">
+                <button type="button" class="btn ghost small" id="btnRpAll">21日分を表示</button>
+                <button type="button" class="btn ghost small" id="btnRpDownload">テキストで保存</button>
+              </div>
+            </div>
+            <div id="rpList" class="bulk-list"></div>
+          </div>
+        </section>
+
+        <!-- 初回カウンセリング -->
+        <section class="panel" data-panel="counsel">
+          <p class="lead">最初の面談で聞いておきたいことをまとめたシートです。回答を入力して「プロフィールに反映」を押すと、目的、運動経験、気になっていることなどが自動で入ります。事前に質問を送ることもできます。</p>
+          <div class="cards two">
+            <div class="card">
+              <form id="counselForm" class="counsel-form" autocomplete="off"></form>
+              <div class="form-actions">
+                <div class="btn-row">
+                  <button type="button" class="btn primary" id="btnCounselSave">回答を保存</button>
+                  <button type="button" class="btn primary" id="btnCounselApply">プロフィールに反映</button>
+                </div>
+              </div>
+              <p class="hint" id="counselApplyNote"></p>
+            </div>
+            <div>
+              <div class="card output-card">
+                <div class="output-head">
+                  <strong>出力</strong>
+                  <div class="btn-row">
+                    <button type="button" class="chip active" data-counsel-out="message">事前に送る質問</button>
+                    <button type="button" class="chip" data-counsel-out="summary">回答のまとめ（コーチ用）</button>
+                  </div>
+                </div>
+                <textarea id="counselOutput" class="output" rows="18" aria-label="カウンセリングの出力"></textarea>
+                <p class="muted small" id="counselCount"></p>
+                <div class="share-row" data-share-target="counselOutput" data-kind="counsel"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 返信アシスト -->
+        <section class="panel" data-panel="reply">
+          <p class="lead">クライアントから届いた返信を貼り付けると、言葉から気持ちと話題を読み取って、寄り添った返事の案を作ります。</p>
+          <div class="cards two">
+            <div class="card">
+              <label>クライアントからの返信
+                <textarea id="replyInput" rows="7" placeholder="例：昨日は飲み会で食べすぎてしまって、体重も増えていて落ち込んでいます…"></textarea>
+              </label>
+              <div class="reply-detect">
+                <h4>読み取った気持ち</h4>
+                <div class="chips" id="replyMoods"></div>
+                <h4>読み取った話題</h4>
+                <div class="chips" id="replyTopics"></div>
+                <p class="hint">言葉の手がかり（キーワード）から判断しています。必ず内容を読んで、押して選び直してください。</p>
+                <div id="replySafety"></div>
+                <button type="button" class="btn ghost small" id="btnReplyToRapport">この気持ちを「ラポール21日」にも反映する</button>
+              </div>
+            </div>
+            <div class="card output-card">
+              <div class="output-head">
+                <strong>返事の案</strong>
+                <button type="button" class="btn ghost small" id="btnReplyRegen">別の言い回しにする</button>
+              </div>
+              <textarea id="replyOutput" class="output" rows="16" aria-label="返事の案"></textarea>
+              <p class="muted small" id="replyCount"></p>
+              <div class="share-row" data-share-target="replyOutput" data-kind="reply"></div>
+              <p class="hint">送る前に、相手の言葉を一部そのまま引用して「〇〇だったんですね」と添えると、気持ちがぐっと伝わります。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- 週の振り返り -->
+        <section class="panel" data-panel="weekly">
+          <p class="lead">1週間の記録をもとに、クライアントに送る振り返りメッセージを作ります。来週の小さな目標も、記録と気になっていることに合わせて提案します。</p>
+          <div class="card controls">
+            <div class="control-row">
+              <label>振り返る週の最終日<input type="date" id="weeklyEnd"></label>
+              <button type="button" class="btn ghost small" id="btnWeeklyPrev">← 前の週</button>
+              <button type="button" class="btn ghost small" id="btnWeeklyNext">次の週 →</button>
+            </div>
+          </div>
+          <div class="cards two">
+            <div class="card">
+              <h3 id="weeklyRange"></h3>
+              <div id="weeklyStats" class="metric-grid"></div>
+              <p class="hint">記録が少ない項目は表示されません。プロフィールのタブで、体重・ウエスト・睡眠・歩数・気分を記録できます。</p>
+            </div>
+            <div class="card output-card">
+              <div class="output-head">
+                <strong>振り返りメッセージ</strong>
+                <button type="button" class="btn ghost small" id="btnWeeklyRegen">別の言い回しにする</button>
+              </div>
+              <textarea id="weeklyOutput" class="output" rows="18" aria-label="週の振り返り"></textarea>
+              <p class="muted small" id="weeklyCount"></p>
+              <div class="share-row" data-share-target="weeklyOutput" data-kind="weekly"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 送信管理 -->
+        <section class="panel" data-panel="sent">
+          <p class="lead">各タブの「✓ 送信済みにする」を押すと、ここに記録されます。今日送る相手と、送り忘れを確認できます。</p>
+          <div class="card">
+            <h3>今日の送信予定（全クライアント）</h3>
+            <div id="sendToday" class="send-list"></div>
+          </div>
+          <div class="card">
+            <h3>ラポール21日の送り忘れ</h3>
+            <div id="sendMissed" class="send-list"></div>
+          </div>
+          <div class="card">
+            <div class="output-head">
+              <h3 id="historyTitle">送信履歴</h3>
+              <label class="inline small">種類
+                <select id="historyKind"><option value="">すべて</option></select>
+              </label>
+            </div>
+            <div id="historyList" class="bulk-list"></div>
+          </div>
+        </section>
+
+        <!-- 食事の例 -->
+        <section class="panel" data-panel="meal">
+          <p class="lead">朝・昼・夕・間食ごとに、自炊・コンビニ・外食の組み合わせ例をまとめています。カロリーの数字ではなく「選び方」の例です。</p>
+          <div class="card controls">
+            <div class="control-row">
+              <label>食事
+                <select id="mealTime"><option value="">すべて</option></select>
+              </label>
+              <label>スタイル
+                <select id="mealStyle"><option value="">すべて</option></select>
+              </label>
+            </div>
+          </div>
+          <div class="cards two">
+            <div id="mealGrid" class="meal-grid"></div>
+            <div class="card output-card tpl-output">
+              <div class="output-head">
+                <strong>このクライアントへの提案</strong>
+                <button type="button" class="btn ghost small" id="btnMealRegen">別の組み合わせにする</button>
+              </div>
+              <p class="hint">プロフィールの「気になっていること」（外食が多い、夕食が遅いなど）に合わせて選んでいます。左の例の「提案に入れる」で差し替えもできます。</p>
+              <textarea id="mealOutput" class="output" rows="16" aria-label="食事の提案"></textarea>
+              <p class="muted small" id="mealCount"></p>
+              <div class="share-row" data-share-target="mealOutput" data-kind="meal"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 一括生成 -->
+        <section class="panel" data-panel="bulk">
+          <div class="card controls">
+            <div class="control-row">
+              <label>開始日目<input type="number" id="bulkFrom" min="1" value="1" inputmode="numeric"></label>
+              <label>終了日目<input type="number" id="bulkTo" min="1" value="7" inputmode="numeric"></label>
+              <label>形式
+                <select id="bulkFormat">
+                  <option value="line">LINE・個別メッセージ</option>
+                  <option value="short">ひとこと（短め）</option>
+                  <option value="sns">SNS投稿用</option>
+                </select>
+              </label>
+              <button type="button" class="btn primary" id="btnBulk">まとめて作る</button>
+            </div>
+            <div class="preset-row">
+              <span>範囲：</span>
+              <button type="button" class="chip" data-bulk="week">今日から1週間</button>
+              <button type="button" class="chip" data-bulk="phase">今の期すべて</button>
+              <button type="button" class="chip" data-bulk="all">全日程</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="output-head">
+              <span id="bulkInfo" class="muted"></span>
+              <div class="btn-row">
+                <button type="button" class="btn ghost small" id="btnBulkCopy">すべてコピー</button>
+                <button type="button" class="btn ghost small" id="btnBulkDownload">テキストで保存</button>
+              </div>
+            </div>
+            <div id="bulkList" class="bulk-list"></div>
+          </div>
+        </section>
+
+        <!-- 停滞期サポート -->
+        <section class="panel" data-panel="plateau">
+          <p class="lead">クライアントから相談があった場面を選ぶと、コーチ向けの解説と、そのまま送れるメッセージが表示されます。</p>
+          <div id="sceneGrid" class="scene-grid"></div>
+          <div id="sceneDetail" class="scene-detail" hidden>
+            <div class="cards two">
+              <div class="card">
+                <h3 id="sceneTitle"></h3>
+                <p class="feeling"><span>クライアントの気持ち</span><span id="sceneFeeling"></span></p>
+                <h4>考えられること</h4>
+                <ul id="sceneCauses"></ul>
+                <h4>対処と克服のヒント</h4>
+                <ul id="sceneTips"></ul>
+              </div>
+              <div class="card output-card">
+                <div class="output-head">
+                  <strong>送れるメッセージ</strong>
+                  <button type="button" class="btn ghost small" id="btnSceneRegen">別の結びにする</button>
+                </div>
+                <textarea id="sceneOutput" class="output" rows="16" aria-label="停滞期メッセージ"></textarea>
+                <p class="muted small" id="sceneCount"></p>
+                <div class="share-row" data-share-target="sceneOutput"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 運動ライブラリ -->
+        <section class="panel" data-panel="exercise">
+          <div class="card controls">
+            <div class="control-row">
+              <label>種類
+                <select id="exCat"><option value="">すべて</option></select>
+              </label>
+              <label>場所
+                <select id="exPlace"><option value="">すべて</option></select>
+              </label>
+              <label class="inline"><input type="checkbox" id="exFit" checked> このクライアントに合うものだけ</label>
+            </div>
+          </div>
+          <div id="exGrid" class="ex-grid"></div>
+        </section>
+
+        <!-- 知識 -->
+        <section class="panel" data-panel="knowledge">
+          <div class="card mech">
+            <h3>体のしくみ：脂肪はどうやって燃えるのか</h3>
+            <p class="muted">クライアントに説明する時の資料としてお使いください。数値は出典のあるものだけを載せています。</p>
+
+            <h4>1日に使うエネルギーの内訳</h4>
+            <div id="mechBar" class="mech-bar" role="img" aria-label="基礎代謝約60%、身体活動約30%、食事誘発性熱産生約10%"></div>
+            <dl id="mechBarLegend" class="mech-legend"></dl>
+
+            <h4>脂肪が燃えるまでの流れ</h4>
+            <ol id="mechSteps" class="mech-steps"></ol>
+
+            <h4>食事誘発性熱産生（食べた時に使われるエネルギー）</h4>
+            <p>食べたものを消化・吸収し、体の中で処理する時にもエネルギーが使われ、その一部は熱になります。食後に体が温かくなるのはこのためです。使われるエネルギーの割合は栄養素によって違い、たんぱく質がいちばん多くなります。</p>
+            <div id="mechDit" class="mech-dit"></div>
+
+            <h4>体重を減らすためにできること</h4>
+            <div id="mechActions" class="mech-actions"></div>
+
+            <h4>よくある誤解</h4>
+            <div id="mechMyths" class="mech-myths"></div>
+
+            <h4>出典</h4>
+            <ul id="mechSources" class="small muted"></ul>
+          </div>
+
+          <div class="card">
+            <h3>しくみをクライアントに伝える</h3>
+            <p class="hint">説明したいテーマを選ぶと、お名前入りのやさしい説明文ができます。</p>
+            <div class="chips" id="mechShareChips"></div>
+            <textarea id="mechOutput" class="output" rows="12" aria-label="しくみの説明文"></textarea>
+            <p class="muted small" id="mechCount"></p>
+            <div class="share-row" data-share-target="mechOutput"></div>
+          </div>
+
+          <div id="knowledgeList" class="knowledge-list"></div>
+          <div class="card">
+            <h3>今の期の食事・運動・心の持ち方</h3>
+            <div id="phaseKnowledge"></div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <footer class="app-footer">
+    <p>このツールが示す数値や情報は一般的な目安であり、医療的な診断や治療に代わるものではありません。持病のある方、妊娠中・授乳中の方などは、必ず医師にご相談ください。</p>
+  </footer>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <div id="printArea" class="print-area" aria-hidden="true"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/features.js"></script>
+  <script src="js/app-extras.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

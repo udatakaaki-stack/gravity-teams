@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>AI食事コーチ</title>
+  <meta name="description" content="食事の写真をアップするだけで、AIが栄養を推定し、1日の収支とアドバイスを届けます">
+  <meta name="theme-color" content="#f4e9f3">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AI食事コーチ">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <div id="statusBar" class="status-bar" hidden></div>
+
+    <!-- ========== ホーム ========== -->
+    <section class="view" data-view="home">
+      <header class="hello">
+        <h1 id="helloName">こんにちは 👋</h1>
+        <p id="helloMeta" class="muted"></p>
+        <p id="helloBody" class="muted small"></p>
+      </header>
+
+      <div id="verdictCard" class="verdict"></div>
+
+      <div class="card">
+        <h2 class="card-title">🔥 今日のカロリー収支</h2>
+        <div class="balance">
+          <div id="ring" class="ring"></div>
+          <dl class="balance-list" id="balanceList"></dl>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <h2 class="card-title">🍽 今日の食事一覧</h2>
+          <button type="button" class="link-btn" data-go="record">＋ 記録する</button>
+        </div>
+        <ul id="todayMeals" class="meal-list"></ul>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">💬 コーチに送る</h2>
+        <p class="muted small">今日の記録を文章にまとめて、LINE などでトレーナーに送れます。</p>
+        <div class="btn-row">
+          <button type="button" class="btn ghost" id="btnShareCopy">まとめをコピー</button>
+          <button type="button" class="btn line" id="btnShareLine">LINEで送る</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 栄養 ========== -->
+    <section class="view" data-view="nutrition" hidden>
+      <header class="page-head">
+        <h1>今日の栄養</h1>
+        <p class="muted small" id="nutriDate"></p>
+      </header>
+      <div class="card">
+        <div id="nutriBars" class="bars"></div>
+        <p class="muted small">目標は「日本人の食事摂取基準（2025年版）」の目標量の範囲から計算しています。食事の値は写真からの推定です。</p>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <span class="ai-badge">✨ AIコーチからのアドバイス</span>
+          <button type="button" class="link-btn" id="btnAdvice">更新する</button>
+        </div>
+        <div id="adviceBox" class="advice"></div>
+      </div>
+    </section>
+
+    <!-- ========== 記録 ========== -->
+    <section class="view" data-view="record" hidden>
+      <header class="page-head">
+        <h1>食事を記録 📷</h1>
+        <p class="muted small">写真をアップするだけで AI が解析します</p>
+      </header>
+
+      <div class="card" id="pickCard">
+        <div class="pick-row">
+          <label class="pick-btn">
+            <input type="file" accept="image/*" capture="environment" id="fileCamera" hidden>
+            <span class="pick-icon">📷</span><span>カメラで撮る</span>
+          </label>
+          <label class="pick-btn">
+            <input type="file" accept="image/*" id="fileLibrary" hidden>
+            <span class="pick-icon">🖼</span><span>写真を選ぶ</span>
+          </label>
+        </div>
+        <img id="preview" class="preview" alt="選んだ食事の写真" hidden>
+        <div class="field">
+          <span class="label">食事の種類</span>
+          <div class="chips" id="mealTypeChips"></div>
+        </div>
+        <div class="field-row">
+          <label class="field">日付<input type="date" id="recDate"></label>
+          <label class="field">時刻<input type="time" id="recTime"></label>
+        </div>
+        <label class="field">メモ（量や内容が分かれば。AIが優先して使います）
+          <input id="recMemo" placeholder="例：ご飯150g、ドレッシングなし">
+        </label>
+        <button type="button" class="btn primary block" id="btnAnalyze" disabled>✨ AIで解析する</button>
+        <button type="button" class="link-btn center" id="btnManual">写真なしで入力する</button>
+        <p class="muted small">写真は解析のために Anthropic 社の Claude API に送られます。人物が写らないように撮るのがおすすめです。</p>
+      </div>
+
+      <div id="loading" class="card loading" hidden>
+        <div class="spinner" aria-hidden="true"></div>
+        <p>AIが写真を解析しています…<br><span class="muted small">10〜30秒ほどかかることがあります</span></p>
+      </div>
+
+      <div id="resultCard" class="card result" hidden></div>
+    </section>
+
+    <!-- ========== 履歴 ========== -->
+    <section class="view" data-view="history" hidden>
+      <header class="page-head">
+        <h1>これまでの記録</h1>
+      </header>
+      <div class="card">
+        <h2 class="card-title">直近14日のカロリー</h2>
+        <div id="kcalChart" class="chart"></div>
+        <p class="muted small" id="kcalAvg"></p>
+      </div>
+      <div class="card">
+        <h2 class="card-title">体重</h2>
+        <form id="weightForm" class="field-row">
+          <label class="field">日付<input type="date" name="date" required></label>
+          <label class="field">体重（kg）<input type="number" name="weight" step="0.1" min="20" max="300" required inputmode="decimal"></label>
+          <button type="submit" class="btn primary">記録</button>
+        </form>
+        <div id="weightChart" class="chart"></div>
+        <p class="muted small" id="weightNote"></p>
+      </div>
+      <div class="card">
+        <h2 class="card-title">日ごとの記録</h2>
+        <div id="dayList" class="day-list"></div>
+      </div>
+    </section>
+
+    <!-- ========== プラン ========== -->
+    <section class="view" data-view="plan" hidden>
+      <header class="page-head">
+        <h1>プラン</h1>
+        <p class="muted small">あなたに合わせた1日の目標を計算します</p>
+      </header>
+      <form id="profileForm" class="card form" autocomplete="off">
+        <label class="field">お名前（呼び名）<input name="name" placeholder="例：はなこ"></label>
+        <div class="field-row">
+          <label class="field">性別（計算用）
+            <select name="sex"><option value="female">女性</option><option value="male">男性</option><option value="other">回答しない</option></select>
+          </label>
+          <label class="field">年齢<input type="number" name="age" min="10" max="100" inputmode="numeric"></label>
+        </div>
+        <div class="field-row">
+          <label class="field">身長（cm）<input type="number" name="height" step="0.1" min="100" max="230" inputmode="decimal"></label>
+          <label class="field">体重（kg）<input type="number" name="weight" step="0.1" min="20" max="300" inputmode="decimal"></label>
+        </div>
+        <label class="field">目標体重（kg）<input type="number" name="goalWeight" step="0.1" min="20" max="300" inputmode="decimal"></label>
+        <label class="field">活動量<select name="activity" id="activitySel"></select></label>
+        <label class="field">ペース<select name="pace" id="paceSel"></select></label>
+        <button type="submit" class="btn primary block">保存する</button>
+      </form>
+
+      <div class="card">
+        <h2 class="card-title">あなたの1日の目標</h2>
+        <div id="targetBox"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">AIの設定</h2>
+        <p id="aiStatus" class="small"></p>
+        <label class="field">合言葉（管理者が設定している場合のみ）<input id="passcode" type="password" autocomplete="off"></label>
+        <button type="button" class="btn ghost" id="btnPasscode">合言葉を保存</button>
+      </div>
+
+      <div class="card">
+        <h2 class="card-title">データ</h2>
+        <p class="muted small">記録はこのスマホのブラウザの中にだけ保存されます。機種変更の前などに書き出しておくと安心です。</p>
+        <div class="btn-row">
+          <button type="button" class="btn ghost" id="btnExport">書き出す</button>
+          <label class="btn ghost">読み込む<input type="file" id="fileImport" accept="application/json" hidden></label>
+          <button type="button" class="btn danger" id="btnReset">すべて削除</button>
+        </div>
+      </div>
+      <p class="disclaimer">表示される栄養の値は、写真からの推定です。実際の値とは異なることがあります。持病のある方、妊娠中・授乳中の方、成長期の方は、食事の調整について医師に相談してください。</p>
+    </section>
+  </div>
+
+  <!-- 食事の詳細（下から出るシート） -->
+  <div id="sheet" class="sheet" hidden>
+    <div class="sheet-bg" data-close></div>
+    <div class="sheet-body" role="dialog" aria-modal="true" aria-label="食事の詳細">
+      <button type="button" class="sheet-close" data-close aria-label="閉じる">✕</button>
+      <div id="sheetContent"></div>
+    </div>
+  </div>
+
+  <nav class="tabbar" aria-label="メニュー">
+    <button type="button" data-go="home" class="tab active"><span>🏠</span>ホーム</button>
+    <button type="button" data-go="nutrition" class="tab"><span>🥗</span>栄養</button>
+    <button type="button" data-go="record" class="tab plus" aria-label="食事を記録"><span>＋</span></button>
+    <button type="button" data-go="history" class="tab"><span>📅</span>履歴</button>
+    <button type="button" data-go="plan" class="tab"><span>🎯</span>プラン</button>
+  </nav>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <script src="js/calc.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

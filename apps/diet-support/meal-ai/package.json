@@ -1,0 +1,15 @@
+{
+  "name": "meal-ai-coach",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "食事の写真からAIが栄養を推定し、1日の収支とアドバイスを返すスマホ向けアプリ",
+  "scripts": {
+    "dev": "node server.mjs",
+    "demo": "MEAL_AI_MOCK=1 node server.mjs"
+  },
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0"
+  }
+}

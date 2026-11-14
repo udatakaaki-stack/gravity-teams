@@ -1,0 +1,6 @@
+# 自動で作られるファイル（保存しなくてよいもの）
+node_modules/
+__pycache__/
+.vercel/
+.data/
+.DS_Store
