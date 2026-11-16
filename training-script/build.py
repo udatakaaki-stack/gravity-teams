@@ -56,7 +56,7 @@ def speaking_report():
     rows = []
     for s in SLIDES:
         chars = sum(len(re.sub(r"（[^）]*）", "", t)) for k, t in s["blocks"]
-                    if k.startswith("say") or k == "qa")
+                    if k.startswith("say") or k in ("qa", "key"))
         waits = 0
         for k, t in s["blocks"]:
             if k.startswith("note"):
@@ -115,6 +115,8 @@ td.nowrap { white-space: nowrap; }
 .aim b { background: var(--blue); color:#fff; padding: 0 2mm; border-radius: 1mm; margin-right: 2mm; font-weight: normal; }
 p.say { margin: 0 0 2.6mm; }
 p.say.revised { border-left: 1.2mm solid var(--orange); padding-left: 2.5mm; }
+p.say.key { color: var(--navy); font-weight: bold; font-size: 12.5pt; }
+.tag.t-key { background: var(--navy); }
 .note, .prep { font-size: 9.8pt; color: var(--sub); margin: 0 0 2.6mm 3mm; line-height: 1.65; }
 .note.revised, .prep.revised { border-left: 1.2mm solid var(--orange); padding-left: 2.5mm; margin-left: 0; }
 .fill { background: var(--yellow); border: 0.4mm dashed #c9a400; border-radius: 1.5mm; padding: 2mm 3mm;
@@ -134,6 +136,8 @@ def block_html(kind, text):
     k = kind.rstrip("+")
     rev = ' <span class="tag rev">改訂</span>' if revised else ""
     cls = " revised" if revised else ""
+    if k == "key":
+        return f'<p class="say key"><span class="tag t-key">顔を上げて</span>{esc(text)}</p>'
     if k == "say":
         return f'<p class="say{cls}">{esc(text)}{rev}</p>'
     if k == "note":
@@ -191,11 +195,15 @@ def build_html():
       <div><span class='tag t-fill'>要記入</span>講師ご自身の言葉を書き込む欄です。</div>
       <div><span class='tag rev'>改訂</span>第3版で新しく加えた進め方です。</div>
       <div><span class='meta'><span class='clock'>開始 12:30</span></span>研修の開始から何分何秒の時点でこのスライドに入るかの目安です。</div>
-      <h3 style='margin-top:5mm'>話すときの心がけ</h3>
-      <div>・数字を出したら、一度ゆっくり繰り返す</div>
-      <div>・問いかけのあとは3秒ほど待ち、会場の顔を見る</div>
-      <div>・実技は先にやって見せ、そのあと全員で一緒に動く</div>
-      <div>・手元のタイマーと各スライドの「開始」時刻を見比べ、遅れていたら次のスライドの説明を短くする</div>
+      <div><span class='tag t-key'>顔を上げて</span>会場を見て言う一文です。ここだけは原稿から目を離します。</div>
+      <h3 style='margin-top:5mm'>原稿を見ながら話すときの心がけ</h3>
+      <div>・最初に「手元の原稿を見ながらお話しします」と断っておく（スライド1に入れてあります）</div>
+      <div>・原稿は胸の高さで持つか演台に置き、頭を深く下げない。1文読んだら、文の終わりで顔を上げる</div>
+      <div>・「顔を上げて」の一文は、会場の顔を見ながら、少しゆっくり言う</div>
+      <div>・問いかけのあとは3秒ほど待つ。指名はせず、うなずきや心の中で考えてもらう</div>
+      <div>・実技の間は台本を置き、デモ用カードを見る。見本を先に見せ、そのあと全員で一緒に動く</div>
+      <div>・参加者の体には触れない。気づいたことは言葉で伝える</div>
+      <div>・押していても早口にしない。時間配分のページの「削る順番」で調整する</div>
     </div></section>""")
 
     # スライドごと

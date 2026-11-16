@@ -11,7 +11,7 @@ import subprocess
 
 from build import esc, fmt_clock, fmt_len, part_of
 from content import PARTS, PRIVATE, SHORTCUTS, SLIDES, TITLE, TOTAL_MIN
-from cues import CUES, PAUSE_SLIDES
+from cues import CUES, DEMO_CARDS, PAUSE_SLIDES
 
 HERE = pathlib.Path(__file__).parent
 MM = 96 / 25.4            # 1mm あたりの CSS px
@@ -41,18 +41,21 @@ body {{ margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--i
          font-size:10pt; display:flex; gap:3mm; align-items:baseline; }}
 .band b {{ font-size:11.5pt; }}
 .band span {{ font-size:8.5pt; opacity:.95; }}
-.blk {{ display:grid; grid-template-columns:17mm 36mm 1fr; column-gap:3mm; padding:1.6mm 0;
+.blk {{ display:grid; grid-template-columns:15mm 28mm 1fr; column-gap:3mm; padding:1.8mm 0;
         border-bottom:0.25mm solid var(--line); }}
 .no {{ font-size:19pt; color:var(--orange); font-weight:bold; line-height:1; }}
 .clock {{ font-size:11pt; color:var(--navy); font-weight:bold; margin-top:1mm; }}
 .dur {{ font-size:8pt; color:var(--sub); }}
-.thumb img {{ width:36mm; border-radius:0.8mm; border:0.25mm solid var(--line); display:block; }}
+.thumb img {{ width:28mm; border-radius:0.8mm; border:0.25mm solid var(--line); display:block; }}
 .thumb .ttl {{ font-size:7.5pt; color:var(--sub); line-height:1.3; margin-top:0.8mm; }}
-.cue {{ font-size:12pt; color:var(--navy); font-weight:bold; line-height:1.5; margin-bottom:0.8mm; }}
+.cue {{ font-size:9.5pt; color:var(--blue); font-weight:bold; line-height:1.5; margin-bottom:1mm; }}
 .cue i {{ font-style:normal; color:var(--orange); margin:0 1.2mm; font-weight:normal; }}
-.full {{ font-size:8.6pt; line-height:1.55; color:#3c4855; }}
-.full p {{ margin:0 0 0.6mm; }}
-.full .nt {{ color:var(--sub); font-size:8pt; }}
+.full {{ font-size:11pt; line-height:1.7; color:var(--ink); }}
+.full p {{ margin:0 0 1.2mm; }}
+.full .key {{ font-weight:bold; color:var(--navy); font-size:11.5pt; border-left:1.2mm solid var(--navy); padding-left:2mm; }}
+.full .key b {{ display:inline-block; background:var(--navy); color:#fff; font-weight:normal; font-size:7.5pt; padding:0 1.2mm; border-radius:0.6mm; margin-right:1.5mm; vertical-align:2px; }}
+.full .card {{ background:var(--orange); color:#fff; font-size:10pt; padding:0.6mm 2mm; border-radius:0.8mm; display:inline-block; }}
+.full .nt {{ color:var(--sub); font-size:9pt; line-height:1.5; }}
 .full .nt b {{ background:var(--sub); color:#fff; font-weight:normal; padding:0 1.2mm; border-radius:0.6mm;
                margin-right:1mm; font-size:7pt; }}
 .full .fl {{ background:var(--yellow); padding:0.3mm 1.5mm; border-radius:0.6mm; color:var(--ink); }}
@@ -67,12 +70,26 @@ body {{ margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--i
 
 
 GUIDE = """<div class='guide'><h3>この台本の見方</h3>
-<div>・大きな字の一行（キーワード）だけを目で追い、話すのは自分の言葉で。下の小さな字は、詰まったときの控えです。</div>
-<div>・左の時刻は「研修開始から何分でこのスライドに入るか」。手元のタイマーと比べ、遅れていたら次の小さな字を読まずにキーワードだけで進めます。</div>
-<div>・各ページの左下に、めくるタイミングを書いています。<span class='tag' style='background:#f26a3f'>オレンジ</span>は動画・実技の最中やパートの切れ目で、手が空いているときにめくれます。<span class='tag' style='background:#1f3a5a'>紺</span>はそのスライドを話し終えたところでめくります。</div>
-<div>・右下に、めくった先の最初のスライドを書いています。めくる前に次の話の入り方を確かめられます。</div>
+<div>・黒い大きな字が読み上げる文です。1文ごとに改行してあるので、文の終わりで顔を上げます。</div>
+<div>・<span class='tag' style='background:#1f3a5a'>顔を上げて</span>の太字は、会場の顔を見ながら、少しゆっくり言う一文です。</div>
+<div>・各スライドの上の青い小さな行は、話の流れの要約です。読むところを見失ったら、ここで位置を確かめます。</div>
+<div>・<span class='tag' style='background:#f26a3f'>デモ用カード</span>の印があるスライドでは、台本を置き、別紙のデモ用カードを見て実技を進めます。</div>
+<div>・左の時刻は「研修開始から何分でこのスライドに入るか」の目安です。各ページの左下に、めくるタイミングを書いています（オレンジ＝手が空いているときにめくれる、紺＝話し終えたらめくる）。</div>
 <div>・{RESERVE_LINE}</div>
 </div>"""
+
+
+def sentences(text):
+    """読みやすいよう1文ずつに分ける（かっこの中の句点では切らない）"""
+    out, buf, depth = [], "", 0
+    for ch in text:
+        buf += ch
+        depth += ch in "（「『" ; depth -= ch in "）」』"
+        if ch == "。" and depth <= 0:
+            out.append(buf); buf = ""
+    if buf:
+        out.append(buf)
+    return out
 
 
 def reserve_line():
@@ -95,7 +112,9 @@ def block_html(s, first_of_part):
     for kind, text in s["blocks"]:
         k = kind.rstrip("+")
         if k == "say":
-            full.append(f"<p>{esc(text)}</p>")
+            full.append("<p>" + "<br>".join(esc(x) for x in sentences(text)) + "</p>")
+        elif k == "key":
+            full.append("<p class='key'><b>顔を上げて</b>" + "<br>".join(esc(x) for x in sentences(text)) + "</p>")
         elif k == "note":
             full.append(f"<p class='nt'><b>進行</b>{esc(text)}</p>")
         elif k == "prep":
@@ -105,6 +124,8 @@ def block_html(s, first_of_part):
         elif k == "qa":
             q, a = text.split("|")
             full.append(f"<p class='qa'><b>Q</b> {esc(q)}　<b>A</b> {esc(a)}</p>")
+    if s["no"] in DEMO_CARDS:
+        full.insert(0, f"<p><span class='card'>▶ デモ用カード「{esc(DEMO_CARDS[s['no']][0])}」を見て進める</span></p>")
     out.append(f"""<div class='blk'>
       <div><div class='no'>{s['no']:02d}</div><div class='clock'>{fmt_clock(s['_clock'])}</div>
            <div class='dur'>{fmt_len(s['sec'])}</div></div>
@@ -213,6 +234,42 @@ def main():
           "await b.close();})();")
     node(js, html_path.resolve().as_uri(), str(pdf))
     print(f"本番用PDF: {total}ページ")
+    build_cards()
+
+
+
+CARD_CSS = """
+@page { size: A4 landscape; margin: 12mm; }
+body { margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:#1f3a5a; }
+.card { height:184mm; break-after:page; display:flex; flex-direction:column; }
+.card:last-child { break-after:auto; }
+.top { display:flex; justify-content:space-between; align-items:baseline; border-bottom:1.2mm solid #f26a3f; padding-bottom:2mm; }
+.top h1 { margin:0; font-size:30pt; }
+.top span { font-size:16pt; color:#66727f; }
+ol { margin:5mm 0 0; padding-left:16mm; font-size:29pt; line-height:1.5; flex:1; }
+ol li { margin-bottom:2.5mm; }
+.say { margin-top:auto; background:#fff1b0; border-radius:2mm; padding:3mm 5mm; font-size:20pt; color:#26313d; }
+"""
+
+
+def build_cards():
+    cards = []
+    for no, (title, minutes, steps, line) in DEMO_CARDS.items():
+        items = "".join(f"<li>{esc(x)}</li>" for x in steps)
+        cards.append(f"<section class='card'><div class='top'><h1>{esc(title)}</h1>"
+                     f"<span>スライド{no}　約{minutes}分</span></div><ol>{items}</ol>"
+                     f"<div class='say'>{esc(line)}</div></section>")
+    html_path = HERE / "cards.html"
+    html_path.write_text(f"<!doctype html><html lang='ja'><head><meta charset='utf-8'><title>デモ用カード</title>"
+                         f"<style>{CARD_CSS}</style></head><body>{''.join(cards)}</body></html>", encoding="utf-8")
+    js = ("const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();"
+          "const p=await b.newPage();await p.goto(process.argv[1]);"
+          "const o=await p.$$eval('.card ol',e=>e.map((x,i)=>x.scrollHeight>x.clientHeight+1?i+1:0).filter(Boolean));"
+          "if(o.length){console.error('カードのはみ出し: '+o.join(','));process.exit(3);}"
+          "await p.pdf({path:process.argv[2],printBackground:true,preferCSSPageSize:true});"
+          "await b.close();})();")
+    node(js, html_path.resolve().as_uri(), str(HERE / "デモ用カード.pdf"))
+    print(f"デモ用カード: {len(cards)}枚")
 
 
 if __name__ == "__main__":
