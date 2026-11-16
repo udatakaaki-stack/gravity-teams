@@ -71,6 +71,7 @@ GUIDE = """<div class='guide'><h3>この台本の見方</h3>
 <div>・左の時刻は「研修開始から何分でこのスライドに入るか」。手元のタイマーと比べ、遅れていたら次の小さな字を読まずにキーワードだけで進めます。</div>
 <div>・各ページの左下に、めくるタイミングを書いています。<span class='tag' style='background:#f26a3f'>オレンジ</span>は動画・実技の最中やパートの切れ目で、手が空いているときにめくれます。<span class='tag' style='background:#1f3a5a'>紺</span>はそのスライドを話し終えたところでめくります。</div>
 <div>・右下に、めくった先の最初のスライドを書いています。めくる前に次の話の入り方を確かめられます。</div>
+<div>・本編は62:00で終わる計画です。そのあと8分が予備時間です。押したときは <b>46（質疑を2分に）→ 9（デモを2分に）→ 36 → 32 → 17・18 → 40</b> の順に削ると、合計で約7分縮みます。</div>
 </div>"""
 
 
@@ -184,7 +185,7 @@ def main():
             foot = (f"<div class='pfoot'>{turn}<span>次のページ ▸ スライド{nxt['no']}「{esc(nxt['title'])}」"
                     f"　{fmt_clock(nxt['_clock'])}〜</span></div>")
         else:
-            foot = "<div class='pfoot'><span>おわり</span><span>お疲れさまでした</span></div>"
+            foot = "<div class='pfoot'><span>本編おわり 62:00</span><span>ここから予備8分（〜70:00）</span></div>"
         extra = GUIDE if k == 0 else ""
         sheets.append(f"<section class='sheet'>{head}<div class='body'>{''.join(us[i:j])}{extra}</div>{foot}</section>")
         print(f"  {k+1}ページ: スライド{a['no']}〜{b['no']}（{sum(hs[i:j]):.0f}/{BODY_H}mm）"

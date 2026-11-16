@@ -4,7 +4,7 @@ import html
 import pathlib
 import re
 
-from content import (PARTS, PRE_CHECKS, REFERENCES, SCRIPT_CHANGES, SLIDE_FIXES,
+from content import (PARTS, PRE_CHECKS, REFERENCES, SCRIPT_CHANGES, SHORTCUTS, SLIDE_FIXES, TOTAL_MIN,
                      SLIDES, SPEAKER, SUBTITLE, TITLE)
 
 HERE = pathlib.Path(__file__).parent
@@ -46,7 +46,7 @@ def check_timing():
         if total != (end - start) * 60:
             problems.append(f"{num}{name}: 合計 {total}秒 / 枠 {(end-start)*60}秒")
     grand = sum(s["sec"] for s in SLIDES)
-    if grand != 3600:
+    if grand != PARTS[-1][3] * 60 or PARTS[-1][3] > TOTAL_MIN:
         problems.append(f"全体 {grand}秒")
     return problems
 
@@ -160,8 +160,8 @@ def build_html():
     </section>""")
 
     # 改訂のポイント
-    out.append("<section class='page'><h2 class='sec-title'>今回の改訂で直したところ</h2>"
-               "<p class='lead'>台本の中で直した箇所には、左側にオレンジの線と「改訂」の印を付けています。"
+    out.append("<section class='page'><h2 class='sec-title'>第2版で直したところ</h2>"
+               "<p class='lead'>第2版では読み上げ文をすべて短く言い切る形に書き直しました。新しく加えた進め方には、左側にオレンジの線と「改訂」の印を付けています。"
                "スライド（PowerPoint）側で直してほしい箇所は、巻末の「スライド修正リスト」にまとめました。</p>"
                "<table><tr><th>箇所</th><th>内容</th></tr>")
     for where, what in SCRIPT_CHANGES:
@@ -174,13 +174,21 @@ def build_html():
     for num, name, start, end, (a, b), aim in PARTS:
         out.append(f"<tr><td class='nowrap'>{start}〜{end}分</td><td class='nowrap'>{num} {esc(name)}</td>"
                    f"<td class='nowrap'>{a}〜{b}</td><td>{esc(aim)}</td></tr>")
+    end = PARTS[-1][3]
+    out.append(f"<tr><td class='nowrap'>{end}〜{TOTAL_MIN}分</td><td class='nowrap'>予備時間</td><td></td>"
+               f"<td>どこかが押したときの吸収に使います。押さなければ、質疑応答を延ばすか、早めに終わります。</td></tr>")
     out.append("</table>")
+    out.append("<h3 style='margin-top:5mm'>押したときに削る順番</h3><table><tr><th>スライド</th><th>やること</th><th>縮む時間</th></tr>")
+    for no, what, sec in SHORTCUTS:
+        no_s = "・".join(map(str, no)) if isinstance(no, tuple) else str(no)
+        out.append(f"<tr><td class='nowrap'>{no_s}</td><td>{esc(what)}</td><td class='nowrap'>{fmt_len(sec)}</td></tr>")
+    out.append(f"<tr><td></td><td>合計</td><td class='nowrap'>約{fmt_len(sum(x[2] for x in SHORTCUTS))}</td></tr></table>")
     out.append("""<div class='legend'><h3>台本の見方</h3>
       <div>ふつうの書体の文章は、そのまま声に出して読める話し言葉です。</div>
       <div><span class='tag t-note'>進行</span>動き、間の取り方、問いかけなどのメモです。読み上げません。</div>
       <div><span class='tag t-prep'>準備</span>本番前にやっておくことです。</div>
       <div><span class='tag t-fill'>要記入</span>講師ご自身の言葉を書き込む欄です。</div>
-      <div><span class='tag rev'>改訂</span>今回の改訂で追加・変更したところです。</div>
+      <div><span class='tag rev'>改訂</span>第2版で新しく加えた進め方です。</div>
       <div><span class='meta'><span class='clock'>開始 12:30</span></span>研修の開始から何分何秒の時点でこのスライドに入るかの目安です。</div>
       <h3 style='margin-top:5mm'>話すときの心がけ</h3>
       <div>・数字を出したら、一度ゆっくり繰り返す</div>
@@ -234,7 +242,7 @@ def main():
     probs = check_timing()
     if probs:
         raise SystemExit("時間の合計が合いません: " + " / ".join(probs))
-    print("時間配分: 各パート・全体ともに枠どおり（60分）")
+    print(f"時間配分: 各パート枠どおり（本編{PARTS[-1][3]}分＋予備{TOTAL_MIN - PARTS[-1][3]}分）")
     tight = [r for r in speaking_report() if r[3] > r[4] + 10]
     for no, chars, waits, need, sec in tight:
         print(f"  注意 スライド{no}: 読み上げ{chars}字＋待ち{waits}秒 ≒ {need}秒 / 目安{sec}秒")
