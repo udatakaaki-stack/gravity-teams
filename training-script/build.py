@@ -63,8 +63,9 @@ def speaking_report():
                 for n in re.findall(r"(\d+)秒(?:ほど待つ|計る)", t):
                     waits += int(n)
                 if "動画を再生" in t:
-                    m = re.search(r"(\d+)分以内", t)
-                    waits += int(m.group(1)) * 60 if m else 150
+                    m = re.search(r"(\d+)分(半)?以内", t)
+                    m2 = re.search(r"(\d+)秒以内", t)
+                    waits += (int(m.group(1)) * 60 + (30 if m.group(2) else 0)) if m else (int(m2.group(1)) if m2 else 150)
         need = chars / CHARS_PER_MIN * 60 + waits
         rows.append((s["no"], chars, waits, round(need), s["sec"]))
     return rows
@@ -160,8 +161,8 @@ def build_html():
     </section>""")
 
     # 改訂のポイント
-    out.append("<section class='page'><h2 class='sec-title'>第2版で直したところ</h2>"
-               "<p class='lead'>第2版では読み上げ文をすべて短く言い切る形に書き直しました。新しく加えた進め方には、左側にオレンジの線と「改訂」の印を付けています。"
+    out.append("<section class='page'><h2 class='sec-title'>第3版で直したところ</h2>"
+               "<p class='lead'>新しいスライド資料（56枚）に合わせて台本を作り直しました。新しく加えた進め方には、左側にオレンジの線と「改訂」の印を付けています。"
                "スライド（PowerPoint）側で直してほしい箇所は、巻末の「スライド修正リスト」にまとめました。</p>"
                "<table><tr><th>箇所</th><th>内容</th></tr>")
     for where, what in SCRIPT_CHANGES:
@@ -188,7 +189,7 @@ def build_html():
       <div><span class='tag t-note'>進行</span>動き、間の取り方、問いかけなどのメモです。読み上げません。</div>
       <div><span class='tag t-prep'>準備</span>本番前にやっておくことです。</div>
       <div><span class='tag t-fill'>要記入</span>講師ご自身の言葉を書き込む欄です。</div>
-      <div><span class='tag rev'>改訂</span>第2版で新しく加えた進め方です。</div>
+      <div><span class='tag rev'>改訂</span>第3版で新しく加えた進め方です。</div>
       <div><span class='meta'><span class='clock'>開始 12:30</span></span>研修の開始から何分何秒の時点でこのスライドに入るかの目安です。</div>
       <h3 style='margin-top:5mm'>話すときの心がけ</h3>
       <div>・数字を出したら、一度ゆっくり繰り返す</div>
