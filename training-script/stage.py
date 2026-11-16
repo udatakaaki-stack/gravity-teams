@@ -32,7 +32,7 @@ body {{ margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--i
 .phead {{ height:{HEAD_H}mm; display:flex; justify-content:space-between; align-items:center;
           font-size:9pt; color:var(--sub); border-bottom:0.4mm solid var(--navy); }}
 .phead b {{ color:var(--navy); font-size:10.5pt; }}
-.body {{ flex:1; padding-top:1.5mm; }}
+.body {{ flex:1; min-height:0; overflow:hidden; padding-top:1.5mm; }}
 .pfoot {{ height:{FOOT_H}mm; display:flex; align-items:center; justify-content:space-between;
           font-size:9.5pt; border-top:0.3mm solid var(--line); color:var(--sub); }}
 .pfoot .turn {{ background:var(--navy); color:#fff; padding:0.8mm 3mm; border-radius:1.2mm; }}
@@ -56,6 +56,7 @@ body {{ margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--i
 .full .key b {{ display:inline-block; background:var(--navy); color:#fff; font-weight:normal; font-size:7.5pt; padding:0 1.2mm; border-radius:0.6mm; margin-right:1.5mm; vertical-align:2px; }}
 .full .card {{ background:var(--orange); color:#fff; font-size:10pt; padding:0.6mm 2mm; border-radius:0.8mm; display:inline-block; }}
 .full .nt {{ color:var(--sub); font-size:9pt; line-height:1.5; }}
+.full .draft b {{ display:inline-block; background:var(--blue); color:#fff; font-weight:normal; font-size:7.5pt; padding:0 1.2mm; border-radius:0.6mm; margin-right:1.5mm; vertical-align:2px; }}
 .full .nt b {{ background:var(--sub); color:#fff; font-weight:normal; padding:0 1.2mm; border-radius:0.6mm;
                margin-right:1mm; font-size:7pt; }}
 .full .fl {{ background:var(--yellow); padding:0.3mm 1.5mm; border-radius:0.6mm; color:var(--ink); }}
@@ -69,7 +70,7 @@ body {{ margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--i
 """
 
 
-GUIDE = """<div class='guide'><h3>この台本の見方</h3>
+GUIDE = """<div class='guide'><h3>この台本の見方（本番前に一度お読みください）</h3>
 <div>・黒い大きな字が読み上げる文です。1文ごとに改行してあるので、文の終わりで顔を上げます。</div>
 <div>・<span class='tag' style='background:#1f3a5a'>顔を上げて</span>の太字は、会場の顔を見ながら、少しゆっくり言う一文です。</div>
 <div>・各スライドの上の青い小さな行は、話の流れの要約です。読むところを見失ったら、ここで位置を確かめます。</div>
@@ -113,6 +114,8 @@ def block_html(s, first_of_part):
         k = kind.rstrip("+")
         if k == "say":
             full.append("<p>" + "<br>".join(esc(x) for x in sentences(text)) + "</p>")
+        elif k == "draft":
+            full.append("<p class='draft'><b>仮</b>" + "<br>".join(esc(x) for x in sentences(text)) + "</p>")
         elif k == "key":
             full.append("<p class='key'><b>顔を上げて</b>" + "<br>".join(esc(x) for x in sentences(text)) + "</p>")
         elif k == "note":
@@ -158,6 +161,7 @@ def node(js, *args):
 def measure(us):
     path = HERE / "_measure.html"
     path.write_text(doc("<div class='measure'><div class='sheet'><div class='body'>" + "".join(us)
+                        + "<div class='unit'>" + GUIDE.replace("{RESERVE_LINE}", reserve_line()) + "</div>"
                         + "</div></div></div>"), encoding="utf-8")
     js = ("const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();"
           "const p=await b.newPage();await p.goto(process.argv[1]);await p.waitForLoadState('networkidle');"
@@ -165,10 +169,11 @@ def measure(us):
           "console.log(JSON.stringify(h));await b.close();})();")
     hs = json.loads(node(js, path.resolve().as_uri()))
     path.unlink()
-    return [h / MM for h in hs]
+    hs = [h / MM for h in hs]
+    return hs[:-1], hs[-1]   # 各スライドの高さ, 見方の欄の高さ
 
 
-def paginate(hs):
+def paginate(hs, last_extra=0.0):
     """ページ数を最小にしつつ、めくりやすい位置（動画・実技中、パートの切れ目）で区切る"""
     n = len(SLIDES)
     good = set(PAUSE_SLIDES) | {p[4][1] for p in PARTS}
@@ -177,7 +182,7 @@ def paginate(hs):
     prev = [0] * (n + 1)
     for j in range(1, n + 1):
         for i in range(j - 1, -1, -1):
-            if sum(hs[i:j]) > BODY_H:
+            if sum(hs[i:j]) + (last_extra if j == n else 0) > BODY_H:
                 break
             last = SLIDES[j - 1]["no"]
             cost = best[i] + 1 + (0 if (last in good or j == n) else 1.5)
@@ -191,11 +196,11 @@ def paginate(hs):
 
 def main():
     us = units()
-    hs = measure(us)
+    hs, guide_h = measure(us)
     too_big = [SLIDES[i]["no"] for i, h in enumerate(hs) if h > BODY_H]
     if too_big:
         raise SystemExit(f"1ページに入らないスライド: {too_big}")
-    groups = paginate(hs)
+    groups = paginate(hs, guide_h)
     total = len(groups)
     sheets = []
     for k, (i, j) in enumerate(groups):
@@ -218,7 +223,7 @@ def main():
             end = PARTS[-1][3]
             foot = (f"<div class='pfoot'><span>本編おわり {end}:00</span>"
                     f"<span>ここから予備{TOTAL_MIN - end}分（〜{TOTAL_MIN}:00）</span></div>")
-        extra = GUIDE.replace("{RESERVE_LINE}", reserve_line()) if k == 0 else ""
+        extra = GUIDE.replace("{RESERVE_LINE}", reserve_line()) if k + 1 == total else ""
         sheets.append(f"<section class='sheet'>{head}<div class='body'>{''.join(us[i:j])}{extra}</div>{foot}</section>")
         print(f"  {k+1}ページ: スライド{a['no']}〜{b['no']}（{sum(hs[i:j]):.0f}/{BODY_H}mm）"
               + (f" めくり＝{PAUSE_SLIDES.get(b['no'], '切れ目')}" if k + 1 < total else ""))

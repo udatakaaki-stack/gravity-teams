@@ -56,7 +56,7 @@ def speaking_report():
     rows = []
     for s in SLIDES:
         chars = sum(len(re.sub(r"（[^）]*）", "", t)) for k, t in s["blocks"]
-                    if k.startswith("say") or k in ("qa", "key"))
+                    if k.startswith("say") or k in ("qa", "key", "draft"))
         waits = 0
         for k, t in s["blocks"]:
             if k.startswith("note"):
@@ -117,6 +117,8 @@ p.say { margin: 0 0 2.6mm; }
 p.say.revised { border-left: 1.2mm solid var(--orange); padding-left: 2.5mm; }
 p.say.key { color: var(--navy); font-weight: bold; font-size: 12.5pt; }
 .tag.t-key { background: var(--navy); }
+p.say.draft { background:#eaf4fb; border:0.4mm dashed var(--blue); border-radius:1.5mm; padding:1.5mm 3mm; }
+.tag.t-draft { background: var(--blue); }
 .note, .prep { font-size: 9.8pt; color: var(--sub); margin: 0 0 2.6mm 3mm; line-height: 1.65; }
 .note.revised, .prep.revised { border-left: 1.2mm solid var(--orange); padding-left: 2.5mm; margin-left: 0; }
 .fill { background: var(--yellow); border: 0.4mm dashed #c9a400; border-radius: 1.5mm; padding: 2mm 3mm;
@@ -136,6 +138,8 @@ def block_html(kind, text):
     k = kind.rstrip("+")
     rev = ' <span class="tag rev">改訂</span>' if revised else ""
     cls = " revised" if revised else ""
+    if k == "draft":
+        return f'<p class="say draft"><span class="tag t-draft">仮の文案</span>{esc(text)}</p>'
     if k == "key":
         return f'<p class="say key"><span class="tag t-key">顔を上げて</span>{esc(text)}</p>'
     if k == "say":
@@ -192,7 +196,8 @@ def build_html():
       <div>ふつうの書体の文章は、そのまま声に出して読める話し言葉です。</div>
       <div><span class='tag t-note'>進行</span>動き、間の取り方、問いかけなどのメモです。読み上げません。</div>
       <div><span class='tag t-prep'>準備</span>本番前にやっておくことです。</div>
-      <div><span class='tag t-fill'>要記入</span>講師ご自身の言葉を書き込む欄です。</div>
+      <div><span class='tag t-fill'>要記入</span>講師ご自身の言葉で補う欄です（主に名前）。</div>
+      <div><span class='tag t-draft'>仮の文案</span>資料から推測して補った文です。本番前に事実と合っているか確かめてください。</div>
       <div><span class='tag rev'>改訂</span>第3版で新しく加えた進め方です。</div>
       <div><span class='meta'><span class='clock'>開始 12:30</span></span>研修の開始から何分何秒の時点でこのスライドに入るかの目安です。</div>
       <div><span class='tag t-key'>顔を上げて</span>会場を見て言う一文です。ここだけは原稿から目を離します。</div>

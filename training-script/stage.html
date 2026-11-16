@@ -10,7 +10,7 @@ body { margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--in
 .phead { height:7mm; display:flex; justify-content:space-between; align-items:center;
           font-size:9pt; color:var(--sub); border-bottom:0.4mm solid var(--navy); }
 .phead b { color:var(--navy); font-size:10.5pt; }
-.body { flex:1; padding-top:1.5mm; }
+.body { flex:1; min-height:0; overflow:hidden; padding-top:1.5mm; }
 .pfoot { height:9mm; display:flex; align-items:center; justify-content:space-between;
           font-size:9.5pt; border-top:0.3mm solid var(--line); color:var(--sub); }
 .pfoot .turn { background:var(--navy); color:#fff; padding:0.8mm 3mm; border-radius:1.2mm; }
@@ -34,6 +34,7 @@ body { margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--in
 .full .key b { display:inline-block; background:var(--navy); color:#fff; font-weight:normal; font-size:7.5pt; padding:0 1.2mm; border-radius:0.6mm; margin-right:1.5mm; vertical-align:2px; }
 .full .card { background:var(--orange); color:#fff; font-size:10pt; padding:0.6mm 2mm; border-radius:0.8mm; display:inline-block; }
 .full .nt { color:var(--sub); font-size:9pt; line-height:1.5; }
+.full .draft b { display:inline-block; background:var(--blue); color:#fff; font-weight:normal; font-size:7.5pt; padding:0 1.2mm; border-radius:0.6mm; margin-right:1.5mm; vertical-align:2px; }
 .full .nt b { background:var(--sub); color:#fff; font-weight:normal; padding:0 1.2mm; border-radius:0.6mm;
                margin-right:1mm; font-size:7pt; }
 .full .fl { background:var(--yellow); padding:0.3mm 1.5mm; border-radius:0.6mm; color:var(--ink); }
@@ -44,7 +45,7 @@ body { margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--in
           font-size:9pt; line-height:1.65; }
 .guide h3 { margin:0 0 1mm; font-size:10.5pt; color:var(--navy); }
 .guide .tag { display:inline-block; color:#fff; border-radius:0.8mm; padding:0 1.5mm; font-size:8pt; }
-</style></head><body><section class='sheet'><div class='phead'><div><b>スライド 1〜5</b>　0:00〜5:00</div><div>少年期に大切な 姿勢・休息・動き・視る力（本番用）　1 / 14</div></div><div class='body'><div class='unit'><div class='band'><b>① 導入</b>0:00〜5:00<span>「今日の話は、自分の団の子の話だ」と感じてもらいます。</span></div><div class='blk'>
+</style></head><body><section class='sheet'><div class='phead'><div><b>スライド 1〜4</b>　0:00〜4:00</div><div>少年期に大切な 姿勢・休息・動き・視る力（本番用）　1 / 14</div></div><div class='body'><div class='unit'><div class='band'><b>① 導入</b>0:00〜5:00<span>「今日の話は、自分の団の子の話だ」と感じてもらいます。</span></div><div class='blk'>
       <div><div class='no'>01</div><div class='clock'>0:00</div>
            <div class='dur'>30秒</div></div>
       <div class='thumb'><img src='slides/s-01.png'><div class='ttl'>表紙</div></div>
@@ -53,7 +54,7 @@ body { margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--in
       <div><div class='no'>02</div><div class='clock'>0:30</div>
            <div class='dur'>1分</div></div>
       <div class='thumb'><img src='slides/s-02.png'><div class='ttl'>自己紹介</div></div>
-      <div><div class='cue'><span class='seg'>自己紹介</span><i>▸</i><span class='seg'>名前と今の仕事</span><i>▸</i><span class='seg'>資格は2つだけ（1分以内）</span></div><div class='full'><p>はじめに、簡単に自己紹介をさせてください。</p><p><span class='fl'>（名前と、今の仕事をひとことで）</span></p><p><span class='fl'>（資格は全部読まず、今日の話に関係するものを2つほど）</span></p><p class='nt'><b>進行</b>資格の一覧は読み上げず、「詳しくはスライドのとおりです」で次へ。ここで1分を超えないように</p></div></div>
+      <div><div class='cue'><span class='seg'>自己紹介</span><i>▸</i><span class='seg'>理事・チーフトレーナー</span><i>▸</i><span class='seg'>資格は2つだけ（1分以内）</span></div><div class='full'><p>はじめに、簡単に自己紹介をさせてください。</p><p><span class='fl'>（名前）です。</span></p><p class='draft'><b>仮</b>都城スポーツクラブの理事で、アトレタシエロでチーフトレーナーをしています。</p><p><span class='fl'>（出身地など、話したい方は口頭でひとこと）</span></p><p class='draft'><b>仮</b>資格はスライドのとおりですが、今日の話に関係するところでは、健康運動指導士と、スポーツビジョンのマスターインストラクターをしています。<br>子どもたちの体づくりと、見る力の両方に関わっています。</p><p class='nt'><b>進行</b>資格の一覧は読み上げず、「詳しくはスライドのとおりです」で次へ。ここで1分を超えないように</p></div></div>
     </div></div><div class='unit'><div class='blk'>
       <div><div class='no'>03</div><div class='clock'>1:30</div>
            <div class='dur'>1分</div></div>
@@ -64,19 +65,12 @@ body { margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--in
            <div class='dur'>1分半</div></div>
       <div class='thumb'><img src='slides/s-04.png'><div class='ttl'>子どもの「できない」</div></div>
       <div><div class='cue'><span class='seg'>捕れない・転ぶ・崩れる子、いませんか（3秒）</span><i>▸</i><span class='seg'>原因は量だけ？</span><i>▸</i><span class='seg'>硬さ・疲れ・見え方</span></div><div class='full'><p class='key'><b>顔を上げて</b>まず、ひとつ質問です。<br>ボールが捕れない子。<br>すぐ転ぶ子。<br>フォームが崩れる子。<br>皆さんの団にもいませんか。</p><p class='nt'><b>進行</b>3秒ほど待ち、会場の顔を見る</p><p>そんなとき、つい「もっと練習しよう」と言ってしまいます。</p><p>でも原因は、練習の量だけではないかもしれません。<br>体の硬さ、疲れ、そして見え方。<br>目に見えない理由が隠れていることがあります。</p></div></div>
-    </div></div><div class='unit'><div class='blk'>
+    </div></div></div><div class='pfoot'><span class='turn'>スライド4を話し終えたらめくる</span><span>次のページ ▸ スライド5「子どもの体は、大人を小さくしたものではない」　4:00〜</span></div></section><section class='sheet'><div class='phead'><div><b>スライド 5〜8</b>　4:00〜8:00</div><div>少年期に大切な 姿勢・休息・動き・視る力（本番用）　2 / 14</div></div><div class='body'><div class='unit'><div class='blk'>
       <div><div class='no'>05</div><div class='clock'>4:00</div>
            <div class='dur'>1分</div></div>
       <div class='thumb'><img src='slides/s-05.png'><div class='ttl'>子どもの体は、大人を小さくしたものではない</div></div>
       <div><div class='cue'><span class='seg'>大人の縮小版ではない</span><i>▸</i><span class='seg'>骨は伸び途中・筋肉は追いつかない・見る力も育ち途中</span><i>▸</i><span class='seg'>中学・高校の土台</span></div><div class='full'><p>子どもの体は、大人を小さくしたものではありません。</p><p>骨は伸びている途中。<br>筋肉は、それにまだ追いついていない。<br>見る力も、まだ育っている途中です。</p><p>だから、この時期の体づくりが、中学、高校、その先の土台になります。</p></div></div>
-    </div></div><div class='guide'><h3>この台本の見方</h3>
-<div>・黒い大きな字が読み上げる文です。1文ごとに改行してあるので、文の終わりで顔を上げます。</div>
-<div>・<span class='tag' style='background:#1f3a5a'>顔を上げて</span>の太字は、会場の顔を見ながら、少しゆっくり言う一文です。</div>
-<div>・各スライドの上の青い小さな行は、話の流れの要約です。読むところを見失ったら、ここで位置を確かめます。</div>
-<div>・<span class='tag' style='background:#f26a3f'>デモ用カード</span>の印があるスライドでは、台本を置き、別紙のデモ用カードを見て実技を進めます。</div>
-<div>・左の時刻は「研修開始から何分でこのスライドに入るか」の目安です。各ページの左下に、めくるタイミングを書いています（オレンジ＝手が空いているときにめくれる、紺＝話し終えたらめくる）。</div>
-<div>・本編は63:00で終わる計画です。そのあと7分が予備時間です。押したときは <b>55 → 9 → 20・25 → 43 → 37 → 15・16</b> の順に削ると、合計で約7分縮みます（削り方は準備用の台本の時間配分のページ）。</div>
-</div></div><div class='pfoot'><span class='turn easy'>パートの切れ目：次のパートに入る前にめくる</span><span>次のページ ▸ スライド6「姿勢（扉）」　5:00〜</span></div></section><section class='sheet'><div class='phead'><div><b>スライド 6〜8</b>　5:00〜8:00</div><div>少年期に大切な 姿勢・休息・動き・視る力（本番用）　2 / 14</div></div><div class='body'><div class='unit'><div class='band'><b>② 姿勢</b>5:00〜21:00<span>立つ姿勢の見方とチェックを、デモンストレーションで体感してもらいます（約10分）。「硬いのは成長のしるし。大人が気づく」を持ち帰ってもらいます。</span></div><div class='blk'>
+    </div></div><div class='unit'><div class='band'><b>② 姿勢</b>5:00〜21:00<span>立つ姿勢の見方とチェックを、デモンストレーションで体感してもらいます（約10分）。「硬いのは成長のしるし。大人が気づく」を持ち帰ってもらいます。</span></div><div class='blk'>
       <div><div class='no'>06</div><div class='clock'>5:00</div>
            <div class='dur'>30秒</div></div>
       <div class='thumb'><img src='slides/s-06.png'><div class='ttl'>姿勢（扉）</div></div>
@@ -150,32 +144,32 @@ body { margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--in
       <div><div class='no'>20</div><div class='clock'>28:30</div>
            <div class='dur'>15秒</div></div>
       <div class='thumb'><img src='slides/s-20.png'><div class='ttl'>実技の写真（1）</div></div>
-      <div><div class='cue'><span class='seg'>実際の練習の様子（写真は流すだけ）</span></div><div class='full'><p>実際の練習の様子です。</p><p class='nt'><b>進行</b>スライド20〜25は、全員が動いている間に流す写真。立ったまま、短く紹介するだけでよい</p></div></div>
+      <div><div class='cue'><span class='seg'>実際の練習の様子</span><i>▸</i><span class='seg'>座って体をほぐす</span></div><div class='full'><p class='draft'><b>仮</b>実際の少年団の練習の様子です。<br>まずは座って、体をほぐすところから始めています。</p><p class='nt'><b>進行</b>スライド20〜25は、全員が動いている間に流す写真。立ったまま、短く紹介するだけでよい</p></div></div>
     </div></div></div><div class='pfoot'><span class='turn'>スライド20を話し終えたらめくる</span><span>次のページ ▸ スライド21「実技の写真（2）」　28:45〜</span></div></section><section class='sheet'><div class='phead'><div><b>スライド 21〜26</b>　28:45〜34:00</div><div>少年期に大切な 姿勢・休息・動き・視る力（本番用）　7 / 14</div></div><div class='body'><div class='unit'><div class='blk'>
       <div><div class='no'>21</div><div class='clock'>28:45</div>
            <div class='dur'>15秒</div></div>
       <div class='thumb'><img src='slides/s-21.png'><div class='ttl'>実技の写真（2）</div></div>
-      <div><div class='cue'><span class='seg'>写真のポイントをひとこと</span></div><div class='full'><p><span class='fl'>（写真のポイントをひとこと）</span></p></div></div>
+      <div><div class='cue'><span class='seg'>片ひざのランジ</span><i>▸</i><span class='seg'>上半身まっすぐ</span></div><div class='full'><p class='draft'><b>仮</b>片ひざをついて、前に踏み出すランジの形です。<br>腰に手を当てて、上半身をまっすぐに保っています。</p></div></div>
     </div></div><div class='unit'><div class='blk'>
       <div><div class='no'>22</div><div class='clock'>29:00</div>
            <div class='dur'>15秒</div></div>
       <div class='thumb'><img src='slides/s-22.png'><div class='ttl'>実技の写真（3）</div></div>
-      <div><div class='cue'><span class='seg'>写真のポイントをひとこと</span></div><div class='full'><p><span class='fl'>（写真のポイントをひとこと）</span></p></div></div>
+      <div><div class='cue'><span class='seg'>足の裏を合わせて座る</span><i>▸</i><span class='seg'>指導者も輪の中に</span></div><div class='full'><p class='draft'><b>仮</b>足の裏を合わせて座る形です。<br>指導者も輪の中に入って一緒にやると、子どもたちの様子がよく見えます。</p></div></div>
     </div></div><div class='unit'><div class='blk'>
       <div><div class='no'>23</div><div class='clock'>29:15</div>
            <div class='dur'>15秒</div></div>
       <div class='thumb'><img src='slides/s-23.png'><div class='ttl'>実技の写真（4）</div></div>
-      <div><div class='cue'><span class='seg'>写真のポイントをひとこと</span></div><div class='full'><p><span class='fl'>（写真のポイントをひとこと）</span></p></div></div>
+      <div><div class='cue'><span class='seg'>足を伸ばして前に倒す</span><i>▸</i><span class='seg'>痛いところまでは倒さない</span></div><div class='full'><p class='draft'><b>仮</b>足を前に伸ばして座り、体を前に倒す形です。<br>痛いところまで倒さないよう声をかけます。</p></div></div>
     </div></div><div class='unit'><div class='blk'>
       <div><div class='no'>24</div><div class='clock'>29:30</div>
            <div class='dur'>15秒</div></div>
       <div class='thumb'><img src='slides/s-24.png'><div class='ttl'>実技の写真（5）</div></div>
-      <div><div class='cue'><span class='seg'>写真のポイントをひとこと</span></div><div class='full'><p><span class='fl'>（写真のポイントをひとこと）</span></p></div></div>
+      <div><div class='cue'><span class='seg'>片足立ちのもも上げ</span><i>▸</i><span class='seg'>ふらつきも手がかり</span></div><div class='full'><p class='draft'><b>仮</b>片足で立つもも上げです。<br>ふらつく子もいますが、それも今の体の状態を知る手がかりになります。</p></div></div>
     </div></div><div class='unit'><div class='blk'>
       <div><div class='no'>25</div><div class='clock'>29:45</div>
            <div class='dur'>15秒</div></div>
       <div class='thumb'><img src='slides/s-25.png'><div class='ttl'>実技の写真（6）</div></div>
-      <div><div class='cue'><span class='seg'>写真のポイントをひとこと</span></div><div class='full'><p><span class='fl'>（写真のポイントをひとこと）</span></p></div></div>
+      <div><div class='cue'><span class='seg'>しゃがんで両手を上へ</span><i>▸</i><span class='seg'>声を出してリズムよく</span></div><div class='full'><p class='draft'><b>仮</b>しゃがんで両手を上に伸ばす動きです。<br>みんなで声を出しながら、リズムよく行います。</p></div></div>
     </div></div><div class='unit'><div class='blk'>
       <div><div class='no'>26</div><div class='clock'>30:00</div>
            <div class='dur'>4分</div></div>
@@ -195,7 +189,7 @@ body { margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--in
       <div><div class='no'>29</div><div class='clock'>38:30</div>
            <div class='dur'>1分</div></div>
       <div class='thumb'><img src='slides/s-29.png'><div class='ttl'>先輩の声から考える</div></div>
-      <div><div class='cue'><span class='seg'>印象の一言を引用</span><i>▸</i><span class='seg'>1〜2人に聞く</span><i>▸</i><span class='seg'>「やっておけばよかった」＝「今ならできる」</span></div><div class='full'><p>いかがでしたか。</p><p><span class='fl'>「　　　　　　　　　　　　」という言葉がありました。</span></p><p>うちの団の子にも当てはまりそうだな、と感じた方は、うなずいていただくだけで結構です。</p><p class='nt'><b>進行</b>指名はしない。うなずきが見えたら「ありがとうございます」と受けて先へ</p><p class='key'><b>顔を上げて</b>先輩の「やっておけばよかった」は、今の子どもたちにとっての「今ならできる」です。</p></div></div>
+      <div><div class='cue'><span class='seg'>いかがでしたか</span><i>▸</i><span class='seg'>心に残った言葉は？</span><i>▸</i><span class='seg'>うなずくだけでOK</span><i>▸</i><span class='seg'>「やっておけばよかった」＝「今ならできる」</span></div><div class='full'><p>いかがでしたか。</p><p class='draft'><b>仮</b>先輩たちの言葉の中で、皆さんの心に残ったものはありましたか。</p><p class='nt'><b>進行</b>動画の中で特に印象に残った一言があれば、ここで「動画の中で『〇〇』という言葉がありました」と引用してもよい</p><p>うちの団の子にも当てはまりそうだな、と感じた方は、うなずいていただくだけで結構です。</p><p class='nt'><b>進行</b>指名はしない。うなずきが見えたら「ありがとうございます」と受けて先へ</p><p class='key'><b>顔を上げて</b>先輩の「やっておけばよかった」は、今の子どもたちにとっての「今ならできる」です。</p></div></div>
     </div></div><div class='unit'><div class='blk'>
       <div><div class='no'>30</div><div class='clock'>39:30</div>
            <div class='dur'>30秒</div></div>
@@ -255,7 +249,7 @@ body { margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--in
       <div><div class='no'>41</div><div class='clock'>47:00</div>
            <div class='dur'>45秒</div></div>
       <div class='thumb'><img src='slides/s-41.png'><div class='ttl'>現代の子ども達の課題</div></div>
-      <div><div class='cue'><span class='seg'>視神経は10歳ごろまで（記入欄）</span><i>▸</i><span class='seg'>画面＝近くにピント＝目の緊張</span><i>▸</i><span class='seg'>目と脳は休んでいない</span></div><div class='full'><p>今の子どもたちには、課題があります。</p><p><span class='fl'>視神経は10歳ごろまで（何が10歳ごろまでなのかを、出典に沿ってひとことで）</span></p><p>ゲームやスマホなど、画面を見ているとき、目は近くにピントを合わせ続けています。<br>それが、目の緊張につながります。<br>画面を見ている間、目と脳は休んでいません。</p></div></div>
+      <div><div class='cue'><span class='seg'>目の働きが育つのは10歳ごろまで（要確認）</span><i>▸</i><span class='seg'>画面＝近くにピント＝目の緊張</span><i>▸</i><span class='seg'>目と脳は休んでいない</span></div><div class='full'><p>今の子どもたちには、課題があります。</p><p class='draft'><b>仮</b>目の働きが大きく育つ大切な時期は、10歳ごろまでといわれています。</p><p>ゲームやスマホなど、画面を見ているとき、目は近くにピントを合わせ続けています。<br>それが、目の緊張につながります。<br>画面を見ている間、目と脳は休んでいません。</p></div></div>
     </div></div><div class='unit'><div class='blk'>
       <div><div class='no'>42</div><div class='clock'>47:45</div>
            <div class='dur'>45秒</div></div>
@@ -285,7 +279,7 @@ body { margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--in
       <div><div class='no'>47</div><div class='clock'>52:15</div>
            <div class='dur'>45秒</div></div>
       <div class='thumb'><img src='slides/s-47.png'><div class='ttl'>写真</div></div>
-      <div><div class='cue'><span class='seg'>写真の説明（自分の言葉で2〜3文）</span></div><div class='full'><p><span class='fl'>（この写真で紹介する取り組みや機器の説明。講師自身の言葉で2〜3文）</span></p></div></div>
+      <div><div class='cue'><span class='seg'>見て、すばやく手でタッチするトレーニング</span><i>▸</i><span class='seg'>眼と手の協応を遊び感覚で</span></div><div class='full'><p class='draft'><b>仮</b>これは、画面に出てくる光や合図を目でとらえて、すばやく手でタッチするトレーニングの様子です。</p><p class='draft'><b>仮</b>先ほどの「眼と手の協応」、見たものに手で素早く反応する力を、遊び感覚で育てることができます。</p></div></div>
     </div></div><div class='unit'><div class='blk'>
       <div><div class='no'>48</div><div class='clock'>53:00</div>
            <div class='dur'>15秒</div></div>
@@ -330,5 +324,12 @@ body { margin:0; font-family:"IPAPGothic","IPAGothic",sans-serif; color:var(--in
       <div><div class='no'>56</div><div class='clock'>62:30</div>
            <div class='dur'>30秒</div></div>
       <div class='thumb'><img src='slides/s-56.png'><div class='ttl'>ご清聴ありがとうございました</div></div>
-      <div><div class='cue'><span class='seg'>お礼</span><i>▸</i><span class='seg'>合言葉をもう一度</span><i>▸</i><span class='seg'>名乗って一礼</span></div><div class='full'><p class='key'><b>顔を上げて</b>最後までありがとうございました。<br>「練習前は動的、練習後は静的」。<br>この合言葉だけでも、明日、子どもたちに伝えてください。</p><p><span class='fl'>（所属と名前を添えて）ありがとうございました。</span></p><p class='nt'><b>進行</b>一礼</p></div></div>
-    </div></div></div><div class='pfoot'><span>本編おわり 63:00</span><span>ここから予備7分（〜70:00）</span></div></section></body></html>
+      <div><div class='cue'><span class='seg'>お礼</span><i>▸</i><span class='seg'>合言葉をもう一度</span><i>▸</i><span class='seg'>名乗って一礼</span></div><div class='full'><p class='key'><b>顔を上げて</b>最後までありがとうございました。<br>「練習前は動的、練習後は静的」。<br>この合言葉だけでも、明日、子どもたちに伝えてください。</p><p><span class='fl'>都城スポーツクラブシエロ、アトレタビジョンの（名前）でした。ありがとうございました。</span></p><p class='nt'><b>進行</b>一礼</p></div></div>
+    </div></div><div class='guide'><h3>この台本の見方（本番前に一度お読みください）</h3>
+<div>・黒い大きな字が読み上げる文です。1文ごとに改行してあるので、文の終わりで顔を上げます。</div>
+<div>・<span class='tag' style='background:#1f3a5a'>顔を上げて</span>の太字は、会場の顔を見ながら、少しゆっくり言う一文です。</div>
+<div>・各スライドの上の青い小さな行は、話の流れの要約です。読むところを見失ったら、ここで位置を確かめます。</div>
+<div>・<span class='tag' style='background:#f26a3f'>デモ用カード</span>の印があるスライドでは、台本を置き、別紙のデモ用カードを見て実技を進めます。</div>
+<div>・左の時刻は「研修開始から何分でこのスライドに入るか」の目安です。各ページの左下に、めくるタイミングを書いています（オレンジ＝手が空いているときにめくれる、紺＝話し終えたらめくる）。</div>
+<div>・本編は63:00で終わる計画です。そのあと7分が予備時間です。押したときは <b>55 → 9 → 20・25 → 43 → 37 → 15・16</b> の順に削ると、合計で約7分縮みます（削り方は準備用の台本の時間配分のページ）。</div>
+</div></div><div class='pfoot'><span>本編おわり 63:00</span><span>ここから予備7分（〜70:00）</span></div></section></body></html>

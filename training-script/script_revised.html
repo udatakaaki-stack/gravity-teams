@@ -43,6 +43,8 @@ p.say { margin: 0 0 2.6mm; }
 p.say.revised { border-left: 1.2mm solid var(--orange); padding-left: 2.5mm; }
 p.say.key { color: var(--navy); font-weight: bold; font-size: 12.5pt; }
 .tag.t-key { background: var(--navy); }
+p.say.draft { background:#eaf4fb; border:0.4mm dashed var(--blue); border-radius:1.5mm; padding:1.5mm 3mm; }
+.tag.t-draft { background: var(--blue); }
 .note, .prep { font-size: 9.8pt; color: var(--sub); margin: 0 0 2.6mm 3mm; line-height: 1.65; }
 .note.revised, .prep.revised { border-left: 1.2mm solid var(--orange); padding-left: 2.5mm; margin-left: 0; }
 .fill { background: var(--yellow); border: 0.4mm dashed #c9a400; border-radius: 1.5mm; padding: 2mm 3mm;
@@ -69,6 +71,7 @@ ul.checks { padding-left: 5mm; } ul.checks li { margin-bottom: 2mm; }
 <tr><td class='nowrap'>参加者への配慮</td><td>指名して答えさせる場面をなくし、うなずきや心の中で考えてもらう形にしました。2人組のチェックは「ご自分で確かめるだけでも大丈夫」とし、参加者の体には触れないことを進行メモに入れました。床に寝るのに抵抗がある方への言い方も変えています。</td></tr>
 <tr><td class='nowrap'>動画のトラブル</td><td>動画が流れないときに言う一言を、スライド28と44に入れました。</td></tr>
 <tr><td class='nowrap'>デモ用カード</td><td>実技（スライド9・10・19・26）の手順を大きな字で1枚ずつまとめた「デモ用カード」を別に作りました。実技の間は台本を置き、カードを見るだけで進められます。</td></tr>
+<tr><td class='nowrap'>足りない情報の補い</td><td>空欄だった箇所（自己紹介、写真の説明、スライド41の一文、スライド47の説明）に、資料から読み取れることをもとにした文案を入れました。推測で補った文には「仮の文案」の印を付けています。高校生の言葉の引用は、実際の発言を作るわけにいかないため、引用しなくても成り立つ問いかけに置き換えました。</td></tr>
 <tr><td class='nowrap'>個人情報</td><td>引き続き、講師の氏名と経歴、子どもや高校生が写っている写真・動画は台本に載せていません。</td></tr>
 </table></section>
 <section class='page'><h2 class='sec-title'>時間配分</h2><table><tr><th>時間</th><th>パート</th><th>スライド</th><th>このパートのねらい</th></tr>
@@ -93,7 +96,8 @@ ul.checks { padding-left: 5mm; } ul.checks li { margin-bottom: 2mm; }
       <div>ふつうの書体の文章は、そのまま声に出して読める話し言葉です。</div>
       <div><span class='tag t-note'>進行</span>動き、間の取り方、問いかけなどのメモです。読み上げません。</div>
       <div><span class='tag t-prep'>準備</span>本番前にやっておくことです。</div>
-      <div><span class='tag t-fill'>要記入</span>講師ご自身の言葉を書き込む欄です。</div>
+      <div><span class='tag t-fill'>要記入</span>講師ご自身の言葉で補う欄です（主に名前）。</div>
+      <div><span class='tag t-draft'>仮の文案</span>資料から推測して補った文です。本番前に事実と合っているか確かめてください。</div>
       <div><span class='tag rev'>改訂</span>第3版で新しく加えた進め方です。</div>
       <div><span class='meta'><span class='clock'>開始 12:30</span></span>研修の開始から何分何秒の時点でこのスライドに入るかの目安です。</div>
       <div><span class='tag t-key'>顔を上げて</span>会場を見て言う一文です。ここだけは原稿から目を離します。</div>
@@ -118,8 +122,10 @@ ul.checks { padding-left: 5mm; } ul.checks li { margin-bottom: 2mm; }
 <div class='head'><div><span class='chip'>① 導入</span>0〜5分</div><div>スライド 2 / 56</div></div>
 <div class='slidehead'><img src='slides/s-02.png'><div><div class='num'>02</div><div class='stitle'>自己紹介</div><div class='meta'><span>目安 1分</span><span class='clock'>開始 0:30</span></div></div></div>
 <p class="say">はじめに、簡単に自己紹介をさせてください。</p>
-<div class="fill"><span class="tag t-fill">要記入</span>（名前と、今の仕事をひとことで）</div>
-<div class="fill"><span class="tag t-fill">要記入</span>（資格は全部読まず、今日の話に関係するものを2つほど）</div>
+<div class="fill"><span class="tag t-fill">要記入</span>（名前）です。</div>
+<p class="say draft"><span class="tag t-draft">仮の文案</span>都城スポーツクラブの理事で、アトレタシエロでチーフトレーナーをしています。</p>
+<div class="fill"><span class="tag t-fill">要記入</span>（出身地など、話したい方は口頭でひとこと）</div>
+<p class="say draft"><span class="tag t-draft">仮の文案</span>資格はスライドのとおりですが、今日の話に関係するところでは、健康運動指導士と、スポーツビジョンのマスターインストラクターをしています。子どもたちの体づくりと、見る力の両方に関わっています。</p>
 <div class="note revised"><span class="tag t-note">進行</span> <span class="tag rev">改訂</span>資格の一覧は読み上げず、「詳しくはスライドのとおりです」で次へ。ここで1分を超えないように</div>
 </section>
 <section class='page'>
@@ -254,33 +260,33 @@ ul.checks { padding-left: 5mm; } ul.checks li { margin-bottom: 2mm; }
 <section class='page'>
 <div class='head'><div><span class='chip'>③ 動き・ストレッチ</span>21〜34分</div><div>スライド 20 / 56</div></div>
 <div class='slidehead'><img src='slides/s-20.png'><div><div class='num'>20</div><div class='stitle'>実技の写真（1）</div><div class='meta'><span>目安 15秒</span><span class='clock'>開始 28:30</span></div></div></div>
-<p class="say revised">実際の練習の様子です。 <span class="tag rev">改訂</span></p>
+<p class="say draft"><span class="tag t-draft">仮の文案</span>実際の少年団の練習の様子です。まずは座って、体をほぐすところから始めています。</p>
 <div class="note revised"><span class="tag t-note">進行</span> <span class="tag rev">改訂</span>スライド20〜25は、全員が動いている間に流す写真。立ったまま、短く紹介するだけでよい</div>
 </section>
 <section class='page'>
 <div class='head'><div><span class='chip'>③ 動き・ストレッチ</span>21〜34分</div><div>スライド 21 / 56</div></div>
 <div class='slidehead'><img src='slides/s-21.png'><div><div class='num'>21</div><div class='stitle'>実技の写真（2）</div><div class='meta'><span>目安 15秒</span><span class='clock'>開始 28:45</span></div></div></div>
-<div class="fill"><span class="tag t-fill">要記入</span>（写真のポイントをひとこと）</div>
+<p class="say draft"><span class="tag t-draft">仮の文案</span>片ひざをついて、前に踏み出すランジの形です。腰に手を当てて、上半身をまっすぐに保っています。</p>
 </section>
 <section class='page'>
 <div class='head'><div><span class='chip'>③ 動き・ストレッチ</span>21〜34分</div><div>スライド 22 / 56</div></div>
 <div class='slidehead'><img src='slides/s-22.png'><div><div class='num'>22</div><div class='stitle'>実技の写真（3）</div><div class='meta'><span>目安 15秒</span><span class='clock'>開始 29:00</span></div></div></div>
-<div class="fill"><span class="tag t-fill">要記入</span>（写真のポイントをひとこと）</div>
+<p class="say draft"><span class="tag t-draft">仮の文案</span>足の裏を合わせて座る形です。指導者も輪の中に入って一緒にやると、子どもたちの様子がよく見えます。</p>
 </section>
 <section class='page'>
 <div class='head'><div><span class='chip'>③ 動き・ストレッチ</span>21〜34分</div><div>スライド 23 / 56</div></div>
 <div class='slidehead'><img src='slides/s-23.png'><div><div class='num'>23</div><div class='stitle'>実技の写真（4）</div><div class='meta'><span>目安 15秒</span><span class='clock'>開始 29:15</span></div></div></div>
-<div class="fill"><span class="tag t-fill">要記入</span>（写真のポイントをひとこと）</div>
+<p class="say draft"><span class="tag t-draft">仮の文案</span>足を前に伸ばして座り、体を前に倒す形です。痛いところまで倒さないよう声をかけます。</p>
 </section>
 <section class='page'>
 <div class='head'><div><span class='chip'>③ 動き・ストレッチ</span>21〜34分</div><div>スライド 24 / 56</div></div>
 <div class='slidehead'><img src='slides/s-24.png'><div><div class='num'>24</div><div class='stitle'>実技の写真（5）</div><div class='meta'><span>目安 15秒</span><span class='clock'>開始 29:30</span></div></div></div>
-<div class="fill"><span class="tag t-fill">要記入</span>（写真のポイントをひとこと）</div>
+<p class="say draft"><span class="tag t-draft">仮の文案</span>片足で立つもも上げです。ふらつく子もいますが、それも今の体の状態を知る手がかりになります。</p>
 </section>
 <section class='page'>
 <div class='head'><div><span class='chip'>③ 動き・ストレッチ</span>21〜34分</div><div>スライド 25 / 56</div></div>
 <div class='slidehead'><img src='slides/s-25.png'><div><div class='num'>25</div><div class='stitle'>実技の写真（6）</div><div class='meta'><span>目安 15秒</span><span class='clock'>開始 29:45</span></div></div></div>
-<div class="fill"><span class="tag t-fill">要記入</span>（写真のポイントをひとこと）</div>
+<p class="say draft"><span class="tag t-draft">仮の文案</span>しゃがんで両手を上に伸ばす動きです。みんなで声を出しながら、リズムよく行います。</p>
 </section>
 <section class='page'>
 <div class='head'><div><span class='chip'>③ 動き・ストレッチ</span>21〜34分</div><div>スライド 26 / 56</div></div>
@@ -310,7 +316,8 @@ ul.checks { padding-left: 5mm; } ul.checks li { margin-bottom: 2mm; }
 <div class='head'><div><span class='chip'>④ 高校生の声</span>34〜40分</div><div>スライド 29 / 56</div></div>
 <div class='slidehead'><img src='slides/s-29.png'><div><div class='num'>29</div><div class='stitle'>先輩の声から考える</div><div class='meta'><span>目安 1分</span><span class='clock'>開始 38:30</span></div></div></div>
 <p class="say">いかがでしたか。</p>
-<div class="fill"><span class="tag t-fill">要記入</span>「　　　　　　　　　　　　」という言葉がありました。</div>
+<p class="say draft"><span class="tag t-draft">仮の文案</span>先輩たちの言葉の中で、皆さんの心に残ったものはありましたか。</p>
+<div class="note revised"><span class="tag t-note">進行</span> <span class="tag rev">改訂</span>動画の中で特に印象に残った一言があれば、ここで「動画の中で『〇〇』という言葉がありました」と引用してもよい</div>
 <p class="say revised">うちの団の子にも当てはまりそうだな、と感じた方は、うなずいていただくだけで結構です。 <span class="tag rev">改訂</span></p>
 <div class="note revised"><span class="tag t-note">進行</span> <span class="tag rev">改訂</span>指名はしない。うなずきが見えたら「ありがとうございます」と受けて先へ</div>
 <p class="say key"><span class="tag t-key">顔を上げて</span>先輩の「やっておけばよかった」は、今の子どもたちにとっての「今ならできる」です。</p>
@@ -388,7 +395,7 @@ ul.checks { padding-left: 5mm; } ul.checks li { margin-bottom: 2mm; }
 <div class='head'><div><span class='chip'>⑥ 視る力</span>46〜55分</div><div>スライド 41 / 56</div></div>
 <div class='slidehead'><img src='slides/s-41.png'><div><div class='num'>41</div><div class='stitle'>現代の子ども達の課題</div><div class='meta'><span>目安 45秒</span><span class='clock'>開始 47:00</span></div></div></div>
 <p class="say">今の子どもたちには、課題があります。</p>
-<div class="fill"><span class="tag t-fill">要記入</span>視神経は10歳ごろまで（何が10歳ごろまでなのかを、出典に沿ってひとことで）</div>
+<p class="say draft"><span class="tag t-draft">仮の文案</span>目の働きが大きく育つ大切な時期は、10歳ごろまでといわれています。</p>
 <p class="say">ゲームやスマホなど、画面を見ているとき、目は近くにピントを合わせ続けています。それが、目の緊張につながります。画面を見ている間、目と脳は休んでいません。</p>
 <div class="prep revised"><span class="tag t-prep">準備</span> <span class="tag rev">改訂</span>「視神経は10歳ごろまで」は、スライドの文が途中で終わっています。出典で中身を確かめてから話してください（付録「スライド修正リスト」のスライド41の項目）。</div>
 </section>
@@ -429,7 +436,8 @@ ul.checks { padding-left: 5mm; } ul.checks li { margin-bottom: 2mm; }
 <section class='page'>
 <div class='head'><div><span class='chip'>⑥ 視る力</span>46〜55分</div><div>スライド 47 / 56</div></div>
 <div class='slidehead'><img src='slides/s-47.png'><div><div class='num'>47</div><div class='stitle'>写真</div><div class='meta'><span>目安 45秒</span><span class='clock'>開始 52:15</span></div></div></div>
-<div class="fill"><span class="tag t-fill">要記入</span>（この写真で紹介する取り組みや機器の説明。講師自身の言葉で2〜3文）</div>
+<p class="say draft"><span class="tag t-draft">仮の文案</span>これは、画面に出てくる光や合図を目でとらえて、すばやく手でタッチするトレーニングの様子です。</p>
+<p class="say draft"><span class="tag t-draft">仮の文案</span>先ほどの「眼と手の協応」、見たものに手で素早く反応する力を、遊び感覚で育てることができます。</p>
 </section>
 <section class='page'>
 <div class='head'><div><span class='chip'>⑥ 視る力</span>46〜55分</div><div>スライド 48 / 56</div></div>
@@ -489,7 +497,7 @@ ul.checks { padding-left: 5mm; } ul.checks li { margin-bottom: 2mm; }
 <div class='head'><div><span class='chip'>⑦ まとめ・質疑応答・終わり</span>55〜63分</div><div>スライド 56 / 56</div></div>
 <div class='slidehead'><img src='slides/s-56.png'><div><div class='num'>56</div><div class='stitle'>ご清聴ありがとうございました</div><div class='meta'><span>目安 30秒</span><span class='clock'>開始 62:30</span></div></div></div>
 <p class="say key"><span class="tag t-key">顔を上げて</span>最後までありがとうございました。「練習前は動的、練習後は静的」。この合言葉だけでも、明日、子どもたちに伝えてください。</p>
-<div class="fill"><span class="tag t-fill">要記入</span>（所属と名前を添えて）ありがとうございました。</div>
+<div class="fill"><span class="tag t-fill">要記入</span>都城スポーツクラブシエロ、アトレタビジョンの（名前）でした。ありがとうございました。</div>
 <div class="note"><span class="tag t-note">進行</span>一礼</div>
 </section>
 <section class='page'><h2 class='sec-title'>付録　本番前の確認ポイント</h2><ul class='checks'>
@@ -498,7 +506,7 @@ ul.checks { padding-left: 5mm; } ul.checks li { margin-bottom: 2mm; }
 <li>高校生インタビュー動画は3分半以内、両眼の動画は3本合わせて2分ほどが目安です。長いときは予備時間から使います。</li>
 <li>姿勢のデモンストレーションの場所。2人組で立てる広さがあるか、壁際に全員が並べるか、床にうつ伏せになれるか。うつ伏せが難しい会場なら、太もも前のチェックは壁に手をついて立って行います。</li>
 <li>スライド30〜38の数字のうち、36と38はスクールコンパスの記事（元の報告の要約）から取っています。質問されたときはそのように答えてください。</li>
-<li>黄色の記入欄（スライド2の自己紹介、21〜25の写真の説明、29の引用する一言、41の一文、47の写真の説明、56の名乗り）を書き込んでおく。</li>
+<li>「仮の文案」の印が付いた文（スライド2、20〜25、29、41、47）が事実と合っているか確かめ、必要なら言い換えておく。とくにスライド41の「10歳ごろまで」は、出典で必ず確かめる。名前（スライド2・56）は当日口頭で。</li>
 <li>付録「スライド修正リスト」の「必須」の項目が直っているか。</li>
 <li>デモ用カードを印刷し、実技をする場所の近く（演台、譜面台、壁際の床など）に置いておく。</li>
 </ul></section>
