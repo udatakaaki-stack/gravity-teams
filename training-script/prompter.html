@@ -16,7 +16,11 @@
 html, body { height: 100%; }
 body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--body);
   -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; overflow: hidden; }
-.app { height: 100%; display: grid; grid-template-rows: auto auto 1fr auto; }
+.app { height: 100%; display: grid; grid-template-rows: auto auto auto 1fr auto; }
+.confirm { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: #3a2a12; border-bottom: 1px solid var(--key);
+  padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.confirm span { color: var(--key); font-size: 17px; font-weight: 700; margin-right: 6px; }
+.confirm[hidden] { display: none !important; }
 .bar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
   padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
   background: var(--panel); border-bottom: 1px solid var(--line); }
@@ -87,8 +91,15 @@ main { overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; posit
       <button id="smaller" type="button" aria-label="文字を小さく">字−</button>
       <button id="bigger" type="button" aria-label="文字を大きく">字＋</button>
       <button id="list" type="button">一覧</button>
+      <button id="home" type="button">最初へ</button>
     </div>
   </header>
+  <div class="confirm" id="confirm" hidden>
+    <span>最初のスライドに戻りますか？</span>
+    <button class="go" id="homeOnly" type="button">スライドだけ戻す</button>
+    <button id="homeReset" type="button">タイマーもリセットして戻す</button>
+    <button id="homeCancel" type="button">やめる</button>
+  </div>
   <div class="progress"><i id="prog"></i></div>
   <div class="stage"><main id="main"><div class="inner" id="inner"></div></main><div class="more" id="more" hidden>▼ 続きがあります（右側をタップ）</div></div>
   <footer class="foot">
@@ -200,6 +211,15 @@ $("list").onclick = e => {
 };
 $("grid").addEventListener("click", e => { const b = e.target.closest("button[data-i]"); if (b) { $("sheet").hidden = true; go(+b.dataset.i); } });
 $("close").onclick = () => { $("sheet").hidden = true; };
+
+// 最初へ：誤って触れても戻らないよう、確認の帯を出してから戻す
+$("home").onclick = e => { e.stopPropagation(); $("confirm").hidden = !$("confirm").hidden; };
+$("homeCancel").onclick = () => { $("confirm").hidden = true; };
+$("homeOnly").onclick = () => { $("confirm").hidden = true; go(0); };
+$("homeReset").onclick = () => {
+  $("confirm").hidden = true; t0 = null; pausedAt = null;
+  store.set("t0", null); store.set("pausedAt", null); go(0);
+};
 
 // 画面が暗くならないようにする（使えない環境では何もしない）
 let lock = null;
