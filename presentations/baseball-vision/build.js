@@ -120,7 +120,7 @@ sec('導入');
 // 1 cover
 {
   const s = pres.addSlide({ masterName: 'COVER', sectionTitle: section });
-  s.addImage({ path: 'ball.png', x: 7.1, y: 1.3, w: 5.9, h: 5.0, altText: '投手の手から打者へ向かうボールの軌道と野球ボール' });
+  s.addImage({ path: 'cover_art.png', x: 7.25, y: 1.0, w: 5.45, h: 5.0, altText: 'リリースからストライクゾーンへ向かう投球と、それを先回りして追う視線の軌跡' });
   s.addText('FOR FUTURE ATHLETES ｜ AGE 6–18', { x: X0, y: 1.6, w: 7, h: 0.4, fontFace: EN, fontSize: 14, bold: true, charSpacing: 3, color: C.accent1, margin: 0, isTextBox: true });
   s.addText([{ text: '野球と', options: { breakLine: true } }, { text: '「視る力」' }], { x: X0, y: 2.1, w: 7.2, h: 2.1, fontSize: 54, bold: true, color: C.text1, margin: 0, valign: 'top', lineSpacingMultiple: 1.05, isTextBox: true });
   s.addText([{ text: '小学生から高校まで。', options: { breakLine: true } }, { text: 'バッティングと視る力' }], { x: X0, y: 4.35, w: 7, h: 1.1, fontSize: 20, color: '2E3D55', margin: 0, valign: 'top', lineSpacingMultiple: 1.4, isTextBox: true });
